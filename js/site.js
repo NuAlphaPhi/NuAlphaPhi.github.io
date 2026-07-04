@@ -12,6 +12,8 @@
     header.classList.toggle("is-scrolled", scrolled);
     if (!hero) {
       header.classList.add("is-solid");
+    } else {
+      header.classList.remove("is-solid");
     }
   }
 
@@ -49,6 +51,7 @@
   document.querySelectorAll(".nav-trigger .nav-btn, .nav-link:not(.nav-cta)").forEach(function (link) {
     link.addEventListener("click", function () {
       if (window.innerWidth <= 900) closeMobileNav();
+      if (link.blur) link.blur();
     });
   });
 
@@ -106,6 +109,9 @@
   }
 
   function getSectionContentTarget(section) {
+    if (section.id === "index") {
+      return section.querySelector(".cta-panel") || section;
+    }
     return (
       section.querySelector(".section-label") ||
       section.querySelector(".section-header") ||
@@ -119,7 +125,8 @@
     var section = target.matches && target.matches("section[id]") ? target : target.closest("section[id]");
     if (section) prepareSectionForScroll(section);
     var scrollTarget = section && target === section ? getSectionContentTarget(section) : target;
-    var top = scrollTarget.getBoundingClientRect().top + window.scrollY - getStickyOffset();
+    var extraGap = section && section.id === "index" ? 48 : 0;
+    var top = scrollTarget.getBoundingClientRect().top + window.scrollY - getStickyOffset() - extraGap;
     window.scrollTo({
       top: Math.max(0, top),
       behavior: reducedMotion ? "auto" : "smooth",
@@ -378,6 +385,117 @@
           submitBtn.disabled = false;
           submitBtn.textContent = "Send Message";
         });
+    });
+  }
+
+  /* Portal gate (placeholder auth — replace with real brother login later) */
+  var portalGate = document.getElementById("portal-gate");
+  var portalContent = document.getElementById("portal-content");
+  var portalForm = document.getElementById("portalLoginForm");
+  var portalError = document.getElementById("portal-error");
+  var portalSignOut = document.getElementById("portalSignOut");
+  var portalSession = document.getElementById("portalSession");
+  var portalPledgeName = document.getElementById("portalPledgeName");
+  var PORTAL_KEY = "nap_portal_auth";
+  var PORTAL_USER_KEY = "nap_portal_user";
+  var PORTAL_USERNAME = "kaiser";
+  var PORTAL_PASSWORD = "Wongian242";
+
+  /* Preview brother profiles — replace with API/database lookup later */
+  var PORTAL_USERS = {
+    kaiser: {
+      firstName: "Kaiser",
+      lastName: "Brother",
+      pledgeName: "Kaiser",
+      pledgeNumber: "TBD",
+      semesterCrossed: "TBD",
+      chapter: "TBD",
+      class: "TBD",
+      idNumber: "TBD",
+    },
+  };
+
+  function getPortalUser(username) {
+    if (!username) return null;
+    return PORTAL_USERS[username.toLowerCase()] || null;
+  }
+
+  function updatePortalSessionLabel(username) {
+    var user = getPortalUser(username);
+    if (portalPledgeName && user) {
+      portalPledgeName.textContent = user.pledgeName;
+    }
+  }
+
+  function portalEmailMatches(emailValue) {
+    var normalized = emailValue.trim();
+    if (!normalized) return false;
+    var at = normalized.indexOf("@");
+    var localPart = at >= 0 ? normalized.slice(0, at) : normalized;
+    return localPart.toLowerCase() === PORTAL_USERNAME;
+  }
+
+  function showPortal(authenticated, username) {
+    if (!portalGate || !portalContent) return;
+    portalGate.hidden = authenticated;
+    portalContent.hidden = !authenticated;
+    if (portalSession) portalSession.hidden = !authenticated;
+    if (authenticated) updatePortalSessionLabel(username);
+  }
+
+  if (portalGate && portalContent) {
+    try {
+      showPortal(
+        sessionStorage.getItem(PORTAL_KEY) === "1",
+        sessionStorage.getItem(PORTAL_USER_KEY)
+      );
+    } catch (err) {
+      showPortal(false);
+    }
+  }
+
+  if (portalForm) {
+    portalForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var email = document.getElementById("portal-email");
+      var password = document.getElementById("portal-password");
+      if (!email.value || !password.value) {
+        if (portalError) {
+          portalError.textContent = "Enter your email and password.";
+          portalError.hidden = false;
+        }
+        return;
+      }
+      if (!portalEmailMatches(email.value) || password.value !== PORTAL_PASSWORD) {
+        if (portalError) {
+          portalError.textContent = "Invalid email or password. Please try again.";
+          portalError.hidden = false;
+        }
+        return;
+      }
+      try {
+        sessionStorage.setItem(PORTAL_KEY, "1");
+        sessionStorage.setItem(PORTAL_USER_KEY, PORTAL_USERNAME);
+      } catch (err) {
+        /* ignore */
+      }
+      if (portalError) portalError.hidden = true;
+      showPortal(true, PORTAL_USERNAME);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  if (portalSignOut) {
+    portalSignOut.addEventListener("click", function () {
+      try {
+        sessionStorage.removeItem(PORTAL_KEY);
+        sessionStorage.removeItem(PORTAL_USER_KEY);
+      } catch (err) {
+        /* ignore */
+      }
+      showPortal(false);
+      if (portalForm) portalForm.reset();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
 
