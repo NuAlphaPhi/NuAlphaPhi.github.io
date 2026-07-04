@@ -1,248 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Find out how to join Nu Alpha Phi - the World's Tightest Brotherhood">
-    <meta name="author" content="">
+    <meta name="author" content="Nu Alpha Phi National Executive Board">
     <meta name="referrer" content="origin">
+    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
     <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Rush | NAPhi</title>
     <base href="https://nualphaphi.com/">
-
-    <!-- Bootstrap Core CSS -->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom Fonts -->
-    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
-    <link href='https://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700' rel='stylesheet' type='text/css'>
-
-    <!-- Theme CSS -->
-    <link href="css/agency.css" rel="stylesheet">
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js" integrity="sha384-0s5Pv64cNZJieYFkXYOTId2HMA2Lfb6q2nAcx2n0RTLUnCAoTTsS0nKEO27XyKcY" crossorigin="anonymous"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js" integrity="sha384-ZoaMbDF+4LeFxg6WdScQ9nnR1QC2MIRxA1O9KWEXQwns1G8UNyIEZIQidzb0T1fo" crossorigin="anonymous"></script>
-    <![endif]-->
-
+    <script>
+      (function () {
+        var host = location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+          document.querySelector('base').href = location.origin + '/';
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <link href="css/nap.css" rel="stylesheet">
 </head>
+<body>
 
-<body id="page-top" class="index">
+    <a class="skip-link" href="#main">Skip to content</a>
 
-    <!-- Navigation -->
-    <nav id="mainNav" class="navbar navbar-default navbar-custom navbar-fixed-top">
-        <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header page-scroll">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
-                </button>
-                <img src="img/letters.png" height="100 rem" alt="Nu Alpha Phi NAPhi Greek Letter">
-               
-            </div>
-
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="hidden">
-                        <a href="#page-top"></a>
-                    </li>
-              
-                    <li>
-                                                <div class="dropdown">
-                          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                            Home
-                          </button>
-    
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-                            <li><a class="page-scroll" href="index#story">Our Story</a></li>
-                            <li><a class="page-scroll" href="index#weare">We Are</a></li>
-                            <li><a class="page-scroll" href="index#join">Why Join</a></li>
-                            <li><a class="page-scroll" href="index#contact">Contact</a></li>
-                          </ul>
+    <header class="site-header" id="site-header">
+        <div class="site-header__inner">
+            <a href="./" class="site-logo">
+                <img src="img/letters.png" alt="Nu Alpha Phi — Home">
+            </a>
+            <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+                <span class="nav-toggle__bar"></span>
+            </button>
+            <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+                <ul class="nav-list">
+                    <li class="nav-item nav-item--dropdown">
+                        <div class="nav-trigger">
+                            <a class="nav-btn" href="index">Home</a>
+                            <button class="nav-chevron-btn" type="button" aria-expanded="false" aria-label="Home sections"><svg class="nav-chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
                         </div>
+                        <ul class="nav-dropdown">
+                            <li><a href="index#story">Our Story</a></li>
+                            <li><a href="index#weare">We Are</a></li>
+                            <li><a href="index#join">Why Join</a></li>
+                        </ul>
                     </li>
-
-                                        <li>
-                                                            <div class="dropdown">
-                          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                            Rush
-                          </button>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                            <li><a class="page-scroll" href="#what">What's Rush?</a></li>
-                            <li><a class="page-scroll" href="#how">How Do I Join?</a></li>
-                            <li><a class="page-scroll" href="#faq">FAQ</a></li>
-                          </ul>
+                    <li class="nav-item nav-item--dropdown">
+                        <div class="nav-trigger">
+                            <a class="nav-btn is-active" href="rush" aria-current="page">Rush</a>
+                            <button class="nav-chevron-btn" type="button" aria-expanded="false" aria-label="Rush sections"><svg class="nav-chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
                         </div>
+                        <ul class="nav-dropdown">
+                            <li><a href="#what">What's Rush?</a></li>
+                            <li><a href="#how">How Do I Join?</a></li>
+                        </ul>
                     </li>
-                                        <li>
-                                                            <div class="dropdown">
-                          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                            The Brotherhood
-                          </button>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                            <li><a class="page-scroll" href="brotherhood#membership">Membership</a></li>
-                            <li><a class="page-scroll" href="brotherhood#rush">Active Life</a></li>
-                            <li><a class="page-scroll" href="brotherhood#establishments">Establishments</a></li>
-                            <li><a class="page-scroll" href="brotherhood#expansion">Expansion</a></li>
-
-                          </ul>
+                    <li class="nav-item nav-item--dropdown">
+                        <div class="nav-trigger">
+                            <a class="nav-btn" href="brotherhood">The Brotherhood</a>
+                            <button class="nav-chevron-btn" type="button" aria-expanded="false" aria-label="The Brotherhood sections"><svg class="nav-chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
                         </div>
+                        <ul class="nav-dropdown">
+                            <li><a href="brotherhood#membership">Membership</a></li>
+                            <li><a href="brotherhood#rush">Active Life</a></li>
+                            <li><a href="brotherhood#establishments">Establishments</a></li>
+                            <li><a href="brotherhood#expansion">Expansion</a></li>
+                        </ul>
                     </li>
-                    <li>
-                                                            <div class="dropdown">
-                          <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                            Info
-                          </button>
-                          <ul class="dropdown-menu" aria-labelledby="dropdownMenu3">
-                            <li><a class="page-scroll" href="info#info">Info</a></li>
-                            <li><a class="page-scroll" href="info#history">History</a></li>
-                            <li><a class="page-scroll" href="info#process">New Member Education</a></li>
-                            <li><a class="page-scroll" href="info#leadership">Leadership</a></li>
-                          </ul>
+                    <li class="nav-item nav-item--dropdown">
+                        <div class="nav-trigger">
+                            <a class="nav-btn" href="info">Info</a>
+                            <button class="nav-chevron-btn" type="button" aria-expanded="false" aria-label="Info sections"><svg class="nav-chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
                         </div>
+                        <ul class="nav-dropdown">
+                            <li><a href="info#info">Info</a></li>
+                            <li><a href="info#history">History</a></li>
+                            <li><a href="info#process">New Member Education</a></li>
+                        </ul>
                     </li>
-                          <li>
-                                                          
-                       <button onclick="window.location.href='blog'" class="btn btn-primary" type="button">
-                            Blog
-                          </button>
+                    <li class="nav-item">
+                        <a class="nav-link" href="blog">Blog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="contact">Contact</a>
                     </li>
                 </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container-fluid -->
-    </nav>
-
-    <!-- Header -->
-    <header style= "background-image: url('./img/rush/line-bg.jpg');">
-        <div class="container">
-            <div class="intro-text">
-                <div class="intro-lead-in">Welcome To The Brotherhood</div>
-                <div class="intro-heading">In Unity We Stand Strong</div>
-               <!-- <a href="#services" class="page-scroll btn btn-xl">Turbstart</a> -->
-            </div>
+            </nav>
         </div>
     </header>
 
+    <main id="main">
 
+        <section class="hero hero--sub">
+            <img class="hero__bg" src="img/rush/line-bg.jpg" alt="" aria-hidden="true">
+            <div class="hero__content">
+                <p class="hero__page">Rush</p>
+                <p class="hero__eyebrow">Welcome To The Brotherhood</p>
+                <h1 class="hero__title">In Unity We Stand Strong</h1>
+            </div>
+        </section>
 
-    <!-- Portfolio Grid Section -->
-    <section id="what" class="bg-light-gray">
+        <nav class="page-subnav" aria-label="Page sections">
+            <div class="container">
+                <ul class="page-subnav__list">
+                    <li><a href="#what">What's Rush?</a></li>
+                    <li><a href="#how">How Do I Join?</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <section id="what" class="section section--alt">
+            <div class="container">
+                <div class="split reveal">
+                    <div class="split__content">
+                        <span class="section-label">Recruitment</span>
+                        <h2 class="section-title">What's Rush</h2>
+                        <div class="prose">
+                            <p>Rush is a period during the school year for students who may be interested in being a part of Greek life to attend a variety of events. Through these events held during Rush, you can learn more about our fraternity as well as to get to know our Brothers on a personal level. Rush is open to anyone from any background. We encourage you to come out to these events as this is a chance for us to get to know each other on a personal level. All events hosted by us are FREE and non-obligatory.</p>
+                        </div>
+                    </div>
+                    <figure class="split__media media-frame">
+                        <img src="img/rush/diagonal.jpg" alt="Pledge Brother Line">
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <section id="how" class="section">
+            <div class="container">
+                <div class="split split--reverse reveal">
+                    <div class="split__content">
+                        <span class="section-label">Join Us</span>
+                        <h2 class="section-title">How Do I Join?</h2>
+                        <div class="prose">
+                            <p>We will invite individuals who are interested in becoming members of Nu Alpha Phi Fraternity, Inc. and who also exemplify qualities of a potential member. Bids will be extended throughout the duration of the rush period. These bids are an invitation to become part of the new member intake process. Individuals may choose to accept or deny the bid.</p>
+                        </div>
+                    </div>
+                    <figure class="split__media media-frame">
+                        <img src="img/rush/sitting.jpg" alt="Fraternity Rush Period">
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <section class="social-section" aria-labelledby="social-heading">
+        <div class="social-section__glow" aria-hidden="true"></div>
         <div class="container">
-                <div class="col-md-6 col-sm-6 portfolio-item text-center">
-                    <h1 class="section-heading">What's Rush</h1>
-                    <p class="text-muted">Rush is a period during the school year for students who may be interested in being a part of Greek life to attend a variety of events. Through these events held during Rush, you can learn more about our fraternity as well as to get to know our Brothers on a personal level. Rush is open to anyone from any background. We encourage you to come out to these events as this is a chance for us to get to know each other on a personal level. All events hosted by us are FREE and non-obligatory.
-</p>
-                </div>
-
-                <div class="col-md-6 col-sm-6 portfolio-item text-center">
-                    <span class="fa-stack fa-2x"></span> <!-- for a space lmao -->
-                        <img src="img/rush/diagonal.jpg" class="img-responsive" alt="Pledge Brother Line">
-
-                </div>
+            <div class="social-section__header reveal">
+                <span class="social-section__eyebrow">Stay Connected</span>
+                <h2 class="social-section__title" id="social-heading">Check Out Our Social Media</h2>
+                <p class="social-section__intro">Follow along for rush updates, chapter news, and brotherhood moments across the nation.</p>
+            </div>
+            <div class="social-grid">
+                <a class="social-card social-card--linkedin reveal" href="https://www.linkedin.com/groups/2868629/" target="_blank" rel="noopener noreferrer">
+                    <span class="social-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    </span>
+                    <span class="social-card__body">
+                        <span class="social-card__platform">LinkedIn</span>
+                        <span class="social-card__desc">Connect with brothers &amp; alumni</span>
+                    </span>
+                    <span class="social-card__arrow" aria-hidden="true">
+                        <svg viewBox="0 0 16 16"><path d="M4 12l8-8M6 4h6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                </a>
+                <a class="social-card social-card--facebook reveal reveal-delay-1" href="https://www.facebook.com/NuAlphaPhi?mibextid=wwXIfr&amp;rdid=FLzhh6bjBNNmEE9a&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1Bbdt12rfJ%2F%3Fmibextid%3DwwXIfr#" target="_blank" rel="noopener noreferrer">
+                    <span class="social-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </span>
+                    <span class="social-card__body">
+                        <span class="social-card__platform">Facebook</span>
+                        <span class="social-card__desc">Follow our official page</span>
+                    </span>
+                    <span class="social-card__arrow" aria-hidden="true">
+                        <svg viewBox="0 0 16 16"><path d="M4 12l8-8M6 4h6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                </a>
+                <a class="social-card social-card--instagram reveal reveal-delay-2" href="https://www.instagram.com/nualphaphi/" target="_blank" rel="noopener noreferrer">
+                    <span class="social-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </span>
+                    <span class="social-card__body">
+                        <span class="social-card__platform">Instagram</span>
+                        <span class="social-card__desc">See photos, events &amp; daily life</span>
+                    </span>
+                    <span class="social-card__arrow" aria-hidden="true">
+                        <svg viewBox="0 0 16 16"><path d="M4 12l8-8M6 4h6v6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- Services Section -->
-    <section id="how">
-        <div class="container">
-                 <div class="col-md-6 col-sm-6 portfolio-item text-center">
-                    <span class="fa-stack fa-2x"></span> <!-- for a space lmao -->
-                        <img src="img/rush/sitting.jpg" class="img-responsive" alt="Fraternity Rush Period">
-
-                </div>
-                <div class="col-md-6 col-sm-6 portfolio-item text-center">
-                    <h1 class="section-heading">How Do I Join?</h1>
-                    <p class="text-muted">We will invite individuals who are interested in becoming members of Nu Alpha Phi Fraternity, Inc. and who also exemplify qualities of a potential member. Bids will be extended throughout the duration of the rush period. These bids are an invitation to become part of the new member intake process. Individuals may choose to accept or deny the bid.
-</p>
-
-                </div>
-
-       
+    <footer class="site-footer">
+        <div class="container site-footer__inner">
+            <div class="site-footer__brand-block">
+                <span class="site-footer__brand">Nu Alpha Phi Fraternity, Inc.</span>
+                <span class="site-footer__tagline">In Unity We Stand Strong</span>
             </div>
-<!--               <div class="row">
-              <div class="col-md-4 col-sm-6 portfolio-item">
-                    <a href="#portfolioModal4" class="portfolio-link" data-toggle="modal">
-                        <div class="portfolio-hover">
-                            <div class="portfolio-hover-content">
-                                <i class="fa fa-plus fa-3x"></i>
-                            </div>
-                        </div>
-                        <img src="img/portfolio/frankie.png" class="img-responsive" alt="Nu Alpha Phi NAPhinest">
+            <ul class="footer-nav">
+                <li><a href="rush">Rush</a></li>
+                <li><a href="brotherhood">Brotherhood</a></li>
+                <li><a href="info">Info</a></li>
+                <li><a href="blog">Blog</a></li>
+                <li><a href="contact">Contact</a></li>
+            </ul>
+            <ul class="social-links">
+                <li>
+                    <a href="https://www.linkedin.com/groups/2868629/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                     </a>
-                    <div class="portfolio-caption">
-                        <h4>Housewarming</h4>
-                        <p class="text-muted">Mad Lit</p>
-                    </div>
-                </div>
-              </div> -->
-        </div>
-    </section>  
-
-    <!-- Team Section -->
-<!--     <section id="faq"  class="bg-light-gray">
-                <div class="container">
-                <div class="col-md-6 col-sm-6 portfolio-item text-center">
-                    <h1 class="section-heading">FAQ</h1>
-                    <p class="text-muted"></p>
-                     <p class="text-muted"></p>
-                </div>
-
-                <div class="col-md-6 col-sm-6 portfolio-item text-center">
-                    <span class="fa-stack fa-2x"></span> <!-- for a space lmao
-                        <img src="img/rush/flex.jpg" class="img-responsive" alt="Brotherhood of NAPhi">
-
-                </div>
-            </div>
-        </div>
-    </section> --> 
-
-
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                    <span class="copyright">NU ALPHA PHI FRATERNITY, INC.</span>
-                </div>
-                <div class="col-md-4">
-                    <ul class="list-inline social-buttons">
-                        <li><a href="https://www.facebook.com/NuAlphaPhi/"><i class="fa fa-facebook"></i></a>
-                        </li>
-                        <li><a href="https://instagram.com/nualphaphi/"><i class="fa fa-instagram"></i></a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+                </li>
+                <li>
+                    <a href="https://www.facebook.com/NuAlphaPhi?mibextid=wwXIfr&amp;rdid=FLzhh6bjBNNmEE9a&amp;share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1Bbdt12rfJ%2F%3Fmibextid%3DwwXIfr#" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://www.instagram.com/nualphaphi/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    </a>
+                </li>
+            </ul>
         </div>
     </footer>
 
-
-    <!-- jQuery -->
-    <script src="vendor/jquery/jquery.min.js"></script>
-
-    <!-- Bootstrap Core JavaScript -->
-    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-
-    <!-- Plugin JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js" integrity="sha384-mE6eXfrb8jxl0rzJDBRanYqgBxtJ6Unn4/1F7q4xRRyIw7Vdg9jP4ycT7x1iVsgb" crossorigin="anonymous"></script>
-
-    <!-- Contact Form JavaScript -->
-    <script src="js/jqBootstrapValidation.js"></script>
-    <script src="js/contact_me.js"></script>
-
-    <!-- Theme JavaScript -->
-    <script src="js/agency.min.js"></script>
-
+    <script src="js/site.js"></script>
 </body>
-
 </html>
