@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Contact Nu Alpha Phi Fraternity, Inc. — questions about rush, alumni, chapters, and more.">
+    <meta name="description" content="Philanthropy, professional development, and brother-owned businesses across Nu Alpha Phi.">
     <meta name="author" content="Nu Alpha Phi National Executive Board">
     <meta name="referrer" content="origin">
     <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
-    <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Contact | NAPhi</title>
+    <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Impact | NAPhi</title>
     <base href="https://nualphaphi.com/">
     <script>
       (function () {
@@ -85,17 +85,17 @@
                     </li>
                     <li class="nav-item nav-item--dropdown">
                         <div class="nav-trigger">
-                            <a class="nav-btn" href="impact">Impact</a>
+                            <a class="nav-btn is-active" href="impact" aria-current="page">Impact</a>
                             <button class="nav-chevron-btn" type="button" aria-expanded="false" aria-label="Impact sections"><svg class="nav-chevron" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
                         </div>
                         <ul class="nav-dropdown">
-                            <li><a href="impact#philanthropy">Philanthropy</a></li>
-                            <li><a href="impact#businesses">Brother Businesses</a></li>
-                            <li><a href="impact#index">Join the Index</a></li>
+                            <li><a href="#philanthropy">Philanthropy</a></li>
+                            <li><a href="#businesses">Brother Businesses</a></li>
+                            <li><a href="#index">Join the Index</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link is-active" href="contact" aria-current="page">Contact</a>
+                        <a class="nav-link" href="contact">Contact</a>
                     </li>
                     <li class="nav-item nav-item--portal">
                         <a class="nav-cta" href="portal">Portal</a>
@@ -108,85 +108,93 @@
     <main id="main">
 
         <section class="hero hero--sub">
-            <img class="hero__bg" src="img/index/header-bg.jpg" alt="" aria-hidden="true">
+            <img class="hero__bg" src="img/blog/professional.jpg" alt="" aria-hidden="true">
             <div class="hero__content">
-                <p class="hero__page">Contact</p>
-                <p class="hero__eyebrow">Get In Touch</p>
-                <h1 class="hero__title">We'd Love to Hear From You</h1>
+                <p class="hero__page">Impact</p>
+                <p class="hero__eyebrow">Service & Network</p>
+                <h1 class="hero__title">Philanthropy & Entrepreneurship</h1>
             </div>
         </section>
 
-        <section class="section contact-section">
-            <div class="container">
-                <div class="contact-layout reveal">
-                    <aside class="contact-aside">
-                        <span class="section-label">Reach Out</span>
-                        <h2 class="section-title">Contact the National Board</h2>
-                        <p class="contact-aside__text">Whether you're interested in rush, reconnecting as alumni, or learning more about Nu Alpha Phi — send us a message and we'll get back to you.</p>
-                        <div class="contact-aside__card">
-                            <span class="contact-aside__label">Email</span>
-                            <a class="contact-aside__link" href="mailto:national@nualphaphi.com">national@nualphaphi.com</a>
-                        </div>
-                        <div class="contact-aside__card">
-                            <span class="contact-aside__label">Response time</span>
-                            <p class="contact-aside__detail">We typically reply within 24 hours.</p>
-                        </div>
-                        <div class="contact-aside__card">
-                            <span class="contact-aside__label">Interested in joining?</span>
-                            <p class="contact-aside__detail">Visit our <a href="rush">Rush page</a> to learn how to get involved.</p>
-                        </div>
-                    </aside>
 
-                    <form class="contact-form" name="sentMessage" id="contactForm" method="POST" action="https://formspree.io/f/maqgabgw">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="first-name">First Name *</label>
-                                <input type="text" class="form-input" id="first-name" name="first_name" required autocomplete="given-name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="last-name">Last Name *</label>
-                                <input type="text" class="form-input" id="last-name" name="last_name" required autocomplete="family-name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="email">Email *</label>
-                                <input type="email" class="form-input" id="email" name="email" required autocomplete="email">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="phone">Phone</label>
-                                <input type="tel" class="form-input" id="phone" name="phone" autocomplete="tel">
-                            </div>
-                            <div class="form-group form-group--full">
-                                <label class="form-label" for="topic">Topic *</label>
-                                <select class="form-select" id="topic" name="topic" required>
-                                    <option value="" disabled selected>Select a topic</option>
-                                    <option value="General Inquiry">General Inquiry</option>
-                                    <option value="Rush &amp; Recruitment">Rush &amp; Recruitment</option>
-                                    <option value="Alumni">Alumni</option>
-                                    <option value="Chapter Expansion">Chapter Expansion</option>
-                                    <option value="Philanthropy &amp; Partnerships">Philanthropy &amp; Partnerships</option>
-                                    <option value="Business Index Listing">Business Index Listing</option>
-                                    <option value="Media &amp; Press">Media &amp; Press</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group form-group--full">
-                                <label class="form-label" for="chapter">Chapter / School</label>
-                                <input type="text" class="form-input" id="chapter" name="chapter_school" placeholder="e.g. Alpha / Albany, Delta / Buffalo, etc." autocomplete="organization">
-                            </div>
-                            <div class="form-group form-group--full">
-                                <label class="form-label" for="message">Message *</label>
-                                <textarea class="form-textarea" id="message" name="message" required placeholder="How can we help you?"></textarea>
-                            </div>
-                        </div>
-                        <input type="hidden" name="_replyto" id="replyto">
-                        <input type="hidden" name="_subject" id="form-subject" value="NAΦ Website Inquiry">
-                        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-                        <button type="submit" class="form-submit">Send Message</button>
-                        <p class="form-feedback" id="form-feedback" role="status" aria-live="polite" hidden></p>
-                    </form>
+        <nav class="page-subnav" aria-label="Page sections">
+            <div class="container">
+                <ul class="page-subnav__list">
+                    <li><a href="#philanthropy">Philanthropy</a></li>
+                    <li><a href="#businesses">Brother Businesses</a></li>
+                    <li><a href="#index">Join the Index</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <section id="philanthropy" class="section">
+            <div class="container">
+                <div class="section-header reveal">
+                    <span class="section-label">Service</span>
+                    <h2 class="section-title">Philanthropy</h2>
+                    <p class="section-intro">Service is one of our Seven Principles. National and chapter philanthropy details will live here.</p>
+                </div>
+                <div class="philanthropy-card reveal">
+                    <div class="philanthropy-card__status">
+                        <span class="philanthropy-card__pulse" aria-hidden="true"></span>
+                        <span class="philanthropy-card__status-text">National partnership loading…</span>
+                    </div>
+                    <h3 class="philanthropy-card__title">Something meaningful is on the way</h3>
+                    <p class="philanthropy-card__text">We’re preparing our next national partnership and service initiatives — details will appear here when ready.</p>
                 </div>
             </div>
         </section>
+
+        <section id="businesses" class="section section--alt">
+            <div class="container">
+                <div class="section-header reveal">
+                    <span class="section-label">Entrepreneurship</span>
+                    <h2 class="section-title">Brother-Owned Businesses</h2>
+                    <p class="section-intro">Highlighting businesses founded or owned by brothers across the nation.</p>
+                </div>
+                <div class="directory-grid">
+                    <article class="directory-card reveal">
+                        <a class="directory-card__logo" href="https://nanonuclearenergy.com/" target="_blank" rel="noopener noreferrer">
+                            <img src="img/impact/businesses/nano-nuclear.png" alt="NANO Nuclear Energy logo" width="160" height="47">
+                        </a>
+                        <span class="directory-card__type">Business</span>
+                        <h3 class="directory-card__title"><a href="https://nanonuclearenergy.com/" target="_blank" rel="noopener noreferrer">NANO Nuclear Energy</a></h3>
+                        <p class="directory-card__meta">Advanced nuclear energy · Beta</p>
+                        <p class="directory-card__text">Founded by Jiang &ldquo;Nitro&rdquo; Yu (Beta). Developing portable microreactor technologies, nuclear fuel fabrication, and clean energy solutions.</p>
+                    </article>
+                    <article class="directory-card reveal reveal-delay-1">
+                        <a class="directory-card__logo" href="https://blueoceannyc.com/" target="_blank" rel="noopener noreferrer">
+                            <img src="img/impact/businesses/blue-ocean.webp" alt="Blue Ocean Property Group logo" width="160" height="58">
+                        </a>
+                        <span class="directory-card__type">Business</span>
+                        <h3 class="directory-card__title"><a href="https://blueoceannyc.com/" target="_blank" rel="noopener noreferrer">Blue Ocean Property Group</a></h3>
+                        <p class="directory-card__meta">Real estate · Beta · New York City</p>
+                        <p class="directory-card__text">Founded by Kenny &ldquo;Shrek&rdquo; Lam (Beta). Boutique advisory for investment sales, capital advisory, and property management across NYC and nationwide.</p>
+                    </article>
+                    <article class="directory-card reveal reveal-delay-2">
+                        <a class="directory-card__logo" href="https://mkcthreads.com" target="_blank" rel="noopener noreferrer">
+                            <img src="img/impact/businesses/mkc-threads.png" alt="MKC Threads logo" width="160" height="48">
+                        </a>
+                        <span class="directory-card__type">Business</span>
+                        <h3 class="directory-card__title"><a href="https://mkcthreads.com" target="_blank" rel="noopener noreferrer">MKC Threads</a></h3>
+                        <p class="directory-card__meta">Custom apparel · Beta</p>
+                        <p class="directory-card__text">Founded by Kai &ldquo;3D&rdquo; Shum (Beta). Custom Greek apparel, graduation stoles, and promotional products for chapters and classes.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="index" class="section">
+            <div class="container">
+                <div class="cta-panel reveal">
+                    <span class="section-label">National Index</span>
+                    <h2 class="section-title">Are you a brother who owns a business?</h2>
+                    <p class="cta-panel__text">If you’re a brother and own a business, fill out our contact form to be included in our national index for future partnerships and event opportunities.</p>
+                    <a class="btn-link" href="contact">Get listed — Contact Us</a>
+                </div>
+            </div>
+        </section>
+
 
     </main>
 
@@ -276,3 +284,4 @@
     <script src="js/site.js"></script>
 </body>
 </html>
+

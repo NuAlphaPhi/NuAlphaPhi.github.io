@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Contact Nu Alpha Phi Fraternity, Inc. — questions about rush, alumni, chapters, and more.">
+    <meta name="description" content="NAΦ Portal — news and events for Nu Alpha Phi brothers.">
     <meta name="author" content="Nu Alpha Phi National Executive Board">
     <meta name="referrer" content="origin">
     <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
-    <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Contact | NAPhi</title>
+    <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Portal | NAPhi</title>
     <base href="https://nualphaphi.com/">
     <script>
       (function () {
@@ -95,10 +95,10 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link is-active" href="contact" aria-current="page">Contact</a>
+                        <a class="nav-link" href="contact">Contact</a>
                     </li>
                     <li class="nav-item nav-item--portal">
-                        <a class="nav-cta" href="portal">Portal</a>
+                        <a class="nav-cta is-active" href="portal" aria-current="page">Portal</a>
                     </li>
                 </ul>
             </nav>
@@ -107,86 +107,176 @@
 
     <main id="main">
 
-        <section class="hero hero--sub">
-            <img class="hero__bg" src="img/index/header-bg.jpg" alt="" aria-hidden="true">
+        <section class="hero">
+            <img class="hero__bg" src="img/portal/hero-bg.jpg" alt="" aria-hidden="true">
             <div class="hero__content">
-                <p class="hero__page">Contact</p>
-                <p class="hero__eyebrow">Get In Touch</p>
-                <h1 class="hero__title">We'd Love to Hear From You</h1>
+                <p class="hero__page">Portal</p>
+                <p class="hero__eyebrow">Brothers Only</p>
+                <h1 class="hero__title">NAΦ Portal</h1>
             </div>
         </section>
 
-        <section class="section contact-section">
-            <div class="container">
-                <div class="contact-layout reveal">
-                    <aside class="contact-aside">
-                        <span class="section-label">Reach Out</span>
-                        <h2 class="section-title">Contact the National Board</h2>
-                        <p class="contact-aside__text">Whether you're interested in rush, reconnecting as alumni, or learning more about Nu Alpha Phi — send us a message and we'll get back to you.</p>
-                        <div class="contact-aside__card">
-                            <span class="contact-aside__label">Email</span>
-                            <a class="contact-aside__link" href="mailto:national@nualphaphi.com">national@nualphaphi.com</a>
-                        </div>
-                        <div class="contact-aside__card">
-                            <span class="contact-aside__label">Response time</span>
-                            <p class="contact-aside__detail">We typically reply within 24 hours.</p>
-                        </div>
-                        <div class="contact-aside__card">
-                            <span class="contact-aside__label">Interested in joining?</span>
-                            <p class="contact-aside__detail">Visit our <a href="rush">Rush page</a> to learn how to get involved.</p>
-                        </div>
-                    </aside>
 
-                    <form class="contact-form" name="sentMessage" id="contactForm" method="POST" action="https://formspree.io/f/maqgabgw">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label class="form-label" for="first-name">First Name *</label>
-                                <input type="text" class="form-input" id="first-name" name="first_name" required autocomplete="given-name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="last-name">Last Name *</label>
-                                <input type="text" class="form-input" id="last-name" name="last_name" required autocomplete="family-name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="email">Email *</label>
-                                <input type="email" class="form-input" id="email" name="email" required autocomplete="email">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="phone">Phone</label>
-                                <input type="tel" class="form-input" id="phone" name="phone" autocomplete="tel">
-                            </div>
-                            <div class="form-group form-group--full">
-                                <label class="form-label" for="topic">Topic *</label>
-                                <select class="form-select" id="topic" name="topic" required>
-                                    <option value="" disabled selected>Select a topic</option>
-                                    <option value="General Inquiry">General Inquiry</option>
-                                    <option value="Rush &amp; Recruitment">Rush &amp; Recruitment</option>
-                                    <option value="Alumni">Alumni</option>
-                                    <option value="Chapter Expansion">Chapter Expansion</option>
-                                    <option value="Philanthropy &amp; Partnerships">Philanthropy &amp; Partnerships</option>
-                                    <option value="Business Index Listing">Business Index Listing</option>
-                                    <option value="Media &amp; Press">Media &amp; Press</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group form-group--full">
-                                <label class="form-label" for="chapter">Chapter / School</label>
-                                <input type="text" class="form-input" id="chapter" name="chapter_school" placeholder="e.g. Alpha / Albany, Delta / Buffalo, etc." autocomplete="organization">
-                            </div>
-                            <div class="form-group form-group--full">
-                                <label class="form-label" for="message">Message *</label>
-                                <textarea class="form-textarea" id="message" name="message" required placeholder="How can we help you?"></textarea>
-                            </div>
+        <section class="section portal-gate-section" id="portal-gate">
+            <div class="container">
+                <div class="portal-gate reveal">
+                    <span class="section-label">Brothers Only</span>
+                    <h2 class="section-title">NAΦ Portal</h2>
+                    <p class="portal-gate__text">News, events, and brotherhood updates for official members. Sign in to continue.</p>
+                    <p class="portal-gate__note">Currently in development.</p>
+                    <form class="portal-gate__form" id="portalLoginForm" novalidate>
+                        <div class="form-group">
+                            <label class="form-label" for="portal-email">Email</label>
+                            <input class="form-input" id="portal-email" name="email" type="email" autocomplete="username" required placeholder="name@nualphaphi.com">
                         </div>
-                        <input type="hidden" name="_replyto" id="replyto">
-                        <input type="hidden" name="_subject" id="form-subject" value="NAΦ Website Inquiry">
-                        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off">
-                        <button type="submit" class="form-submit">Send Message</button>
-                        <p class="form-feedback" id="form-feedback" role="status" aria-live="polite" hidden></p>
+                        <div class="form-group">
+                            <label class="form-label" for="portal-password">Password</label>
+                            <input class="form-input" id="portal-password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+                        </div>
+                        <button class="form-submit" type="submit">Enter Portal</button>
+                        <p class="portal-gate__error" id="portal-error" role="alert" hidden></p>
                     </form>
                 </div>
             </div>
         </section>
+
+        <div id="portal-content" class="portal-content" hidden>
+            <nav class="page-subnav" aria-label="Portal sections">
+                <div class="container">
+                    <ul class="page-subnav__list">
+                        <li><a href="#news">News</a></li>
+                        <li><a href="#events">Events</a></li>
+                    </ul>
+                    <div class="portal-session" id="portalSession" hidden>
+                        <p class="portal-session__label">Currently logged in as <span id="portalPledgeName"></span></p>
+                        <button class="portal-signout" id="portalSignOut" type="button">Sign out</button>
+                    </div>
+                </div>
+            </nav>
+
+            <section id="news" class="section">
+                <div class="container">
+                    <div class="section-header reveal">
+                        <span class="section-label">Updates</span>
+                        <h2 class="section-title">Brotherhood News</h2>
+                        <p class="section-intro">Announcements and updates for active brothers and alumni. Add new posts here.</p>
+                    </div>
+                    <div class="news-list">
+                        <article class="news-card news-card--placeholder reveal">
+                            <span class="news-card__date">Date TBD</span>
+                            <h3 class="news-card__title">News headline</h3>
+                            <p class="news-card__text">Short summary of a brotherhood announcement. Replace with real news items.</p>
+                        </article>
+                        <article class="news-card news-card--placeholder reveal reveal-delay-1">
+                            <span class="news-card__date">Date TBD</span>
+                            <h3 class="news-card__title">News headline</h3>
+                            <p class="news-card__text">Short summary of a brotherhood announcement. Replace with real news items.</p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section id="events" class="section section--alt">
+                <div class="container">
+                    <div class="section-header reveal">
+                        <span class="section-label">Calendar</span>
+                        <h2 class="section-title">News and Events</h2>
+                    </div>
+                    <div class="event-grid">
+                        <article class="event-card reveal">
+                            <button class="event-card__trigger" type="button" data-modal="modal-chapter-wars" aria-haspopup="dialog">
+                                <div class="event-card__media">
+                                    <img class="event-card__img" src="img/portfolio/chapterwars.jpg" alt="">
+                                    <span class="event-card__hint" aria-hidden="true">View event</span>
+                                </div>
+                                <div class="event-card__body">
+                                    <span class="event-card__tag">National Brotherhood Event</span>
+                                    <h3 class="event-card__title">Chapter Wars</h3>
+                                    <p class="event-card__desc">National athletics event — brother against brother across chapters.</p>
+                                </div>
+                            </button>
+                        </article>
+                        <article class="event-card reveal reveal-delay-1">
+                            <button class="event-card__trigger" type="button" data-modal="modal-tasa" aria-haspopup="dialog">
+                                <div class="event-card__media">
+                                    <img class="event-card__img" src="img/portfolio/tasa.jpg" alt="">
+                                    <span class="event-card__hint" aria-hidden="true">View event</span>
+                                </div>
+                                <div class="event-card__body">
+                                    <span class="event-card__tag">Iota Chapter</span>
+                                    <h3 class="event-card__title">TASA Night Market</h3>
+                                    <p class="event-card__desc">Iota chapter cohosts with TASA — experience Taiwanese culture at Night Market.</p>
+                                </div>
+                            </button>
+                        </article>
+                        <article class="event-card reveal reveal-delay-2">
+                            <button class="event-card__trigger" type="button" data-modal="modal-phinest" aria-haspopup="dialog">
+                                <div class="event-card__media">
+                                    <img class="event-card__img" src="img/portfolio/phinest.jpg" alt="">
+                                    <span class="event-card__hint" aria-hidden="true">View event</span>
+                                </div>
+                                <div class="event-card__body">
+                                    <span class="event-card__tag">Philanthropy</span>
+                                    <h3 class="event-card__title">NAPhinest</h3>
+                                    <p class="event-card__desc">Compete to see who’s the Phinest — proceeds support philanthropy initiatives.</p>
+                                </div>
+                            </button>
+                        </article>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <dialog class="modal-overlay" id="modal-chapter-wars" aria-labelledby="modal-chapter-wars-title">
+            <div class="modal" role="document">
+                <div class="modal__header">
+                    <div>
+                        <h2 class="modal__title" id="modal-chapter-wars-title">Chapter Wars</h2>
+                        <p class="modal__intro">National brotherhood event</p>
+                    </div>
+                    <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+                </div>
+                <img class="modal__img" src="img/portfolio/chapterwars.jpg" alt="Nu Alpha Phi Chapter Wars">
+                <div class="modal__body prose">
+                    <p>Nine will enter -- only one will leave victorious. Defend your chapter's honor through some friendly competition with the brothers of our fraternity.</p>
+                    <p>Every year, Nu Alpha Phi organizes a sports olympic, brother against brother in sports like softball, basketball, and volleyball between chapters. Naphis from every generation, young and old, practice to prepare themselves for this annual event.</p>
+                    <p>When chapter pride is on the line, it is the duty of every brother to demonstrate the strength of his own pack. Only one will earn the crown.</p>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog class="modal-overlay" id="modal-tasa" aria-labelledby="modal-tasa-title">
+            <div class="modal" role="document">
+                <div class="modal__header">
+                    <div>
+                        <h2 class="modal__title" id="modal-tasa-title">TASA Night Market</h2>
+                        <p class="modal__intro">Iota chapter event</p>
+                    </div>
+                    <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+                </div>
+                <img class="modal__img" src="img/portfolio/tasablurb.jpg" alt="Nu Alpha Phi TASA Night Market">
+                <div class="modal__body prose">
+                    <p>Hosted by Iota chapter in partnership with TASA. Experience Taiwanese culture at Night Market — a signature Iota event celebrating community, food, and culture.</p>
+                </div>
+            </div>
+        </dialog>
+
+        <dialog class="modal-overlay" id="modal-phinest" aria-labelledby="modal-phinest-title">
+            <div class="modal" role="document">
+                <div class="modal__header">
+                    <div>
+                        <h2 class="modal__title" id="modal-phinest-title">NAPhinest</h2>
+                        <p class="modal__intro">Compete to see who’s the Phinest</p>
+                    </div>
+                    <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+                </div>
+                <img class="modal__img" src="img/portfolio/phinestblurb.jpg" alt="Nu Alpha Phi NAPhinest">
+                <div class="modal__body prose">
+                    <p>Help us make you a star or watch in awe while Naphi Brothers provide awareness and raise money for philanthropy. Proceeds support charitable initiatives empowering communities we serve.</p>
+                </div>
+            </div>
+        </dialog>
+
 
     </main>
 
@@ -276,3 +366,4 @@
     <script src="js/site.js"></script>
 </body>
 </html>
+
