@@ -16,6 +16,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.path = "/" + html_path + suffix
         return super().do_GET()
 
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))

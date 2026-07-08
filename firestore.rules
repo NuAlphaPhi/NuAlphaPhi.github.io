@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Brother profiles: any signed-in brother can read (needed to show names on
+    // announcements/events/comments), only the owner can create/update their own doc.
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /announcements/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+
+      match /comments/{cid} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
+        allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      }
+    }
+
+    match /events/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.createdByUid == request.auth.uid;
+
+      // RSVP doc ID must equal the writer's own uid — you can only ever write your own RSVP.
+      match /rsvps/{rsvpUid} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() && request.auth.uid == rsvpUid;
+      }
+
+      match /comments/{cid} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
+        allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      }
+    }
+  }
+}

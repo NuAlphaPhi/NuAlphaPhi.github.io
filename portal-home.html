@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="NAΦ Portal — news and events for Nu Alpha Phi brothers.">
+    <meta name="author" content="Nu Alpha Phi National Executive Board">
+    <meta name="referrer" content="origin">
+    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+    <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Portal | NAPhi</title>
+    <base href="https://nualphaphi.com/">
+    <script>
+      (function () {
+        var host = location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+          document.querySelector('base').href = location.origin + '/';
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("nap_portal_theme") !== "light") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <link href="css/nap.css" rel="stylesheet">
+</head>
+<body>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="portal-shell" id="portal-app" hidden>
+        <aside class="portal-shell__sidebar">
+            <a href="index" class="portal-shell__brand">
+                <img src="img/letters.png" alt="Nu Alpha Phi — Home">
+            </a>
+
+            <div class="portal-shell__user">
+                <div class="portal-shell__user-row">
+                    <span id="portalUserAvatar"></span>
+                    <div>
+                        <p class="portal-shell__user-label">Logged in as</p>
+                        <p class="portal-shell__user-name" id="portalPledgeName"></p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="portal-shell__nav" aria-label="Portal sections">
+                <button class="portal-shell__nav-btn is-active" type="button" data-tab="overview">Overview</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="directory">Directory</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="announcements">Announcements</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="events">Events</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="birthdays">Birthdays</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
+            </nav>
+
+            <button class="portal-shell__signout" id="portalSignOut" type="button">Sign Out</button>
+        </aside>
+
+        <main id="main" class="portal-shell__main">
+
+            <section class="portal-tab-panel" id="panel-overview" data-panel="overview">
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Welcome</span>
+                        <h1 class="portal-view-title">Overview</h1>
+                        <p class="portal-view-intro">A quick look at what's new across the chapter.</p>
+                    </div>
+                </div>
+                <div id="overviewNudge"></div>
+                <div class="overview-grid" id="overviewGrid"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-directory" data-panel="directory" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Brothers</span>
+                        <h1 class="portal-view-title">Directory</h1>
+                        <p class="portal-view-intro">Search or filter to find a brother.</p>
+                    </div>
+                </div>
+
+                <div class="directory-filters">
+                    <input class="form-input" id="directorySearch" type="search" placeholder="Search by name or pledge name…">
+                    <select class="form-select" id="directoryChapterFilter">
+                        <option value="">All Chapters</option>
+                    </select>
+                    <select class="form-select" id="directoryClassFilter">
+                        <option value="">All Classes</option>
+                    </select>
+                </div>
+
+                <div class="directory-grid" id="directoryGrid"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-announcements" data-panel="announcements" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Updates</span>
+                        <h1 class="portal-view-title">Brotherhood News</h1>
+                        <p class="portal-view-intro">Announcements and updates for active brothers and alumni.</p>
+                    </div>
+                    <button class="form-submit form-submit--small" id="newAnnouncementBtn" type="button">New Announcement</button>
+                </div>
+                <div class="news-list" id="announcementsList"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-events" data-panel="events" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Calendar</span>
+                        <h1 class="portal-view-title">Events</h1>
+                        <p class="portal-view-intro">See what's coming up, or start something new.</p>
+                    </div>
+                    <button class="form-submit form-submit--small" id="newEventBtn" type="button">New Event</button>
+                </div>
+
+                <div class="event-calendar">
+                    <div class="event-calendar__header">
+                        <button class="event-calendar__nav-btn" id="eventCalendarPrevBtn" type="button" aria-label="Previous month">‹</button>
+                        <span class="event-calendar__month-label" id="eventCalendarMonthLabel"></span>
+                        <button class="event-calendar__nav-btn" id="eventCalendarNextBtn" type="button" aria-label="Next month">›</button>
+                    </div>
+                    <div class="event-calendar__weekdays" id="eventCalendarWeekdays"></div>
+                    <div class="event-calendar__grid" id="eventCalendarGrid"></div>
+                </div>
+
+                <div id="eventsListsContainer">
+                    <div class="event-list__heading" id="eventListHeading">
+                        <h2 class="portal-view-title portal-view-title--small">Events Soon</h2>
+                        <div class="event-list__heading-actions">
+                            <button class="event-list__clear-filter" id="clearDayFilterBtn" type="button" hidden>Show all</button>
+                        </div>
+                    </div>
+                    <div class="rsvp-event-list" id="eventsUpcomingList"></div>
+
+                    <div class="event-list__heading" id="completedEventsHeading">
+                        <h2 class="portal-view-title portal-view-title--small portal-view-title--spaced">Completed Events</h2>
+                    </div>
+                    <div class="rsvp-event-list" id="eventsCompletedList"></div>
+                </div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-birthdays" data-panel="birthdays" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Celebrate</span>
+                        <h1 class="portal-view-title">Birthdays</h1>
+                        <p class="portal-view-intro">Coming up across the brotherhood.</p>
+                    </div>
+                </div>
+                <div class="birthday-list" id="birthdayList"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-myinfo" data-panel="myinfo" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Your Profile</span>
+                        <h1 class="portal-view-title">My Information</h1>
+                        <p class="portal-view-intro">Keep your brother profile up to date so other bros can find and connect with you.</p>
+                    </div>
+                </div>
+
+                <div class="profile-photo-field">
+                    <span id="settingsPhotoPreview"></span>
+                    <div>
+                        <label class="form-submit form-submit--inline form-submit--secondary" for="settings-photo-input">Change Photo</label>
+                        <input type="file" id="settings-photo-input" accept="image/*" hidden>
+                        <p class="profile-photo-field__hint">JPG or PNG. Square photos look best.</p>
+                    </div>
+                </div>
+
+                <form id="portalSettingsForm" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="settings-firstName">First Name</label>
+                            <input class="form-input" id="settings-firstName" name="firstName" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-lastName">Last Name</label>
+                            <input class="form-input" id="settings-lastName" name="lastName" type="text">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-pledgeName">Pledge Name</label>
+                            <input class="form-input" id="settings-pledgeName" name="pledgeName" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-pledgeNumber">Pledge Number</label>
+                            <input class="form-input" id="settings-pledgeNumber" name="pledgeNumber" type="text">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-chapter">Chapter</label>
+                            <select class="form-select" id="settings-chapter" name="chapter">
+                                <option value="">Select a chapter</option>
+                                <option value="Alpha">Alpha</option>
+                                <option value="Beta">Beta</option>
+                                <option value="Gamma">Gamma</option>
+                                <option value="Delta">Delta</option>
+                                <option value="Epsilon">Epsilon</option>
+                                <option value="Zeta">Zeta</option>
+                                <option value="Eta">Eta</option>
+                                <option value="Theta">Theta</option>
+                                <option value="Iota">Iota</option>
+                                <option value="Kappa">Kappa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-pledgeClass">Class</label>
+                            <input class="form-input" id="settings-pledgeClass" name="pledgeClass" type="text" placeholder="e.g. Alpha Class">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-semesterCrossed">Semester Crossed</label>
+                            <select class="form-select" id="settings-semesterCrossed" name="semesterCrossed">
+                                <option value="">Select a semester</option>
+                                <option value="Fall">Fall</option>
+                                <option value="Spring">Spring</option>
+                                <option value="Summer">Summer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-yearCrossed">Year Crossed</label>
+                            <input class="form-input" id="settings-yearCrossed" name="yearCrossed" type="number" min="1900" max="2100">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-birthday">Birthday</label>
+                            <input class="form-input" id="settings-birthday" name="birthday" type="date">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-hometown">Hometown</label>
+                            <input class="form-input" id="settings-hometown" name="hometown" type="text">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-currentLocation">Current Location</label>
+                            <input class="form-input" id="settings-currentLocation" name="currentLocation" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-phone">Phone Number</label>
+                            <input class="form-input" id="settings-phone" name="phone" type="tel">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-occupation">Occupation</label>
+                            <input class="form-input" id="settings-occupation" name="occupation" type="text">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-major">Major</label>
+                            <input class="form-input" id="settings-major" name="major" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-graduationYear">Graduation Year</label>
+                            <input class="form-input" id="settings-graduationYear" name="graduationYear" type="number" min="1900" max="2100">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-instagram">Instagram</label>
+                            <input class="form-input" id="settings-instagram" name="instagram" type="text" placeholder="@handle">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-facebook">Facebook</label>
+                            <input class="form-input" id="settings-facebook" name="facebook" type="text">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="settings-linkedin">LinkedIn</label>
+                            <input class="form-input" id="settings-linkedin" name="linkedin" type="text">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-bigName">Big's Name</label>
+                            <input class="form-input" id="settings-bigName" name="bigName" type="text">
+                        </div>
+
+                        <div class="form-group form-group--full">
+                            <label class="form-label" for="settings-bigPledgeName">Big's Pledge Name</label>
+                            <input class="form-input" id="settings-bigPledgeName" name="bigPledgeName" type="text">
+                        </div>
+
+                        <div class="form-group form-group--full">
+                            <label class="form-label" for="settings-bio">Bio</label>
+                            <textarea class="form-textarea" id="settings-bio" name="bio" placeholder="Tell other brothers a bit about yourself"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="form-submit form-submit--inline" type="submit">Save Changes</button>
+                    <p class="form-feedback" id="settings-feedback" role="status" aria-live="polite" hidden></p>
+                </form>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-settings" data-panel="settings" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Account</span>
+                        <h1 class="portal-view-title">Settings</h1>
+                        <p class="portal-view-intro">Password and appearance preferences.</p>
+                    </div>
+                </div>
+
+                <div class="portal-panel-content">
+                    <h2 class="portal-view-title portal-view-title--small">Change Password</h2>
+                    <form id="passwordChangeForm" novalidate>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-current-password">Current Password</label>
+                            <input class="form-input" id="settings-current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-new-password">New Password</label>
+                            <input class="form-input" id="settings-new-password" name="newPassword" type="password" autocomplete="new-password" required placeholder="At least 6 characters">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="settings-confirm-new-password">Confirm New Password</label>
+                            <input class="form-input" id="settings-confirm-new-password" name="confirmNewPassword" type="password" autocomplete="new-password" required>
+                        </div>
+                        <button class="form-submit form-submit--inline" type="submit">Update Password</button>
+                        <p class="form-error" id="password-change-error" role="alert" hidden></p>
+                        <p class="form-feedback" id="password-change-feedback" role="status" aria-live="polite" hidden></p>
+                    </form>
+
+                    <h2 class="portal-view-title portal-view-title--small portal-view-title--spaced">Appearance</h2>
+                    <div class="theme-toggle">
+                        <div>
+                            <p class="theme-toggle__label">Dark Mode</p>
+                            <p class="theme-toggle__desc">Applies across the whole portal on this device.</p>
+                        </div>
+                        <button class="theme-toggle__switch" id="themeToggleBtn" type="button" aria-pressed="false"></button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <dialog class="modal-overlay" id="modal-announcement-form" aria-labelledby="modal-announcement-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-announcement-title">New Announcement</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="announcementForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="announcement-title">Title</label>
+                    <input class="form-input" id="announcement-title" name="title" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="announcement-body">Message</label>
+                    <textarea class="form-textarea" id="announcement-body" name="body" required></textarea>
+                </div>
+                <button class="form-submit" type="submit">Post Announcement</button>
+            </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal-overlay" id="modal-event-form" aria-labelledby="modal-event-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-event-title">New Event</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="eventForm" novalidate>
+                <div class="profile-photo-field">
+                    <span id="eventPhotoPreview"></span>
+                    <div>
+                        <label class="form-submit form-submit--inline form-submit--secondary" for="event-photo-input">Add Photo</label>
+                        <input type="file" id="event-photo-input" accept="image/*" hidden>
+                        <p class="profile-photo-field__hint">Optional — a flyer or photo for the event.</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="event-name">Event Name</label>
+                    <input class="form-input" id="event-name" name="name" type="text" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="event-description">Description</label>
+                    <textarea class="form-textarea" id="event-description" name="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="event-location">Place</label>
+                    <input class="form-input" id="event-location" name="location" type="text" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="event-start">Starts</label>
+                        <input class="form-input" id="event-start" name="startAt" type="datetime-local" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="event-end">Ends</label>
+                        <input class="form-input" id="event-end" name="endAt" type="datetime-local" required>
+                    </div>
+                </div>
+                <p class="form-error" id="event-form-error" role="alert" hidden></p>
+                <button class="form-submit" type="submit">Create Event</button>
+            </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal-overlay" id="modal-profile-view" aria-labelledby="profile-modal-name">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div class="profile-modal__header">
+                    <span id="profileModalAvatar"></span>
+                    <div>
+                        <h2 class="profile-modal__name" id="profile-modal-name"></h2>
+                        <p class="profile-modal__pledge" id="profile-modal-pledge"></p>
+                    </div>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <p class="profile-modal__bio" id="profile-modal-bio" hidden></p>
+            <div class="profile-modal__grid" id="profile-modal-grid"></div>
+        </div>
+    </dialog>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/portal-auth.js"></script>
+    <script src="js/portal-shell.js"></script>
+    <script src="js/portal-settings.js"></script>
+    <script src="js/portal-account-settings.js"></script>
+    <script src="js/portal-announcements.js"></script>
+    <script src="js/portal-events.js"></script>
+    <script src="js/portal-directory.js"></script>
+    <script src="js/portal-birthdays.js"></script>
+    <script src="js/portal-overview.js"></script>
+    <script src="js/site.js"></script>
+</body>
+</html>
