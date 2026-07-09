@@ -42,5 +42,16 @@ service cloud.firestore {
         allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
       }
     }
+
+    // Comment notifications: the commenter (actor) creates the doc for the
+    // post owner (recipient). Only the recipient can read their own
+    // notifications, and their only allowed write is flipping `read`.
+    match /notifications/{id} {
+      allow read: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.actorUid == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.recipientUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+    }
   }
 }

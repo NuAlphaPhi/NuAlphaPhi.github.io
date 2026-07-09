@@ -155,11 +155,19 @@
   chapterFilter.addEventListener("change", render);
   classFilter.addEventListener("change", render);
 
-  db.collection("users").onSnapshot(function (snap) {
-    allBrothers = snap.docs.map(function (doc) {
-      return Object.assign({ uid: doc.id }, doc.data());
-    });
+  /* Shared with every other portal module: click anything with
+     data-open-profile="<uid>" and it lands here. */
+  window.napOpenProfileModal = function (uid) {
+    var brother = window.napGetBrotherByUid(uid);
+    if (brother) openProfile(brother);
+  };
+
+  function refreshFromCache() {
+    allBrothers = window.NAP_ALL_BROTHERS;
     populateClassFilter();
     render();
-  });
+  }
+
+  document.addEventListener("nap:brothers-updated", refreshFromCache);
+  refreshFromCache();
 })();

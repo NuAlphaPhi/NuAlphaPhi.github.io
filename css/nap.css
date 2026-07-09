@@ -2642,6 +2642,10 @@ dialog.modal-overlay[open] .modal {
   margin-inline: auto;
 }
 
+.rsvp-event-list[hidden] {
+  display: none;
+}
+
 .rsvp-event-card {
   padding: 1.35rem 1.5rem;
   background: var(--white);
@@ -2792,165 +2796,10 @@ dialog.modal-overlay[open] .modal {
   color: var(--maroon);
 }
 
-/* Portal — calendar */
-.event-calendar {
-  max-width: 460px;
-  margin: 0 auto 2.5rem;
-  padding: 1.5rem 1.5rem 1.75rem;
-  background: var(--white);
-  border: 1px solid var(--grey-200);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-
-.event-calendar__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.25rem;
-}
-
-.event-calendar__nav-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--grey-200);
-  border-radius: 50%;
-  background: var(--white);
-  color: var(--grey-600);
-  font: inherit;
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: border-color var(--transition), color var(--transition), background var(--transition);
-}
-
-.event-calendar__nav-btn:hover,
-.event-calendar__nav-btn:focus-visible {
-  border-color: var(--maroon);
-  color: var(--white);
-  background: var(--maroon);
-}
-
-.event-calendar__month-label {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--black);
-}
-
-.event-calendar__weekdays,
-.event-calendar__grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0.35rem;
-}
-
-.event-calendar__weekdays {
-  margin-bottom: 0.6rem;
-}
-
-.event-calendar__weekday {
-  text-align: center;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--grey-400);
-}
-
-.event-calendar__day {
-  position: relative;
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: none;
-  color: var(--black);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background var(--transition), border-color var(--transition), color var(--transition);
-}
-
-.event-calendar__day:hover,
-.event-calendar__day:focus-visible {
-  background: var(--grey-50);
-  border-color: var(--grey-200);
-}
-
-.event-calendar__day.is-other-month {
-  color: var(--grey-400);
-  opacity: 0.55;
-}
-
-.event-calendar__day.is-today {
-  border-color: var(--maroon);
-}
-
-.event-calendar__day.is-today .event-calendar__day-num {
-  font-weight: 700;
-  color: var(--maroon);
-}
-
-.event-calendar__day.is-selected {
-  background: var(--maroon);
-  border-color: var(--maroon);
-}
-
-.event-calendar__day.is-selected .event-calendar__day-num {
-  color: var(--white);
-}
-
-.event-calendar__day.is-selected .event-calendar__dot {
-  background: var(--white);
-}
-
-.event-calendar__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--maroon);
-}
-
 .event-list__empty {
   padding: 2rem 1rem;
   text-align: center;
   color: var(--grey-400);
-}
-
-.event-list__heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  max-width: 760px;
-  margin: 0 auto 1rem;
-}
-
-.event-list__clear-filter {
-  padding: 0.3rem 0.65rem;
-  border: 1px solid var(--grey-200);
-  border-radius: var(--radius-sm);
-  background: var(--white);
-  color: var(--grey-600);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.event-list__clear-filter:hover,
-.event-list__clear-filter:focus-visible {
-  border-color: var(--maroon);
-  color: var(--maroon);
-}
-
-.event-list__heading-actions {
-  display: flex;
-  gap: 0.6rem;
 }
 
 .section-title--small {
@@ -3005,10 +2854,14 @@ dialog.modal-overlay[open] .modal {
   margin: 0;
 }
 
-/* Portal — sidebar app shell */
+/* Portal — sidebar app shell
+   height (not min-height) + overflow hidden keeps this pinned to the
+   viewport so the sidebar never scrolls away with the main content —
+   only .portal-shell__main scrolls internally. */
 .portal-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--grey-50);
 }
 
@@ -3018,6 +2871,7 @@ dialog.modal-overlay[open] .modal {
   flex-shrink: 0;
   width: 250px;
   padding: 1.5rem 1.25rem;
+  overflow-y: auto;
   background: var(--white);
   border-right: 1px solid var(--grey-200);
 }
@@ -3147,10 +3001,6 @@ dialog.modal-overlay[open] .modal {
 .portal-shell .national-events .section-label {
   display: block;
   margin-bottom: 0.85rem;
-}
-
-.portal-shell .event-calendar {
-  margin: 0 0 2rem;
 }
 
 .portal-shell .news-list,
@@ -3319,6 +3169,29 @@ html[data-theme="dark"] .modal__img {
   max-width: 480px;
 }
 
+.settings-account-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--grey-50);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+}
+
+.settings-account-summary__name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--black);
+}
+
+.settings-account-summary__email {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--grey-600);
+}
+
 .portal-view-title--spaced {
   margin-top: 2.25rem;
 }
@@ -3438,10 +3311,20 @@ html[data-theme="dark"] .modal__img {
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
   padding: 0.9rem 1.1rem;
   background: var(--white);
   border: 1px solid var(--grey-200);
   border-radius: var(--radius-md);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition);
+}
+
+.birthday-item:hover,
+.birthday-item:focus-visible {
+  border-color: var(--maroon);
 }
 
 .birthday-item.is-today {
@@ -3464,6 +3347,12 @@ html[data-theme="dark"] .modal__img {
   margin: 0.15rem 0 0;
   font-size: 0.82rem;
   color: var(--grey-600);
+}
+
+.birthday-item__meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: var(--grey-400);
 }
 
 .birthday-item__badge {
@@ -3524,13 +3413,36 @@ html[data-theme="dark"] .modal__img {
 }
 
 .overview-card__item {
+  display: block;
+  width: 100%;
   padding-bottom: 0.75rem;
+  border: none;
   border-bottom: 1px solid var(--grey-200);
+  background: none;
+  text-align: left;
+  font: inherit;
 }
 
 .overview-card__item:last-child {
   padding-bottom: 0;
   border-bottom: none;
+}
+
+.overview-card__item--clickable {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.overview-card__item--clickable:hover,
+.overview-card__item--clickable:focus-visible {
+  background: var(--grey-50);
+}
+
+.overview-card__item--birthday {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .overview-card__item-title {
@@ -3551,6 +3463,348 @@ html[data-theme="dark"] .modal__img {
   color: var(--grey-400);
 }
 
+/* Sub-tabs (Events Soon / Completed Events) */
+.sub-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  padding: 0.3rem;
+  background: var(--grey-50);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-sm);
+  max-width: 460px;
+}
+
+.sub-tabs__btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--grey-600);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.sub-tabs__btn.is-active {
+  background: var(--white);
+  color: var(--maroon);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Author badge — clickable name + chapter + semester crossed, used on
+   announcements, events, and comments */
+.author-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.author-badge:hover .author-badge__name,
+.author-badge:focus-visible .author-badge__name {
+  color: var(--maroon);
+  text-decoration: underline;
+}
+
+.author-badge__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--black);
+  transition: color var(--transition);
+}
+
+.author-badge__meta {
+  font-size: 0.78rem;
+  color: var(--grey-400);
+  font-weight: 500;
+}
+
+.comment-item__author.author-badge {
+  display: flex;
+}
+
+/* Comments — collapsed by default behind Show/Add buttons */
+.comments-block {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--grey-200);
+}
+
+.comments-block__toolbar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comments-block__empty {
+  margin: 0.85rem 0 0;
+  font-size: 0.85rem;
+  color: var(--grey-400);
+}
+
+.comments-block .comment-list {
+  margin-top: 0.85rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.comments-block .comment-form {
+  margin-top: 0.85rem;
+}
+
+.comment-item.is-highlighted {
+  animation: comment-highlight 2.5s ease;
+}
+
+@keyframes comment-highlight {
+  0% {
+    background: var(--maroon-soft);
+  }
+  100% {
+    background: var(--grey-50);
+  }
+}
+
+/* Compact event card tweaks */
+.rsvp-event-card__desc-preview {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--grey-600);
+}
+
+.rsvp-event-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Event / announcement detail popups */
+.modal--detail {
+  width: min(600px, 100%);
+}
+
+.event-modal__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+
+.event-modal__meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--maroon);
+  font-weight: 600;
+}
+
+.event-modal__author {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.85rem;
+  color: var(--grey-600);
+}
+
+.event-modal__desc {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--grey-600);
+  white-space: pre-wrap;
+}
+
+.event-modal__owner-actions {
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+/* Notification bell */
+.notification-bell {
+  position: relative;
+  margin-left: auto;
+}
+
+.notification-bell__btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--grey-200);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--grey-600);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.notification-bell__btn:hover,
+.notification-bell__btn:focus-visible {
+  border-color: var(--maroon);
+  color: var(--maroon);
+}
+
+.notification-bell__dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e0344c;
+  border: 2px solid var(--white);
+}
+
+/* position: fixed (not absolute) — the dropdown's top/left are set from JS
+   using the bell button's viewport coordinates. This is required because the
+   sidebar has overflow-y: auto (for the independent-scroll fix), which forces
+   overflow-x to auto too and would clip an absolutely-positioned dropdown
+   that's wider than the sidebar itself. */
+.notification-dropdown {
+  position: fixed;
+  z-index: 40;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0.85rem;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.notification-dropdown__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.notification-dropdown__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--grey-400);
+}
+
+.notification-dropdown__clear {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--maroon);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notification-dropdown__clear:hover,
+.notification-dropdown__clear:focus-visible {
+  text-decoration: underline;
+}
+
+.notification-dropdown__list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.notification-dropdown__empty {
+  margin: 0;
+  padding: 1rem 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--grey-400);
+}
+
+.notification-item {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+}
+
+.notification-item:hover,
+.notification-item:focus-within {
+  background: var(--grey-50);
+}
+
+.notification-item.is-unread {
+  background: var(--maroon-soft);
+}
+
+.notification-item__body {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.4rem 0.6rem 0.7rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.notification-item__text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--black);
+}
+
+.notification-item__time {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--grey-400);
+}
+
+.notification-item__delete {
+  flex-shrink: 0;
+  align-self: center;
+  margin-right: 0.5rem;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--grey-400);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.notification-item__delete:hover,
+.notification-item__delete:focus-visible {
+  background: var(--grey-200);
+  color: #991b1b;
+}
+
 @media (max-width: 700px) {
   .directory-filters {
     grid-template-columns: 1fr;
@@ -3564,7 +3818,8 @@ html[data-theme="dark"] .modal__img {
 @media (max-width: 860px) {
   .portal-shell {
     flex-direction: column;
-    min-height: auto;
+    height: auto;
+    overflow: visible;
   }
 
   .portal-shell__sidebar {
@@ -3573,8 +3828,13 @@ html[data-theme="dark"] .modal__img {
     align-items: center;
     flex-wrap: wrap;
     gap: 0.75rem 1.5rem;
+    overflow-y: visible;
     border-right: none;
     border-bottom: 1px solid var(--grey-200);
+  }
+
+  .portal-shell__main {
+    overflow-y: visible;
   }
 
   .portal-shell__brand img {

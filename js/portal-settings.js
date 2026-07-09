@@ -105,6 +105,7 @@
         }
         var avatarEl = document.getElementById("portalUserAvatar");
         if (avatarEl) avatarEl.innerHTML = window.napAvatarHtml(window.NAP_CURRENT_PROFILE, "sm");
+        if (window.napRefreshSettingsAccountSummary) window.napRefreshSettingsAccountSummary();
         if (feedback) {
           feedback.textContent = "Saved.";
           feedback.className = "form-feedback form-feedback--success";

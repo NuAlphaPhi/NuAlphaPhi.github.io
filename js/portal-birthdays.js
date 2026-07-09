@@ -62,15 +62,21 @@
           ? "Tomorrow"
           : dateLabel + " · in " + entry.days + " days";
 
+        var metaParts = [];
+        if (entry.brother.chapter) metaParts.push(entry.brother.chapter);
+        var crossed = window.napSemesterCrossed(entry.brother);
+        if (crossed) metaParts.push(crossed);
+
         return (
-          '<div class="birthday-item' + (isToday ? " is-today" : "") + '">' +
+          '<button class="birthday-item' + (isToday ? " is-today" : "") + '" type="button" data-open-profile="' + escapeHtml(entry.brother.uid) + '">' +
           window.napAvatarHtml(entry.brother, "md") +
           '<div class="birthday-item__info">' +
           '<p class="birthday-item__name">' + escapeHtml(window.napDisplayName(entry.brother, "Brother")) + "</p>" +
           '<p class="birthday-item__date">' + whenLabel + " — turning " + entry.age + "</p>" +
+          (metaParts.length ? '<p class="birthday-item__meta">' + escapeHtml(metaParts.join(" · ")) + "</p>" : "") +
           "</div>" +
           (isToday ? '<span class="birthday-item__badge">Today</span>' : "") +
-          "</div>"
+          "</button>"
         );
       })
       .join("");

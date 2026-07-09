@@ -1,41 +1,40 @@
-/* Events + RSVPs + comments + hand-rolled calendar, all live via Firestore onSnapshot */
+/* Events + RSVPs + comments + detail popup, all live via Firestore onSnapshot */
 (function () {
   "use strict";
 
-  var calendarEl = document.querySelector(".event-calendar");
-  if (!calendarEl) return;
-
-  var monthLabelEl = document.getElementById("eventCalendarMonthLabel");
-  var weekdaysEl = document.getElementById("eventCalendarWeekdays");
-  var gridEl = document.getElementById("eventCalendarGrid");
-  var prevBtn = document.getElementById("eventCalendarPrevBtn");
-  var nextBtn = document.getElementById("eventCalendarNextBtn");
   var listsContainer = document.getElementById("eventsListsContainer");
+  if (!listsContainer) return;
+
+  var subTabBtns = document.querySelectorAll("#eventsSubTabs [data-event-tab]");
   var listEl = document.getElementById("eventsUpcomingList");
   var completedListEl = document.getElementById("eventsCompletedList");
-  var completedHeadingEl = document.getElementById("completedEventsHeading");
-  var listHeadingEl = document.getElementById("eventListHeading");
-  var clearFilterBtn = document.getElementById("clearDayFilterBtn");
   var newEventBtn = document.getElementById("newEventBtn");
-  var modal = document.getElementById("modal-event-form");
+  var formModal = document.getElementById("modal-event-form");
   var form = document.getElementById("eventForm");
-  var modalTitle = document.getElementById("modal-event-title");
+  var formModalTitle = document.getElementById("modal-event-title");
   var submitBtn = form ? form.querySelector(".form-submit") : null;
   var photoInput = document.getElementById("event-photo-input");
   var photoPreview = document.getElementById("eventPhotoPreview");
 
+  var eventModal = document.getElementById("modal-event-view");
+  var eventModalTitleEl = document.getElementById("event-modal-title");
+  var eventModalBodyEl = document.getElementById("eventModalBody");
+
   var currentUid = null;
-  var currentMonthDate = new Date();
-  currentMonthDate.setDate(1);
-  var selectedDayKey = null;
+  var currentEventTab = "soon";
   var allEvents = [];
   var currentEditEventId = null;
   var pendingEventPhotoDataUrl = null;
   var rsvpMap = {};
   var rsvpUnsubscribers = {};
-  var expandedEventIds = {};
-  var commentUnsubscribers = {};
-  var editingEventCommentId = null;
+
+  var openEventId = null;
+  var eventModalCommentsExpanded = false;
+  var eventModalAddCommentOpen = false;
+  var eventModalEditingCommentId = null;
+  var eventModalCommentUnsub = null;
+  var eventModalComments = [];
+  var pendingHighlightCommentId = null;
 
   document.addEventListener("nap:auth-ready", function (e) {
     currentUid = e.detail.uid;
@@ -54,10 +53,6 @@
 
   function pad(n) {
     return n < 10 ? "0" + n : "" + n;
-  }
-
-  function dateKey(date) {
-    return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
   }
 
   function formatEventTime(ev) {
@@ -98,75 +93,25 @@
     });
   }
 
-  /* Calendar */
-  function renderCalendar() {
-    monthLabelEl.textContent = currentMonthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-    weekdaysEl.innerHTML = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-      .map(function (d) {
-        return '<span class="event-calendar__weekday">' + d + "</span>";
-      })
-      .join("");
-
-    var eventsByDate = {};
-    allEvents.forEach(function (ev) {
-      var key = dateKey(ev.startAt.toDate());
-      if (!eventsByDate[key]) eventsByDate[key] = 0;
-      eventsByDate[key]++;
+  /* Sub-tabs: Events Soon / Completed Events */
+  function setEventTab(tab) {
+    currentEventTab = tab;
+    subTabBtns.forEach(function (btn) {
+      var active = btn.getAttribute("data-event-tab") === tab;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
     });
-
-    var year = currentMonthDate.getFullYear();
-    var month = currentMonthDate.getMonth();
-    var firstOfMonth = new Date(year, month, 1);
-    var startOffset = firstOfMonth.getDay();
-    var gridStart = new Date(year, month, 1 - startOffset);
-    var today = new Date();
-    var todayKey = dateKey(today);
-
-    var html = "";
-    for (var i = 0; i < 42; i++) {
-      var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
-      var key = dateKey(cellDate);
-      var classes = ["event-calendar__day"];
-      if (cellDate.getMonth() !== month) classes.push("is-other-month");
-      if (key === todayKey) classes.push("is-today");
-      if (key === selectedDayKey) classes.push("is-selected");
-      if (eventsByDate[key]) classes.push("has-events");
-
-      html +=
-        '<button type="button" class="' + classes.join(" ") + '" data-date-key="' + key + '">' +
-        '<span class="event-calendar__day-num">' + cellDate.getDate() + "</span>" +
-        (eventsByDate[key] ? '<span class="event-calendar__dot"></span>' : "") +
-        "</button>";
-    }
-    gridEl.innerHTML = html;
+    listEl.hidden = tab !== "soon";
+    completedListEl.hidden = tab !== "completed";
   }
 
-  gridEl.addEventListener("click", function (e) {
-    var cell = e.target.closest("[data-date-key]");
-    if (!cell) return;
-    var key = cell.getAttribute("data-date-key");
-    selectedDayKey = selectedDayKey === key ? null : key;
-    renderCalendar();
-    renderEventList();
-  });
-
-  prevBtn.addEventListener("click", function () {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
-    renderCalendar();
-  });
-
-  nextBtn.addEventListener("click", function () {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
-    renderCalendar();
-  });
-
-  if (clearFilterBtn) {
-    clearFilterBtn.addEventListener("click", function () {
-      selectedDayKey = null;
-      renderCalendar();
-      renderEventList();
+  subTabBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setEventTab(btn.getAttribute("data-event-tab"));
     });
-  }
+  });
+
+  window.napSetEventTab = setEventTab;
 
   /* RSVP live lists */
   function attachRsvpListener(eventId) {
@@ -185,6 +130,7 @@
         });
         rsvpMap[eventId] = { names: names, mine: mine };
         renderEventList();
+        if (openEventId === eventId) renderEventModal();
       });
   }
 
@@ -208,66 +154,46 @@
     );
   }
 
-  /* Comments */
-  function detachCommentListener(eventId) {
-    if (commentUnsubscribers[eventId]) {
-      commentUnsubscribers[eventId]();
-      delete commentUnsubscribers[eventId];
-    }
+  function rsvpButtonsHtml(eventId, mine) {
+    return ["going", "maybe", "not_going"]
+      .map(function (status) {
+        var label = status === "going" ? "Going" : status === "maybe" ? "Maybe" : "Not Going";
+        var active = mine === status ? " is-active" : "";
+        return (
+          '<button class="rsvp-toggle__btn' + active + '" type="button" data-rsvp="' + status + '" data-event-id="' + eventId + '">' +
+          label +
+          "</button>"
+        );
+      })
+      .join("");
   }
 
-  function renderEventComments(eventId, container) {
-    if (!container) return;
-    var commentsRef = db.collection("events").doc(eventId).collection("comments").orderBy("createdAt", "asc");
-
-    commentUnsubscribers[eventId] = commentsRef.onSnapshot(function (snap) {
-      var html = '<div class="comment-list">';
-      snap.forEach(function (doc) {
-        var c = doc.data();
-        var isOwner = c.authorUid === currentUid;
-
-        if (editingEventCommentId === doc.id) {
-          html +=
-            '<div class="comment-item">' +
-            '<form class="event-comment-edit-form" data-comment-id="' + doc.id + '" data-event-id="' + eventId + '" style="display:flex;gap:0.5rem;">' +
-            '<input class="form-input" name="body" value="' + escapeHtml(c.body) + '" required>' +
-            '<button class="form-submit form-submit--small" type="submit">Save</button>' +
-            '<button class="news-card__action-btn" type="button" data-cancel-event-comment-edit>Cancel</button>' +
-            "</form></div>";
-        } else {
-          html +=
-            '<div class="comment-item">' +
-            '<div class="comment-item__meta">' +
-            '<span class="comment-item__author">' + escapeHtml(c.authorName) + "</span>" +
-            (isOwner
-              ? '<span class="comment-item__actions">' +
-                '<button class="news-card__action-btn" type="button" data-edit-event-comment="' + doc.id + '" data-event-id="' + eventId + '">Edit</button>' +
-                '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-event-comment="' + doc.id + '" data-event-id="' + eventId + '">Delete</button>' +
-                "</span>"
-              : "") +
-            "</div>" +
-            '<p class="comment-item__text">' + escapeHtml(c.body) + "</p>" +
-            "</div>";
-        }
-      });
-      html += "</div>";
-      html +=
-        '<form class="event-comment-form" data-event-id="' + eventId + '">' +
-        '<input class="form-input" name="body" placeholder="Ask a question or add a comment…" required>' +
-        '<button class="form-submit form-submit--small" type="submit">Comment</button>' +
-        "</form>";
-
-      container.innerHTML = html;
-    });
+  function attendeesHtml(rsvp) {
+    return [
+      ["going", "Going"],
+      ["maybe", "Maybe"],
+      ["not_going", "Not Going"],
+    ]
+      .map(function (pair) {
+        var names = rsvp.names[pair[0]];
+        return (
+          '<div class="rsvp-attendees__group">' +
+          '<span class="rsvp-attendees__label">' + pair[1] + " (" + names.length + ")</span>" +
+          '<span class="rsvp-attendees__names">' + (names.length ? escapeHtml(names.join(", ")) : "No one yet") + "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
   }
 
-  /* Event list rendering */
-  function renderEventCard(ev) {
+  /* Compact list cards — clicking anywhere on the card opens the detail popup */
+  function renderEventCardCompact(ev) {
     var isOwner = ev.createdByUid === currentUid;
     var rsvp = rsvpMap[ev.id] || { names: { going: [], maybe: [], not_going: [] }, mine: null };
-    var expanded = !!expandedEventIds[ev.id];
+    var description = ev.description || "";
+    var descPreview = description.length > 140 ? description.slice(0, 140).trim() + "…" : description;
 
-    var html = '<article class="rsvp-event-card' + (expanded ? " is-expanded" : "") + '">';
+    var html = '<article class="rsvp-event-card" data-open-event="' + ev.id + '">';
 
     if (ev.photoDataUrl) {
       html += '<img class="rsvp-event-card__photo" src="' + ev.photoDataUrl + '" alt="">';
@@ -275,9 +201,7 @@
 
     html +=
       '<div class="rsvp-event-card__header">' +
-      '<button class="rsvp-event-card__title-btn" type="button" data-toggle-expand="' + ev.id + '">' +
       '<h3 class="rsvp-event-card__title">' + escapeHtml(ev.name) + "</h3>" +
-      "</button>" +
       (isOwner
         ? '<div class="news-card__actions">' +
           '<button class="news-card__action-btn" type="button" data-edit-event="' + ev.id + '">Edit</button>' +
@@ -288,50 +212,20 @@
 
     html += '<p class="rsvp-event-card__meta">' + escapeHtml(ev.location) + " · " + formatEventTime(ev) + "</p>";
 
-    if (expanded) {
-      html += '<p class="rsvp-event-card__desc">' + escapeHtml(ev.description) + "</p>";
+    if (descPreview) {
+      html += '<p class="rsvp-event-card__desc-preview">' + escapeHtml(descPreview) + "</p>";
     }
 
     html +=
-      '<div class="rsvp-toggle">' +
-      ["going", "maybe", "not_going"]
-        .map(function (status) {
-          var label = status === "going" ? "Going" : status === "maybe" ? "Maybe" : "Not Going";
-          var active = rsvp.mine === status ? " is-active" : "";
-          return (
-            '<button class="rsvp-toggle__btn' + active + '" type="button" data-rsvp="' + status + '" data-event-id="' + ev.id + '">' +
-            label +
-            "</button>"
-          );
-        })
-        .join("") +
+      '<div class="rsvp-event-card__footer">' +
+      window.napAuthorBadgeHtml(ev.createdByUid, ev.createdByName) +
+      '<div class="rsvp-toggle">' + rsvpButtonsHtml(ev.id, rsvp.mine) + "</div>" +
       "</div>";
 
-    if (expanded) {
-      html +=
-        '<div class="rsvp-attendees">' +
-        [
-          ["going", "Going"],
-          ["maybe", "Maybe"],
-          ["not_going", "Not Going"],
-        ]
-          .map(function (pair) {
-            var names = rsvp.names[pair[0]];
-            return (
-              '<div class="rsvp-attendees__group">' +
-              '<span class="rsvp-attendees__label">' + pair[1] + " (" + names.length + ")</span>" +
-              '<span class="rsvp-attendees__names">' + (names.length ? escapeHtml(names.join(", ")) : "No one yet") + "</span>" +
-              "</div>"
-            );
-          })
-          .join("") +
-        "</div>" +
-        '<div id="comments-event-' + ev.id + '"></div>';
-    } else {
-      var goingCount = rsvp.names.going.length;
-      var maybeCount = rsvp.names.maybe.length;
-      html += '<p class="rsvp-event-card__summary">' + goingCount + " going · " + maybeCount + " maybe — click the title for details &amp; comments</p>";
-    }
+    html +=
+      '<p class="rsvp-event-card__summary">' +
+      rsvp.names.going.length + " going · " + rsvp.names.maybe.length + " maybe — click for details &amp; comments" +
+      "</p>";
 
     html += "</article>";
     return html;
@@ -342,35 +236,10 @@
       container.innerHTML = '<p class="event-list__empty">No events to show.</p>';
       return;
     }
-    container.innerHTML = events.map(renderEventCard).join("");
-    events.forEach(function (ev) {
-      if (expandedEventIds[ev.id]) {
-        renderEventComments(ev.id, document.getElementById("comments-event-" + ev.id));
-      } else {
-        detachCommentListener(ev.id);
-      }
-    });
+    container.innerHTML = events.map(renderEventCardCompact).join("");
   }
 
   function renderEventList() {
-    if (selectedDayKey) {
-      var dayEvents = allEvents.filter(function (ev) {
-        return dateKey(ev.startAt.toDate()) === selectedDayKey;
-      });
-      listHeadingEl.querySelector(".portal-view-title").textContent =
-        "Events on " + new Date(selectedDayKey + "T00:00:00").toLocaleDateString(undefined, { month: "long", day: "numeric" });
-      clearFilterBtn.hidden = false;
-      completedHeadingEl.hidden = true;
-      completedListEl.hidden = true;
-      renderEventGroup(dayEvents, listEl);
-      return;
-    }
-
-    clearFilterBtn.hidden = true;
-    completedHeadingEl.hidden = false;
-    completedListEl.hidden = false;
-    listHeadingEl.querySelector(".portal-view-title").textContent = "Events Soon";
-
     var now = new Date();
     var soon = allEvents
       .filter(function (ev) {
@@ -392,90 +261,273 @@
   }
 
   listsContainer.addEventListener("click", function (e) {
-    var expandBtn = e.target.closest("[data-toggle-expand]");
     var rsvpBtn = e.target.closest("[data-rsvp]");
     var editBtn = e.target.closest("[data-edit-event]");
     var deleteBtn = e.target.closest("[data-delete-event]");
-    var editCommentBtn = e.target.closest("[data-edit-event-comment]");
-    var deleteCommentBtn = e.target.closest("[data-delete-event-comment]");
-    var cancelCommentEdit = e.target.closest("[data-cancel-event-comment-edit]");
-
-    if (expandBtn) {
-      var id = expandBtn.getAttribute("data-toggle-expand");
-      expandedEventIds[id] = !expandedEventIds[id];
-      renderEventList();
-    }
+    var profileBtn = e.target.closest("[data-open-profile]");
+    var openBtn = e.target.closest("[data-open-event]");
 
     if (rsvpBtn) {
       setRsvp(rsvpBtn.getAttribute("data-event-id"), rsvpBtn.getAttribute("data-rsvp"));
+      return;
     }
 
     if (editBtn) {
       var ev = allEvents.find(function (item) {
         return item.id === editBtn.getAttribute("data-edit-event");
       });
-      if (ev) openModal(ev);
+      if (ev) openEditModal(ev);
+      return;
     }
 
     if (deleteBtn) {
       if (window.confirm("Delete this event? This also removes its RSVPs and comments.")) {
         deleteEventCascade(deleteBtn.getAttribute("data-delete-event"));
       }
+      return;
+    }
+
+    if (profileBtn) return;
+
+    if (openBtn) {
+      openEventDetail(openBtn.getAttribute("data-open-event"));
+    }
+  });
+
+  /* Detail popup */
+  function attachEventModalCommentListener(eventId) {
+    if (eventModalCommentUnsub) {
+      eventModalCommentUnsub();
+      eventModalCommentUnsub = null;
+    }
+    eventModalCommentUnsub = db
+      .collection("events")
+      .doc(eventId)
+      .collection("comments")
+      .orderBy("createdAt", "asc")
+      .onSnapshot(function (snap) {
+        eventModalComments = snap.docs.map(function (doc) {
+          return Object.assign({ id: doc.id }, doc.data());
+        });
+        renderEventModal();
+        if (pendingHighlightCommentId) {
+          scrollToComment(pendingHighlightCommentId);
+          pendingHighlightCommentId = null;
+        }
+      });
+  }
+
+  function scrollToComment(commentId) {
+    window.requestAnimationFrame(function () {
+      var el = document.getElementById("comment-" + commentId);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("is-highlighted");
+      window.setTimeout(function () {
+        el.classList.remove("is-highlighted");
+      }, 2500);
+    });
+  }
+
+  function openEventDetail(eventId, opts) {
+    opts = opts || {};
+    openEventId = eventId;
+    eventModalCommentsExpanded = !!opts.expandComments || !!opts.commentId;
+    eventModalAddCommentOpen = false;
+    eventModalEditingCommentId = null;
+    pendingHighlightCommentId = opts.commentId || null;
+    attachEventModalCommentListener(eventId);
+    renderEventModal();
+    eventModal.showModal();
+  }
+
+  window.napOpenEvent = function (eventId, opts) {
+    opts = opts || {};
+    if (opts.switchTab) {
+      window.napSetTab("events");
+      var ev = allEvents.find(function (item) {
+        return item.id === eventId;
+      });
+      if (ev) {
+        setEventTab(ev.endAt.toDate() < new Date() ? "completed" : "soon");
+      }
+    }
+    openEventDetail(eventId, opts);
+  };
+
+  eventModal.addEventListener("close", function () {
+    if (eventModalCommentUnsub) {
+      eventModalCommentUnsub();
+      eventModalCommentUnsub = null;
+    }
+    openEventId = null;
+    eventModalComments = [];
+  });
+
+  function renderEventModal() {
+    var ev = allEvents.find(function (item) {
+      return item.id === openEventId;
+    });
+    if (!ev) {
+      eventModal.close();
+      return;
+    }
+
+    var isOwner = ev.createdByUid === currentUid;
+    var rsvp = rsvpMap[ev.id] || { names: { going: [], maybe: [], not_going: [] }, mine: null };
+
+    eventModalTitleEl.textContent = ev.name;
+
+    var html = "";
+    if (ev.photoDataUrl) {
+      html += '<img class="event-modal__photo" src="' + ev.photoDataUrl + '" alt="">';
+    }
+
+    html += '<p class="event-modal__meta">' + escapeHtml(ev.location) + " · " + formatEventTime(ev) + "</p>";
+    html += '<div class="event-modal__author">Created by ' + window.napAuthorBadgeHtml(ev.createdByUid, ev.createdByName) + "</div>";
+
+    if (ev.description) {
+      html += '<p class="event-modal__desc">' + escapeHtml(ev.description) + "</p>";
+    }
+
+    if (isOwner) {
+      html +=
+        '<div class="news-card__actions event-modal__owner-actions">' +
+        '<button class="news-card__action-btn" type="button" data-edit-event="' + ev.id + '">Edit</button>' +
+        '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-event="' + ev.id + '">Delete</button>' +
+        "</div>";
+    }
+
+    html += '<div class="rsvp-toggle">' + rsvpButtonsHtml(ev.id, rsvp.mine) + "</div>";
+    html += '<div class="rsvp-attendees">' + attendeesHtml(rsvp) + "</div>";
+
+    html += window.napCommentsSectionHtml({
+      comments: eventModalComments,
+      currentUid: currentUid,
+      expanded: eventModalCommentsExpanded,
+      showAddForm: eventModalAddCommentOpen,
+      editingCommentId: eventModalEditingCommentId,
+    });
+
+    eventModalBodyEl.innerHTML = html;
+  }
+
+  eventModalBodyEl.addEventListener("click", function (e) {
+    var rsvpBtn = e.target.closest("[data-rsvp]");
+    var editBtn = e.target.closest("[data-edit-event]");
+    var deleteBtn = e.target.closest("[data-delete-event]");
+    var profileBtn = e.target.closest("[data-open-profile]");
+    var toggleShow = e.target.closest("[data-comments-toggle-show]");
+    var toggleAdd = e.target.closest("[data-comments-toggle-add]");
+    var editCommentBtn = e.target.closest("[data-comment-edit]");
+    var deleteCommentBtn = e.target.closest("[data-comment-delete]");
+    var cancelCommentEdit = e.target.closest("[data-cancel-comment-edit]");
+
+    if (profileBtn) return;
+
+    if (rsvpBtn) {
+      setRsvp(rsvpBtn.getAttribute("data-event-id"), rsvpBtn.getAttribute("data-rsvp"));
+      return;
+    }
+
+    if (editBtn) {
+      var ev = allEvents.find(function (item) {
+        return item.id === editBtn.getAttribute("data-edit-event");
+      });
+      if (ev) {
+        eventModal.close();
+        openEditModal(ev);
+      }
+      return;
+    }
+
+    if (deleteBtn) {
+      if (window.confirm("Delete this event? This also removes its RSVPs and comments.")) {
+        deleteEventCascade(deleteBtn.getAttribute("data-delete-event"));
+        eventModal.close();
+      }
+      return;
+    }
+
+    if (toggleShow) {
+      eventModalCommentsExpanded = !eventModalCommentsExpanded;
+      renderEventModal();
+      return;
+    }
+
+    if (toggleAdd) {
+      eventModalAddCommentOpen = !eventModalAddCommentOpen;
+      renderEventModal();
+      return;
     }
 
     if (editCommentBtn) {
-      editingEventCommentId = editCommentBtn.getAttribute("data-edit-event-comment");
-      var eventId = editCommentBtn.getAttribute("data-event-id");
-      renderEventComments(eventId, document.getElementById("comments-event-" + eventId));
+      eventModalEditingCommentId = editCommentBtn.getAttribute("data-comment-edit");
+      renderEventModal();
+      return;
     }
 
     if (deleteCommentBtn) {
       if (window.confirm("Delete this comment?")) {
-        db.collection("events")
-          .doc(deleteCommentBtn.getAttribute("data-event-id"))
-          .collection("comments")
-          .doc(deleteCommentBtn.getAttribute("data-delete-event-comment"))
-          .delete();
+        db.collection("events").doc(openEventId).collection("comments").doc(deleteCommentBtn.getAttribute("data-comment-delete")).delete();
       }
+      return;
     }
 
     if (cancelCommentEdit) {
-      editingEventCommentId = null;
-      var formEl = cancelCommentEdit.closest("form");
-      var eventId2 = formEl.getAttribute("data-event-id");
-      renderEventComments(eventId2, document.getElementById("comments-event-" + eventId2));
+      eventModalEditingCommentId = null;
+      renderEventModal();
     }
   });
 
-  listsContainer.addEventListener("submit", function (e) {
-    if (e.target.classList.contains("event-comment-form")) {
+  eventModalBodyEl.addEventListener("submit", function (e) {
+    if (e.target.classList.contains("comment-add-form")) {
       e.preventDefault();
-      var eventId = e.target.getAttribute("data-event-id");
       var input = e.target.querySelector('[name="body"]');
       var body = input.value.trim();
       if (!body) return;
 
-      db.collection("events").doc(eventId).collection("comments").add({
-        authorUid: currentUid,
-        authorName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
-        body: body,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      var ev = allEvents.find(function (item) {
+        return item.id === openEventId;
       });
+
+      db.collection("events")
+        .doc(openEventId)
+        .collection("comments")
+        .add({
+          authorUid: currentUid,
+          authorName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
+          body: body,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        })
+        .then(function (docRef) {
+          if (ev && window.napNotifyComment) {
+            window.napNotifyComment({
+              recipientUid: ev.createdByUid,
+              type: "event",
+              postId: openEventId,
+              postTitle: ev.name,
+              commentId: docRef.id,
+              snippet: body,
+            });
+          }
+        });
+
+      eventModalAddCommentOpen = false;
     }
 
-    if (e.target.classList.contains("event-comment-edit-form")) {
+    if (e.target.classList.contains("comment-edit-form")) {
       e.preventDefault();
       var cid = e.target.getAttribute("data-comment-id");
-      var eid = e.target.getAttribute("data-event-id");
       var newBody = e.target.querySelector('[name="body"]').value.trim();
       if (!newBody) return;
 
-      db.collection("events").doc(eid).collection("comments").doc(cid).update({
+      db.collection("events").doc(openEventId).collection("comments").doc(cid).update({
         body: newBody,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
-      editingEventCommentId = null;
+      eventModalEditingCommentId = null;
     }
   });
 
@@ -493,14 +545,13 @@
       return batch.commit();
     });
     detachRsvpListener(eventId);
-    detachCommentListener(eventId);
   }
 
   /* Create / edit event modal */
-  function openModal(ev) {
+  function openEditModal(ev) {
     currentEditEventId = ev ? ev.id : null;
     pendingEventPhotoDataUrl = null;
-    modalTitle.textContent = ev ? "Edit Event" : "New Event";
+    formModalTitle.textContent = ev ? "Edit Event" : "New Event";
     submitBtn.textContent = ev ? "Save Changes" : "Create Event";
     form.querySelector('[name="name"]').value = ev ? ev.name : "";
     form.querySelector('[name="description"]').value = ev ? ev.description : "";
@@ -508,12 +559,12 @@
     form.querySelector('[name="startAt"]').value = ev ? toDatetimeLocalValue(ev.startAt.toDate()) : "";
     form.querySelector('[name="endAt"]').value = ev ? toDatetimeLocalValue(ev.endAt.toDate()) : "";
     renderPhotoPreview(photoPreview, ev ? ev.photoDataUrl : null);
-    modal.showModal();
+    formModal.showModal();
   }
 
   if (newEventBtn) {
     newEventBtn.addEventListener("click", function () {
-      openModal(null);
+      openEditModal(null);
     });
   }
 
@@ -564,7 +615,7 @@
         db.collection("events").add(payload);
       }
 
-      modal.close();
+      formModal.close();
     });
   }
 
@@ -586,10 +637,8 @@
         attachRsvpListener(ev.id);
       });
 
-      renderCalendar();
       renderEventList();
+      if (openEventId) renderEventModal();
     });
   }
-
-  renderCalendar();
 })();

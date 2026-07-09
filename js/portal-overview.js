@@ -50,14 +50,20 @@
         .map(function (doc) {
           var a = doc.data();
           return (
-            '<div class="overview-card__item">' +
+            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-announcement="' + doc.id + '">' +
             '<p class="overview-card__item-title">' + escapeHtml(a.title) + "</p>" +
             '<p class="overview-card__item-meta">' + escapeHtml(a.authorName) + " · " + formatDate(a.createdAt) + "</p>" +
-            "</div>"
+            "</button>"
           );
         })
         .join("");
     });
+
+  announcementsListEl.addEventListener("click", function (e) {
+    var trigger = e.target.closest("[data-open-announcement]");
+    if (!trigger || !window.napOpenAnnouncement) return;
+    window.napOpenAnnouncement(trigger.getAttribute("data-open-announcement"));
+  });
 
   db.collection("events")
     .orderBy("startAt", "asc")
@@ -66,7 +72,7 @@
       var now = new Date();
       var upcoming = snap.docs
         .map(function (doc) {
-          return doc.data();
+          return Object.assign({ id: doc.id }, doc.data());
         })
         .filter(function (ev) {
           return ev.endAt.toDate() >= now;
@@ -82,14 +88,20 @@
         .map(function (ev) {
           var start = ev.startAt.toDate();
           return (
-            '<div class="overview-card__item">' +
+            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-event="' + ev.id + '">' +
             '<p class="overview-card__item-title">' + escapeHtml(ev.name) + "</p>" +
             '<p class="overview-card__item-meta">' + escapeHtml(ev.location) + " · " + start.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + "</p>" +
-            "</div>"
+            "</button>"
           );
         })
         .join("");
     });
+
+  eventsListEl.addEventListener("click", function (e) {
+    var trigger = e.target.closest("[data-open-event]");
+    if (!trigger || !window.napOpenEvent) return;
+    window.napOpenEvent(trigger.getAttribute("data-open-event"));
+  });
 
   function daysUntilNextBirthday(birthday, today) {
     var parts = birthday.split("-");
@@ -126,11 +138,18 @@
     birthdaysListEl.innerHTML = upcoming
       .map(function (entry) {
         var when = entry.days === 0 ? "Today" : entry.days === 1 ? "Tomorrow" : "In " + entry.days + " days";
+        var metaParts = [when];
+        if (entry.brother.chapter) metaParts.push(entry.brother.chapter);
+        var crossed = window.napSemesterCrossed(entry.brother);
+        if (crossed) metaParts.push(crossed);
         return (
-          '<div class="overview-card__item">' +
+          '<button class="overview-card__item overview-card__item--clickable overview-card__item--birthday" type="button" data-open-profile="' + escapeHtml(entry.brother.uid) + '">' +
+          window.napAvatarHtml(entry.brother, "sm") +
+          '<span>' +
           '<p class="overview-card__item-title">' + escapeHtml(window.napDisplayName(entry.brother, "Brother")) + "</p>" +
-          '<p class="overview-card__item-meta">' + when + "</p>" +
-          "</div>"
+          '<p class="overview-card__item-meta">' + escapeHtml(metaParts.join(" · ")) + "</p>" +
+          "</span>" +
+          "</button>"
         );
       })
       .join("");

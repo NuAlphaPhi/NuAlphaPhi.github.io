@@ -1,6 +1,44 @@
-/* Account settings: password change + dark mode toggle (Settings tab of portal-home.html) */
+/* Account settings: sub-tabs, account summary, password change + dark mode toggle (Settings tab of portal-home.html) */
 (function () {
   "use strict";
+
+  /* Account Security / Appearance sub-tabs */
+  var settingsSubTabBtns = document.querySelectorAll("#settingsSubTabs [data-settings-tab]");
+  var settingsPanels = document.querySelectorAll("[data-settings-panel]");
+
+  function setSettingsTab(tab) {
+    settingsSubTabBtns.forEach(function (btn) {
+      var active = btn.getAttribute("data-settings-tab") === tab;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    settingsPanels.forEach(function (panel) {
+      panel.hidden = panel.getAttribute("data-settings-panel") !== tab;
+    });
+  }
+
+  settingsSubTabBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setSettingsTab(btn.getAttribute("data-settings-tab"));
+    });
+  });
+
+  /* Account summary — name + email shown at the top of Account Security */
+  var accountAvatarEl = document.getElementById("settingsAccountAvatar");
+  var accountNameEl = document.getElementById("settingsAccountName");
+  var accountEmailEl = document.getElementById("settingsAccountEmail");
+
+  window.napRefreshSettingsAccountSummary = function () {
+    if (!accountNameEl) return;
+    var profile = window.NAP_CURRENT_PROFILE || {};
+    if (accountAvatarEl) accountAvatarEl.innerHTML = window.napAvatarHtml(profile, "lg");
+    accountNameEl.textContent = window.napFullName(profile) || window.napDisplayName(profile, "Brother");
+    accountEmailEl.textContent = (auth.currentUser && auth.currentUser.email) || profile.email || "";
+  };
+
+  document.addEventListener("nap:auth-ready", function () {
+    window.napRefreshSettingsAccountSummary();
+  });
 
   var THEME_KEY = "nap_portal_theme";
 

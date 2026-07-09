@@ -84,6 +84,150 @@
     });
   };
 
+  function escapeHtml(value) {
+    var div = document.createElement("div");
+    div.textContent = value === null || value === undefined ? "" : String(value);
+    return div.innerHTML;
+  }
+
+  /* Shared brother directory cache — every portal module can look up a brother
+     by uid without running its own Firestore listener. */
+  window.NAP_ALL_BROTHERS = [];
+  window.napGetBrotherByUid = function (uid) {
+    if (!uid) return null;
+    return (
+      window.NAP_ALL_BROTHERS.find(function (b) {
+        return b.uid === uid;
+      }) || null
+    );
+  };
+
+  db.collection("users").onSnapshot(function (snap) {
+    window.NAP_ALL_BROTHERS = snap.docs.map(function (doc) {
+      return Object.assign({ uid: doc.id }, doc.data());
+    });
+    document.dispatchEvent(new CustomEvent("nap:brothers-updated"));
+  });
+
+  /* Renders a clickable "Name · Chapter · Semester Year" author badge, used on
+     announcements, events, and comments. Falls back to the stored author name
+     if the brother's profile isn't in the cache yet. */
+  window.napAuthorBadgeHtml = function (uid, fallbackName, extraClass) {
+    var brother = window.napGetBrotherByUid(uid);
+    var name = (brother && window.napDisplayName(brother, "")) || fallbackName || "A brother";
+    var metaParts = [];
+    if (brother && brother.chapter) metaParts.push(brother.chapter);
+    var crossed = brother ? window.napSemesterCrossed(brother) : "";
+    if (crossed) metaParts.push(crossed);
+
+    var metaHtml = metaParts.length
+      ? '<span class="author-badge__meta">' + metaParts.map(escapeHtml).join(" &middot; ") + "</span>"
+      : "";
+
+    return (
+      '<button class="author-badge' + (extraClass ? " " + extraClass : "") + '" type="button" data-open-profile="' + escapeHtml(uid || "") + '">' +
+      '<span class="author-badge__name">' + escapeHtml(name) + "</span>" +
+      metaHtml +
+      "</button>"
+    );
+  };
+
+  /* Global click delegate: any element carrying data-open-profile="<uid>"
+     opens that brother's profile modal, no matter which module rendered it. */
+  document.addEventListener("click", function (e) {
+    var trigger = e.target.closest("[data-open-profile]");
+    if (!trigger) return;
+    var uid = trigger.getAttribute("data-open-profile");
+    if (uid && window.napOpenProfileModal) {
+      window.napOpenProfileModal(uid);
+    }
+  });
+
+  /* Shared comments UI (announcements + events): comments are collapsed by
+     default behind a "Show Comments" toggle, with a separate "Add Comment"
+     toggle for the reply form. Callers own the Firestore reads/writes and
+     local expand/collapse state — this just renders the markup consistently
+     so both modules (and the event-detail modal) look and behave the same. */
+  window.napCommentsSectionHtml = function (opts) {
+    opts = opts || {};
+    var comments = opts.comments || [];
+    var currentUid = opts.currentUid;
+    var expanded = !!opts.expanded;
+    var showAddForm = !!opts.showAddForm;
+    var editingCommentId = opts.editingCommentId || null;
+    var count = comments.length;
+
+    var html = '<div class="comments-block">';
+    html +=
+      '<div class="comments-block__toolbar">' +
+      '<button class="news-card__action-btn" type="button" data-comments-toggle-show>' +
+      (expanded ? "Hide Comments" : "Show Comments (" + count + ")") +
+      "</button>" +
+      '<button class="news-card__action-btn" type="button" data-comments-toggle-add>' +
+      (showAddForm ? "Cancel" : "Add Comment") +
+      "</button>" +
+      "</div>";
+
+    if (expanded) {
+      if (!comments.length) {
+        html += '<p class="comments-block__empty">No comments yet.</p>';
+      } else {
+        html += '<div class="comment-list">';
+        comments.forEach(function (c) {
+          if (editingCommentId === c.id) {
+            html +=
+              '<div class="comment-item" id="comment-' + c.id + '">' +
+              '<form class="comment-edit-form" data-comment-id="' + c.id + '" style="display:flex;gap:0.5rem;">' +
+              '<input class="form-input" name="body" value="' + escapeHtml(c.body) + '" required>' +
+              '<button class="form-submit form-submit--small" type="submit">Save</button>' +
+              '<button class="news-card__action-btn" type="button" data-cancel-comment-edit>Cancel</button>' +
+              "</form></div>";
+          } else {
+            var isOwner = c.authorUid === currentUid;
+            html +=
+              '<div class="comment-item" id="comment-' + c.id + '">' +
+              '<div class="comment-item__meta">' +
+              window.napAuthorBadgeHtml(c.authorUid, c.authorName, "comment-item__author") +
+              (isOwner
+                ? '<span class="comment-item__actions">' +
+                  '<button class="news-card__action-btn" type="button" data-comment-edit="' + c.id + '">Edit</button>' +
+                  '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-comment-delete="' + c.id + '">Delete</button>' +
+                  "</span>"
+                : "") +
+              "</div>" +
+              '<p class="comment-item__text">' + escapeHtml(c.body) + "</p>" +
+              "</div>";
+          }
+        });
+        html += "</div>";
+      }
+    }
+
+    if (showAddForm) {
+      html +=
+        '<form class="comment-form comment-add-form">' +
+        '<input class="form-input" name="body" placeholder="Ask a question or add a comment…" required>' +
+        '<button class="form-submit form-submit--small" type="submit">Comment</button>' +
+        "</form>";
+    }
+
+    html += "</div>";
+    return html;
+  };
+
+  window.napTimeAgo = function (date) {
+    if (!date) return "";
+    var seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+    if (seconds < 60) return "Just now";
+    var minutes = Math.round(seconds / 60);
+    if (minutes < 60) return minutes + "m ago";
+    var hours = Math.round(minutes / 60);
+    if (hours < 24) return hours + "h ago";
+    var days = Math.round(hours / 24);
+    if (days < 7) return days + "d ago";
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  };
+
   auth.onAuthStateChanged(function (user) {
     if (!user) {
       window.location.href = "portal";
