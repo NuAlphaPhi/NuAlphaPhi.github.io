@@ -20,8 +20,8 @@
     return div.innerHTML;
   }
 
-  document.addEventListener("nap:auth-ready", function (e) {
-    currentUid = e.detail.uid;
+  window.napOnAuthReady(function (detail) {
+    currentUid = detail.uid;
     if (!started) {
       started = true;
       startNotificationsListener();

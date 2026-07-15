@@ -36,7 +36,7 @@
     accountEmailEl.textContent = (auth.currentUser && auth.currentUser.email) || profile.email || "";
   };
 
-  document.addEventListener("nap:auth-ready", function () {
+  window.napOnAuthReady(function () {
     window.napRefreshSettingsAccountSummary();
   });
 
@@ -89,9 +89,7 @@
     }
 
     var submitBtn = form.querySelector(".form-submit");
-    var originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Updating…";
+    window.napSaveButtonStart(submitBtn, "Updating…");
 
     var user = auth.currentUser;
     var credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
@@ -108,16 +106,14 @@
           feedbackEl.className = "form-feedback form-feedback--success";
           feedbackEl.hidden = false;
         }
+        window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
       })
       .catch(function (err) {
         if (errorEl) {
           errorEl.textContent = PASSWORD_ERROR_MESSAGES[err.code] || err.message || "Something went wrong. Please try again.";
           errorEl.hidden = false;
         }
-      })
-      .finally(function () {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
+        window.napSaveButtonDone(submitBtn, { error: true });
       });
   });
 })();

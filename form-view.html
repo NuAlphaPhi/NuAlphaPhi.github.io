@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <meta name="description" content="NAΦ Portal — fill out a form.">
+    <meta name="author" content="Nu Alpha Phi National Executive Board">
+    <meta name="referrer" content="origin">
+    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
+    <title>Form | NAΦ | Nu Alpha Phi Fraternity Inc.</title>
+    <base href="https://nualphaphi.com/">
+    <script>
+      (function () {
+        var host = location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+          document.querySelector('base').href = location.origin + '/';
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("nap_portal_theme") !== "light") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <link href="css/nap.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="public-form-page">
+        <div class="public-form-card" id="formViewCard">
+            <div class="public-form-state" id="formViewLoading">
+                <p>Loading form…</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/form-view.js"></script>
+</body>
+</html>

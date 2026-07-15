@@ -168,6 +168,5 @@
     render();
   }
 
-  document.addEventListener("nap:brothers-updated", refreshFromCache);
-  refreshFromCache();
+  window.napOnBrothersUpdated(refreshFromCache);
 })();

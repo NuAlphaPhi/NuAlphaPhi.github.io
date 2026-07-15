@@ -50,8 +50,8 @@
     if (photoPreview) photoPreview.innerHTML = window.napAvatarHtml(profile, "lg");
   }
 
-  document.addEventListener("nap:auth-ready", function (e) {
-    fillForm(e.detail.profile || {});
+  window.napOnAuthReady(function (detail) {
+    fillForm(detail.profile || {});
   });
 
   if (photoInput) {
@@ -82,9 +82,7 @@
     });
 
     var submitBtn = form.querySelector(".form-submit");
-    var originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Saving…";
+    window.napSaveButtonStart(submitBtn, "Saving…");
     if (feedback) feedback.hidden = true;
 
     update.uid = window.NAP_CURRENT_UID;
@@ -111,6 +109,7 @@
           feedback.className = "form-feedback form-feedback--success";
           feedback.hidden = false;
         }
+        window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
       })
       .catch(function (err) {
         if (feedback) {
@@ -118,10 +117,7 @@
           feedback.className = "form-feedback form-feedback--error";
           feedback.hidden = false;
         }
-      })
-      .finally(function () {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
+        window.napSaveButtonDone(submitBtn, { error: true });
       });
   });
 })();

@@ -155,8 +155,8 @@
       .join("");
   });
 
-  document.addEventListener("nap:auth-ready", function (e) {
-    var profile = e.detail.profile || {};
+  window.napOnAuthReady(function (detail) {
+    var profile = detail.profile || {};
     if (window.napIsProfileComplete(profile)) {
       nudgeEl.innerHTML = "";
       return;

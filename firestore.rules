@@ -53,5 +53,43 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
     }
+
+    // Forms (Google-Forms-style): the owner (createdByUid) can fully manage
+    // the form, including who's listed in collaboratorUids. A form doc can
+    // also be read by anyone, signed in or not, once published == true — that
+    // public GET is what powers the public "fill out this form" link. List
+    // queries (the portal's "My Forms" / "Shared with Me") still require
+    // sign-in and are scoped per-document to owner/collaborator by the same
+    // rule, same pattern as /notifications above.
+    match /forms/{formId} {
+      // resource == null first: a GET on a form id that doesn't exist (bad/typo'd
+      // public link) has nothing to protect, and must short-circuit to true
+      // before the other clauses touch resource.data — otherwise accessing
+      // .data on a null resource throws and the whole rule denies, which
+      // surfaces to visitors as a permission error instead of "not found".
+      allow read: if resource == null
+        || resource.data.published == true
+        || (isSignedIn() && (
+          resource.data.createdByUid == request.auth.uid ||
+          (resource.data.collaboratorUids is list && request.auth.uid in resource.data.collaboratorUids)
+        ));
+      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.createdByUid == request.auth.uid;
+
+      // Responses: anyone (including unauthenticated visitors via the public
+      // link) can submit a response while the form is published, unless the
+      // owner turned on requireSignIn — then only a signed-in brother can.
+      // Only the form's owner or collaborators can read the responses back.
+      match /responses/{responseId} {
+        allow create: if get(/databases/$(database)/documents/forms/$(formId)).data.published == true
+          && (get(/databases/$(database)/documents/forms/$(formId)).data.requireSignIn != true || isSignedIn());
+        allow read: if isSignedIn() && (
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdByUid == request.auth.uid ||
+          (get(/databases/$(database)/documents/forms/$(formId)).data.collaboratorUids is list &&
+            request.auth.uid in get(/databases/$(database)/documents/forms/$(formId)).data.collaboratorUids)
+        );
+        allow update, delete: if false;
+      }
+    }
   }
 }

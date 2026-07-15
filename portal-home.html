@@ -75,6 +75,7 @@
                 <button class="portal-shell__nav-btn" type="button" data-tab="directory">Directory</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="announcements">Announcements</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="events">Events</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="forms">Forms</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="birthdays">Birthdays</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
@@ -149,6 +150,97 @@
                 <div id="eventsListsContainer">
                     <div class="rsvp-event-list" id="eventsUpcomingList" data-event-panel="soon"></div>
                     <div class="rsvp-event-list" id="eventsCompletedList" data-event-panel="completed" hidden></div>
+                </div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-forms" data-panel="forms" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Surveys</span>
+                        <h1 class="portal-view-title">Forms</h1>
+                        <p class="portal-view-intro">Build a form, share the public link, and see who responds.</p>
+                    </div>
+                    <button class="form-submit form-submit--small" id="newFormBtn" type="button">New Form</button>
+                </div>
+
+                <div class="sub-tabs" id="formsSubTabs" role="tablist" aria-label="Forms">
+                    <button class="sub-tabs__btn is-active" type="button" data-forms-tab="mine" role="tab" aria-selected="true">My Forms</button>
+                    <button class="sub-tabs__btn" type="button" data-forms-tab="shared" role="tab" aria-selected="false">Shared with Me</button>
+                </div>
+
+                <div id="formsListsContainer">
+                    <div class="forms-grid" id="formsMyList" data-forms-panel="mine"></div>
+                    <div class="forms-grid" id="formsSharedList" data-forms-panel="shared" hidden></div>
+                </div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-form-builder" data-panel="form-builder" hidden>
+                <button class="portal-back-btn" type="button" id="formBuilderBackBtn">&larr; Back to Forms</button>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Surveys</span>
+                        <h1 class="portal-view-title" id="formBuilderPageTitle">New Form</h1>
+                        <p class="portal-view-intro">Build your questions, then turn on Accepting Responses to make the public link live.</p>
+                    </div>
+                </div>
+
+                <form id="formBuilderForm" novalidate>
+                    <div class="form-banner-field" id="formBuilderBannerField">
+                        <div class="form-banner-field__preview" id="formBuilderBannerPreview"></div>
+                        <div class="form-banner-field__actions">
+                            <label class="form-submit form-submit--inline form-submit--secondary" for="form-builder-banner-input">Add Banner</label>
+                            <input type="file" id="form-builder-banner-input" accept="image/*" hidden>
+                            <button class="form-submit form-submit--inline form-submit--secondary" type="button" id="formBuilderBannerRemoveBtn" hidden>Remove Banner</button>
+                            <p class="profile-photo-field__hint">Shown at the top of your form. You'll be able to crop it after choosing a photo.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="form-builder-title">Title</label>
+                        <input class="form-input" id="form-builder-title" name="title" type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="form-builder-description">Description</label>
+                        <textarea class="form-textarea" id="form-builder-description" name="description" placeholder="Optional — shown at the top of the form"></textarea>
+                    </div>
+
+                    <div class="theme-toggle form-builder__publish-toggle">
+                        <div>
+                            <p class="theme-toggle__label">Accepting Responses</p>
+                            <p class="theme-toggle__desc">Turn on to make the public link live.</p>
+                        </div>
+                        <button class="theme-toggle__switch" id="formBuilderPublishBtn" type="button" aria-pressed="false"></button>
+                    </div>
+
+                    <div class="theme-toggle form-builder__publish-toggle">
+                        <div>
+                            <p class="theme-toggle__label">Require Sign-In</p>
+                            <p class="theme-toggle__desc">Only brothers with a portal account can fill this out. Off means anyone with the link can.</p>
+                        </div>
+                        <button class="theme-toggle__switch" id="formBuilderRequireSignInBtn" type="button" aria-pressed="false"></button>
+                    </div>
+
+                    <div id="formBuilderQuestions"></div>
+                    <button class="form-submit form-submit--secondary form-submit--inline" id="formBuilderAddQuestionBtn" type="button">Add Question</button>
+
+                    <p class="form-error" id="form-builder-error" role="alert" hidden></p>
+                    <button class="form-submit" type="submit">Save Form</button>
+                </form>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-form-responses" data-panel="form-responses" hidden>
+                <button class="portal-back-btn" type="button" id="formResponsesBackBtn">&larr; Back to Forms</button>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Surveys</span>
+                        <h1 class="portal-view-title" id="formResponsesPageTitle">Responses</h1>
+                        <p class="portal-view-intro" id="formResponsesPageCount"></p>
+                    </div>
+                </div>
+
+                <div class="form-responses-layout" id="formResponsesLayout">
+                    <div class="form-responses-sidebar" id="formResponsesSidebar"></div>
+                    <div class="form-responses-detail" id="formResponsesDetail"></div>
                 </div>
             </section>
 
@@ -467,16 +559,71 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay" id="modal-form-share" aria-labelledby="modal-form-share-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-form-share-title">Share Form</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+
+            <p class="form-label">Public Link</p>
+            <div class="form-share__link-row">
+                <input class="form-input" id="formSharePublicLink" type="text" readonly>
+                <button class="form-submit form-submit--secondary form-submit--inline" id="formShareCopyBtn" type="button">Copy</button>
+            </div>
+
+            <p class="form-label">Collaborators</p>
+            <p class="profile-photo-field__hint">Brothers you add can view responses to this form.</p>
+            <div id="formShareCollabList"></div>
+            <div class="form-share__add-row">
+                <select class="form-select" id="formShareCollabSelect"></select>
+                <button class="form-submit form-submit--secondary form-submit--inline" id="formShareAddCollabBtn" type="button">Add</button>
+            </div>
+        </div>
+    </dialog>
+
+    <dialog class="modal-overlay" id="modal-banner-crop" aria-labelledby="modal-banner-crop-title">
+        <div class="modal modal--crop" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-banner-crop-title">Position Banner</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+
+            <p class="profile-photo-field__hint">Drag to reposition, use the slider to zoom. The framed area is what shows on your form.</p>
+
+            <div class="banner-crop__stage">
+                <canvas id="bannerCropCanvas"></canvas>
+            </div>
+
+            <div class="banner-crop__zoom-row">
+                <span aria-hidden="true">&minus;</span>
+                <input type="range" id="bannerCropZoom" min="1" max="4" step="0.01" value="1">
+                <span aria-hidden="true">+</span>
+            </div>
+
+            <div class="banner-crop__actions">
+                <button class="form-submit form-submit--secondary form-submit--inline" type="button" data-close-modal>Cancel</button>
+                <button class="form-submit form-submit--inline" type="button" id="bannerCropApplyBtn">Apply Banner</button>
+            </div>
+        </div>
+    </dialog>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/portal-auth.js"></script>
     <script src="js/portal-shell.js"></script>
+    <script src="js/portal-save-feedback.js"></script>
     <script src="js/portal-settings.js"></script>
     <script src="js/portal-account-settings.js"></script>
     <script src="js/portal-announcements.js"></script>
     <script src="js/portal-events.js"></script>
+    <script src="js/portal-forms.js"></script>
     <script src="js/portal-directory.js"></script>
     <script src="js/portal-birthdays.js"></script>
     <script src="js/portal-overview.js"></script>

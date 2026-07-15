@@ -36,8 +36,8 @@
   var eventModalComments = [];
   var pendingHighlightCommentId = null;
 
-  document.addEventListener("nap:auth-ready", function (e) {
-    currentUid = e.detail.uid;
+  window.napOnAuthReady(function (detail) {
+    currentUid = detail.uid;
     renderEventList();
     if (!started) {
       started = true;
@@ -605,17 +605,34 @@
         payload.photoDataUrl = pendingEventPhotoDataUrl;
       }
 
-      if (currentEditEventId) {
-        db.collection("events").doc(currentEditEventId).update(payload);
+      var isEdit = !!currentEditEventId;
+      var writePromise;
+      window.napSaveButtonStart(submitBtn, isEdit ? "Saving…" : "Creating…");
+
+      if (isEdit) {
+        writePromise = db.collection("events").doc(currentEditEventId).update(payload);
       } else {
         payload.photoDataUrl = pendingEventPhotoDataUrl || "";
         payload.createdByUid = currentUid;
         payload.createdByName = window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother");
         payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-        db.collection("events").add(payload);
+        writePromise = db.collection("events").add(payload);
       }
 
-      formModal.close();
+      writePromise
+        .then(function () {
+          window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
+          window.setTimeout(function () {
+            formModal.close();
+          }, 550);
+        })
+        .catch(function () {
+          window.napSaveButtonDone(submitBtn, { error: true });
+          if (errorEl) {
+            errorEl.textContent = "Something went wrong. Please try again.";
+            errorEl.hidden = false;
+          }
+        });
     });
   }
 

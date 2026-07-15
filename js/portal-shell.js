@@ -6,9 +6,13 @@
   var panels = document.querySelectorAll(".portal-tab-panel");
   if (!navBtns.length) return;
 
-  function setTab(tab) {
+  /* navTab lets a sub-page with no nav button of its own (e.g. the form
+     builder/responses pages, reached only from within the Forms tab) keep
+     that tab highlighted instead of leaving the sidebar with nothing active. */
+  function setTab(tab, navTab) {
+    var activeNavTab = navTab || tab;
     navBtns.forEach(function (btn) {
-      btn.classList.toggle("is-active", btn.getAttribute("data-tab") === tab);
+      btn.classList.toggle("is-active", btn.getAttribute("data-tab") === activeNavTab);
     });
     panels.forEach(function (panel) {
       panel.hidden = panel.getAttribute("data-panel") !== tab;

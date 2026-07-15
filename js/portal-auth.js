@@ -102,10 +102,24 @@
     );
   };
 
+  /* "nap:auth-ready" and "nap:brothers-updated" each fire once, as soon as
+     data is available — which can happen before a later <script> tag has even
+     finished loading and registered its listener (each module is its own
+     network request, and a warm/cached auth session can resolve faster than
+     they all download). These napOn* helpers replay the last known state to
+     late subscribers instead of silently dropping them, while still behaving
+     exactly like document.addEventListener for anyone who was ready in time. */
+  window.NAP_BROTHERS_READY = false;
+  window.napOnBrothersUpdated = function (handler) {
+    if (window.NAP_BROTHERS_READY) handler();
+    document.addEventListener("nap:brothers-updated", handler);
+  };
+
   db.collection("users").onSnapshot(function (snap) {
     window.NAP_ALL_BROTHERS = snap.docs.map(function (doc) {
       return Object.assign({ uid: doc.id }, doc.data());
     });
+    window.NAP_BROTHERS_READY = true;
     document.dispatchEvent(new CustomEvent("nap:brothers-updated"));
   });
 
@@ -228,6 +242,14 @@
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   };
 
+  window.NAP_AUTH_READY_DETAIL = null;
+  window.napOnAuthReady = function (handler) {
+    if (window.NAP_AUTH_READY_DETAIL) handler(window.NAP_AUTH_READY_DETAIL);
+    document.addEventListener("nap:auth-ready", function (e) {
+      handler(e.detail);
+    });
+  };
+
   auth.onAuthStateChanged(function (user) {
     if (!user) {
       window.location.href = "portal";
@@ -248,8 +270,9 @@
       }
       if (portalApp) portalApp.hidden = false;
 
+      window.NAP_AUTH_READY_DETAIL = { uid: user.uid, profile: profile };
       document.dispatchEvent(
-        new CustomEvent("nap:auth-ready", { detail: { uid: user.uid, profile: profile } })
+        new CustomEvent("nap:auth-ready", { detail: window.NAP_AUTH_READY_DETAIL })
       );
     });
   });

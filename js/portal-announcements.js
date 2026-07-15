@@ -34,8 +34,8 @@
   var pendingHighlightCommentId = null;
 
   var started = false;
-  document.addEventListener("nap:auth-ready", function (e) {
-    currentUid = e.detail.uid;
+  window.napOnAuthReady(function (detail) {
+    currentUid = detail.uid;
     if (!started) {
       started = true;
       startAnnouncementsListener();
@@ -76,15 +76,18 @@
       if (!title || !body) return;
 
       var authorName = window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother");
+      var isEdit = !!currentEditId;
+      var writePromise;
+      window.napSaveButtonStart(submitBtn, isEdit ? "Saving…" : "Posting…");
 
-      if (currentEditId) {
-        db.collection("announcements").doc(currentEditId).update({
+      if (isEdit) {
+        writePromise = db.collection("announcements").doc(currentEditId).update({
           title: title,
           body: body,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
       } else {
-        db.collection("announcements").add({
+        writePromise = db.collection("announcements").add({
           authorUid: currentUid,
           authorName: authorName,
           title: title,
@@ -94,7 +97,16 @@
         });
       }
 
-      modal.close();
+      writePromise
+        .then(function () {
+          window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
+          window.setTimeout(function () {
+            modal.close();
+          }, 550);
+        })
+        .catch(function () {
+          window.napSaveButtonDone(submitBtn, { error: true });
+        });
     });
   }
 
