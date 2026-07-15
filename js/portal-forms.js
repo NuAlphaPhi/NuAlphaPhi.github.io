@@ -38,8 +38,11 @@
     return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
+  /* Always points at the real production domain, even when the portal
+     itself is being viewed from localhost during testing — a share link
+     that says "localhost" is useless to any other brother it's sent to. */
   function publicLinkFor(formId) {
-    return window.location.origin + "/form-view?id=" + formId;
+    return "https://nualphaphi.com/form-view?id=" + formId;
   }
 
   window.napOnAuthReady(function (detail) {
@@ -164,9 +167,10 @@
       return;
     }
     if (deleteBtn) {
-      if (window.confirm("Delete this form? This also removes all of its responses.")) {
-        deleteFormCascade(deleteBtn.getAttribute("data-form-delete"));
-      }
+      var formIdToDelete = deleteBtn.getAttribute("data-form-delete");
+      window.napConfirm("This also removes all of its responses. This can't be undone.", { title: "Delete this form?" }).then(function (confirmed) {
+        if (confirmed) deleteFormCascade(formIdToDelete);
+      });
     }
   });
 
@@ -182,6 +186,9 @@
         });
         batch.delete(formRef);
         return batch.commit();
+      })
+      .catch(function () {
+        window.alert("Couldn't delete this form. Please try again.");
       });
   }
 

@@ -103,10 +103,11 @@
         .map(function (opt, i) {
           var id = name + "_" + i;
           return (
-            '<div class="public-form-choice-row">' +
+            '<label class="public-form-choice-row" for="' + id + '">' +
             '<input type="radio" id="' + id + '" name="' + name + '" value="' + escapeHtml(opt) + '"' + requiredAttr + ">" +
-            '<label for="' + id + '">' + escapeHtml(opt) + "</label>" +
-            "</div>"
+            '<span class="public-form-choice-row__indicator" aria-hidden="true"></span>' +
+            '<span class="public-form-choice-row__text">' + escapeHtml(opt) + "</span>" +
+            "</label>"
           );
         })
         .join("");
@@ -115,10 +116,11 @@
         .map(function (opt, i) {
           var id = name + "_" + i;
           return (
-            '<div class="public-form-choice-row">' +
+            '<label class="public-form-choice-row public-form-choice-row--checkbox" for="' + id + '">' +
             '<input type="checkbox" id="' + id + '" name="' + name + '" value="' + escapeHtml(opt) + '">' +
-            '<label for="' + id + '">' + escapeHtml(opt) + "</label>" +
-            "</div>"
+            '<span class="public-form-choice-row__indicator" aria-hidden="true"></span>' +
+            '<span class="public-form-choice-row__text">' + escapeHtml(opt) + "</span>" +
+            "</label>"
           );
         })
         .join("");

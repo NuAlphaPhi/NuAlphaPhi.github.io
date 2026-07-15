@@ -281,9 +281,10 @@
     }
 
     if (deleteBtn) {
-      if (window.confirm("Delete this event? This also removes its RSVPs and comments.")) {
-        deleteEventCascade(deleteBtn.getAttribute("data-delete-event"));
-      }
+      var eventIdToDelete = deleteBtn.getAttribute("data-delete-event");
+      window.napConfirm("This also removes its RSVPs and comments. This can't be undone.", { title: "Delete this event?" }).then(function (confirmed) {
+        if (confirmed) deleteEventCascade(eventIdToDelete);
+      });
       return;
     }
 
@@ -442,10 +443,13 @@
     }
 
     if (deleteBtn) {
-      if (window.confirm("Delete this event? This also removes its RSVPs and comments.")) {
-        deleteEventCascade(deleteBtn.getAttribute("data-delete-event"));
-        eventModal.close();
-      }
+      var eventIdToDeleteInModal = deleteBtn.getAttribute("data-delete-event");
+      window.napConfirm("This also removes its RSVPs and comments. This can't be undone.", { title: "Delete this event?" }).then(function (confirmed) {
+        if (confirmed) {
+          deleteEventCascade(eventIdToDeleteInModal);
+          eventModal.close();
+        }
+      });
       return;
     }
 
@@ -468,9 +472,10 @@
     }
 
     if (deleteCommentBtn) {
-      if (window.confirm("Delete this comment?")) {
-        db.collection("events").doc(openEventId).collection("comments").doc(deleteCommentBtn.getAttribute("data-comment-delete")).delete();
-      }
+      var eventCommentIdToDelete = deleteCommentBtn.getAttribute("data-comment-delete");
+      window.napConfirm("This can't be undone.", { title: "Delete this comment?" }).then(function (confirmed) {
+        if (confirmed) db.collection("events").doc(openEventId).collection("comments").doc(eventCommentIdToDelete).delete();
+      });
       return;
     }
 
@@ -543,6 +548,8 @@
       });
       batch.delete(eventRef);
       return batch.commit();
+    }).catch(function () {
+      window.alert("Couldn't delete this event. Please try again.");
     });
     detachRsvpListener(eventId);
   }

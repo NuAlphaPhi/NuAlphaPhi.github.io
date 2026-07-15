@@ -136,13 +136,15 @@
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", function () {
       if (!allNotifications.length) return;
-      if (!window.confirm("Clear all notifications?")) return;
-      var batch = db.batch();
-      allNotifications.forEach(function (n) {
-        batch.delete(db.collection("notifications").doc(n.id));
+      window.napConfirm("This can't be undone.", { title: "Clear all notifications?", confirmLabel: "Clear All" }).then(function (confirmed) {
+        if (!confirmed) return;
+        var batch = db.batch();
+        allNotifications.forEach(function (n) {
+          batch.delete(db.collection("notifications").doc(n.id));
+        });
+        batch.commit();
+        setDropdownOpen(false);
       });
-      batch.commit();
-      setDropdownOpen(false);
     });
   }
 

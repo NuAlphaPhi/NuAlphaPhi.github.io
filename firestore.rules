@@ -18,10 +18,18 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
 
+      // Delete is also allowed for the announcement's own author, not just the
+      // comment's — deleting an announcement cascades to delete every comment
+      // underneath it (see deleteAnnouncementCascade), including ones the
+      // announcement author didn't write themselves.
       match /comments/{cid} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+        allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+        allow delete: if isSignedIn() && (
+          resource.data.authorUid == request.auth.uid ||
+          get(/databases/$(database)/documents/announcements/$(id)).data.authorUid == request.auth.uid
+        );
       }
     }
 
@@ -30,16 +38,28 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.createdByUid == request.auth.uid;
 
-      // RSVP doc ID must equal the writer's own uid — you can only ever write your own RSVP.
+      // RSVP doc ID must equal the writer's own uid for create/update — you can
+      // only ever set your own RSVP. Delete is also allowed for the event's
+      // owner, since deleting an event cascades to delete every RSVP under it
+      // (see deleteEventCascade), including brothers' RSVPs other than their own.
       match /rsvps/{rsvpUid} {
         allow read: if isSignedIn();
-        allow write: if isSignedIn() && request.auth.uid == rsvpUid;
+        allow create, update: if isSignedIn() && request.auth.uid == rsvpUid;
+        allow delete: if isSignedIn() && (
+          request.auth.uid == rsvpUid ||
+          get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid
+        );
       }
 
+      // Same cascade-delete reasoning as announcements/{id}/comments above.
       match /comments/{cid} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-        allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+        allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+        allow delete: if isSignedIn() && (
+          resource.data.authorUid == request.auth.uid ||
+          get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid
+        );
       }
     }
 
@@ -88,7 +108,11 @@ service cloud.firestore {
           (get(/databases/$(database)/documents/forms/$(formId)).data.collaboratorUids is list &&
             request.auth.uid in get(/databases/$(database)/documents/forms/$(formId)).data.collaboratorUids)
         );
-        allow update, delete: if false;
+        allow update: if false;
+        // Delete is only for the form's owner, mirroring who can delete the form
+        // itself — needed so deleteFormCascade can clear out responses when a
+        // form (which may have responses from other brothers) gets deleted.
+        allow delete: if isSignedIn() && get(/databases/$(database)/documents/forms/$(formId)).data.createdByUid == request.auth.uid;
       }
     }
   }

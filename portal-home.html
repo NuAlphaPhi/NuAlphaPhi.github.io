@@ -612,6 +612,17 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay" id="modal-confirm" aria-labelledby="modalConfirmTitle" aria-describedby="modalConfirmBody">
+        <div class="modal modal--confirm" role="alertdialog">
+            <h2 class="modal__title" id="modalConfirmTitle">Are you sure?</h2>
+            <p class="modal-confirm__body" id="modalConfirmBody"></p>
+            <div class="modal-confirm__actions">
+                <button class="form-submit form-submit--secondary form-submit--inline" type="button" id="modalConfirmCancelBtn">Cancel</button>
+                <button class="form-submit form-submit--inline form-submit--danger" type="button" id="modalConfirmOkBtn">Delete</button>
+            </div>
+        </div>
+    </dialog>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -619,6 +630,7 @@
     <script src="js/portal-auth.js"></script>
     <script src="js/portal-shell.js"></script>
     <script src="js/portal-save-feedback.js"></script>
+    <script src="js/portal-confirm.js"></script>
     <script src="js/portal-settings.js"></script>
     <script src="js/portal-account-settings.js"></script>
     <script src="js/portal-announcements.js"></script>

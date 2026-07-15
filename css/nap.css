@@ -3218,6 +3218,38 @@ html[data-theme="dark"] .modal__img {
   background: var(--white);
 }
 
+.form-submit--danger {
+  background: #991b1b;
+}
+
+.form-submit--danger:hover,
+.form-submit--danger:focus-visible {
+  background: #7a1616;
+}
+
+/* Shared confirm dialog (replaces window.confirm) */
+.modal--confirm {
+  width: min(420px, 100%);
+}
+
+.modal-confirm__body {
+  margin: 0.6rem 0 1.75rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--grey-600);
+}
+
+.modal-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.modal-confirm__actions .form-submit {
+  width: auto;
+  margin-top: 0;
+}
+
 .profile-photo-field {
   display: flex;
   align-items: center;
@@ -4473,18 +4505,88 @@ html[data-theme="dark"] .modal__img {
 }
 
 .public-form-choice-row {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.55rem;
+  gap: 0.85rem;
+  margin-bottom: 0.6rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.public-form-choice-row:last-child {
+  margin-bottom: 0;
+}
+
+.public-form-choice-row:hover {
+  border-color: var(--maroon);
+}
+
+.public-form-choice-row:has(input:checked) {
+  border-color: var(--maroon);
+  background: color-mix(in srgb, var(--maroon) 8%, transparent);
+}
+
+.public-form-choice-row:focus-within {
+  outline: 2px solid var(--maroon);
+  outline-offset: 2px;
 }
 
 .public-form-choice-row input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.public-form-choice-row__indicator {
+  position: relative;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  accent-color: var(--maroon);
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--grey-200);
+  border-radius: 50%;
+  transition: border-color var(--transition);
+}
+
+.public-form-choice-row--checkbox .public-form-choice-row__indicator {
+  border-radius: 6px;
+}
+
+.public-form-choice-row input:checked ~ .public-form-choice-row__indicator {
+  border-color: var(--maroon);
+}
+
+.public-form-choice-row input:checked ~ .public-form-choice-row__indicator::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--maroon);
+}
+
+.public-form-choice-row--checkbox input:checked ~ .public-form-choice-row__indicator::after {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 5px;
+  margin: -6px 0 0 -5px;
+  background: transparent;
+  border-radius: 0;
+  border-left: 2px solid var(--maroon);
+  border-bottom: 2px solid var(--maroon);
+  transform: rotate(-45deg);
+}
+
+.public-form-choice-row__text {
+  color: var(--black);
 }
 
 .public-form-state {

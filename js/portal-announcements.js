@@ -119,6 +119,8 @@
       });
       batch.delete(db.collection("announcements").doc(id));
       return batch.commit();
+    }).catch(function () {
+      window.alert("Couldn't delete this announcement. Please try again.");
     });
   }
 
@@ -276,9 +278,10 @@
     }
 
     if (deleteBtn) {
-      if (window.confirm("Delete this announcement? This also removes its comments.")) {
-        deleteAnnouncementCascade(deleteBtn.getAttribute("data-delete-announcement"));
-      }
+      var announcementIdToDelete = deleteBtn.getAttribute("data-delete-announcement");
+      window.napConfirm("This also removes its comments. This can't be undone.", { title: "Delete this announcement?" }).then(function (confirmed) {
+        if (confirmed) deleteAnnouncementCascade(announcementIdToDelete);
+      });
       return;
     }
 
@@ -303,9 +306,10 @@
     }
 
     if (deleteCommentBtn) {
-      if (window.confirm("Delete this comment?")) {
-        db.collection("announcements").doc(announcementId).collection("comments").doc(deleteCommentBtn.getAttribute("data-comment-delete")).delete();
-      }
+      var commentIdToDelete = deleteCommentBtn.getAttribute("data-comment-delete");
+      window.napConfirm("This can't be undone.", { title: "Delete this comment?" }).then(function (confirmed) {
+        if (confirmed) db.collection("announcements").doc(announcementId).collection("comments").doc(commentIdToDelete).delete();
+      });
       return;
     }
 
@@ -423,9 +427,10 @@
     }
 
     if (deleteCommentBtn) {
-      if (window.confirm("Delete this comment?")) {
-        db.collection("announcements").doc(openAnnouncementId).collection("comments").doc(deleteCommentBtn.getAttribute("data-comment-delete")).delete();
-      }
+      var detailCommentIdToDelete = deleteCommentBtn.getAttribute("data-comment-delete");
+      window.napConfirm("This can't be undone.", { title: "Delete this comment?" }).then(function (confirmed) {
+        if (confirmed) db.collection("announcements").doc(openAnnouncementId).collection("comments").doc(detailCommentIdToDelete).delete();
+      });
       return;
     }
 
