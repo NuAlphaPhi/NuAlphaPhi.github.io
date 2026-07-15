@@ -199,9 +199,11 @@
       html += '<img class="rsvp-event-card__photo" src="' + ev.photoDataUrl + '" alt="">';
     }
 
+    var pendingBadge = ev.approved === false ? '<span class="pending-badge">Pending Approval</span>' : "";
+
     html +=
       '<div class="rsvp-event-card__header">' +
-      '<h3 class="rsvp-event-card__title">' + escapeHtml(ev.name) + "</h3>" +
+      '<h3 class="rsvp-event-card__title">' + escapeHtml(ev.name) + pendingBadge + "</h3>" +
       (isOwner
         ? '<div class="news-card__actions">' +
           '<button class="news-card__action-btn" type="button" data-edit-event="' + ev.id + '">Edit</button>' +
@@ -613,6 +615,7 @@
       }
 
       var isEdit = !!currentEditEventId;
+      var isAdmin = window.napIsAdmin();
       var writePromise;
       window.napSaveButtonStart(submitBtn, isEdit ? "Saving…" : "Creating…");
 
@@ -622,13 +625,23 @@
         payload.photoDataUrl = pendingEventPhotoDataUrl || "";
         payload.createdByUid = currentUid;
         payload.createdByName = window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother");
+        /* Admin events go live instantly; everyone else's wait for approval. */
+        payload.approved = isAdmin;
         payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
         writePromise = db.collection("events").add(payload);
       }
 
       writePromise
         .then(function () {
-          window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
+          if (!isEdit && isAdmin && window.napQueueBrotherhoodEmail) {
+            window.napQueueBrotherhoodEmail(
+              "New event: " + name,
+              payload.createdByName + " posted a new event:\n\n" + name + "\n" + location + " · " + startDate.toLocaleString() +
+                (description ? "\n\n" + description : "") +
+                "\n\nRSVP in the portal: https://nualphaphi.com/portal-home"
+            );
+          }
+          window.napSaveButtonDone(submitBtn, { savedLabel: isEdit || isAdmin ? "Saved" : "Sent for Approval" });
           window.setTimeout(function () {
             formModal.close();
           }, 550);
@@ -647,9 +660,16 @@
   var started = false;
   function startEventsListener() {
     db.collection("events").onSnapshot(function (snap) {
-      allEvents = snap.docs.map(function (doc) {
-        return Object.assign({ id: doc.id }, doc.data());
-      });
+      /* Unapproved events stay hidden from the lists, except to their own
+         creator, who sees them with a "Pending Approval" badge. Docs from
+         before the approval feature (no approved field) count as approved. */
+      allEvents = snap.docs
+        .map(function (doc) {
+          return Object.assign({ id: doc.id }, doc.data());
+        })
+        .filter(function (ev) {
+          return ev.approved !== false || ev.createdByUid === currentUid;
+        });
 
       var currentIds = allEvents.map(function (ev) {
         return ev.id;

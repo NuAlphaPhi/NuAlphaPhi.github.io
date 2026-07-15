@@ -76,9 +76,11 @@
                 <button class="portal-shell__nav-btn" type="button" data-tab="announcements">Announcements</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="events">Events</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="forms">Forms</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="pledges">Pledges</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="birthdays">Birthdays</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="admin" id="adminNavBtn" hidden>Admin</button>
             </nav>
 
             <button class="portal-shell__signout" id="portalSignOut" type="button">Sign Out</button>
@@ -236,12 +238,48 @@
                         <h1 class="portal-view-title" id="formResponsesPageTitle">Responses</h1>
                         <p class="portal-view-intro" id="formResponsesPageCount"></p>
                     </div>
+                    <div class="news-card__actions" id="formResponsesExportActions">
+                        <button class="news-card__action-btn" type="button" id="formResponsesExportCsvBtn">Export CSV</button>
+                        <button class="news-card__action-btn" type="button" id="formResponsesExportPdfBtn">Export PDF</button>
+                    </div>
                 </div>
 
                 <div class="form-responses-layout" id="formResponsesLayout">
                     <div class="form-responses-sidebar" id="formResponsesSidebar"></div>
                     <div class="form-responses-detail" id="formResponsesDetail"></div>
                 </div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-pledges" data-panel="pledges" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Brotherhood</span>
+                        <h1 class="portal-view-title">Pledges</h1>
+                        <p class="portal-view-intro">Pledge classes and the brothers they became.</p>
+                    </div>
+                    <button class="form-submit form-submit--small" id="newPledgeClassBtn" type="button" hidden>New Pledge Class</button>
+                </div>
+                <div class="forms-grid" id="pledgeClassGrid"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-pledge-class" data-panel="pledge-class" hidden>
+                <button class="portal-back-btn" type="button" id="pledgeClassBackBtn">&larr; Back to Pledges</button>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Pledge Class</span>
+                        <h1 class="portal-view-title" id="pledgeClassPageTitle"></h1>
+                        <p class="portal-view-intro" id="pledgeClassPageMeta"></p>
+                    </div>
+                    <div class="news-card__actions" id="pledgeClassPageActions"></div>
+                </div>
+
+                <div class="profile-modal__grid" id="pledgeClassInfoGrid"></div>
+
+                <div class="portal-view-header portal-view-header--spaced">
+                    <h2 class="portal-view-title portal-view-title--small">Pledges</h2>
+                    <button class="form-submit form-submit--small" id="newPledgeBtn" type="button" hidden>Add Pledge</button>
+                </div>
+                <div class="directory-grid" id="pledgeGrid"></div>
             </section>
 
             <section class="portal-tab-panel" id="panel-birthdays" data-panel="birthdays" hidden>
@@ -406,6 +444,8 @@
                 <div class="sub-tabs" id="settingsSubTabs" role="tablist" aria-label="Settings">
                     <button class="sub-tabs__btn is-active" type="button" data-settings-tab="security" role="tab" aria-selected="true">Account Security</button>
                     <button class="sub-tabs__btn" type="button" data-settings-tab="appearance" role="tab" aria-selected="false">Appearance</button>
+                    <button class="sub-tabs__btn" type="button" data-settings-tab="notifications" role="tab" aria-selected="false">Notifications</button>
+                    <button class="sub-tabs__btn" type="button" data-settings-tab="admin" role="tab" aria-selected="false">Admin</button>
                 </div>
 
                 <div class="portal-panel-content" id="settingsSecurityPanel" data-settings-panel="security">
@@ -447,6 +487,53 @@
                         <button class="theme-toggle__switch" id="themeToggleBtn" type="button" aria-pressed="false"></button>
                     </div>
                 </div>
+
+                <div class="portal-panel-content" id="settingsNotificationsPanel" data-settings-panel="notifications" hidden>
+                    <h2 class="portal-view-title portal-view-title--small">Notifications</h2>
+                    <div class="theme-toggle">
+                        <div>
+                            <p class="theme-toggle__label">Email Notifications</p>
+                            <p class="theme-toggle__desc">Get an email whenever a new announcement or event is posted.</p>
+                        </div>
+                        <button class="theme-toggle__switch" id="emailNotifToggleBtn" type="button" aria-pressed="true"></button>
+                    </div>
+                    <p class="form-feedback" id="email-notif-feedback" role="status" aria-live="polite" hidden></p>
+                </div>
+
+                <div class="portal-panel-content" id="settingsAdminPanel" data-settings-panel="admin" hidden>
+                    <h2 class="portal-view-title portal-view-title--small">Admin Access</h2>
+                    <div id="settingsAdminNotAdmin">
+                        <p class="portal-view-intro">Enter the admin code to unlock administrator privileges on your account.</p>
+                        <form id="adminCodeForm" novalidate>
+                            <div class="form-group">
+                                <label class="form-label" for="settings-admin-code">Admin Code</label>
+                                <input class="form-input" id="settings-admin-code" name="adminCode" type="password" autocomplete="off" required>
+                            </div>
+                            <button class="form-submit form-submit--inline" type="submit">Activate Admin Access</button>
+                            <p class="form-error" id="admin-code-error" role="alert" hidden></p>
+                        </form>
+                    </div>
+                    <div id="settingsAdminIsAdmin" hidden>
+                        <p class="portal-view-intro">You have administrator access. You can approve announcements and events from the Admin tab, and edit or remove brother accounts from the Directory.</p>
+                        <button class="news-card__action-btn news-card__action-btn--danger" type="button" id="removeAdminBtn">Remove Admin Access</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-admin" data-panel="admin" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Administration</span>
+                        <h1 class="portal-view-title">Admin</h1>
+                        <p class="portal-view-intro">Review announcement and event requests from brothers before they go live.</p>
+                    </div>
+                </div>
+
+                <h2 class="portal-view-title portal-view-title--small">Pending Announcements</h2>
+                <div class="news-list" id="adminPendingAnnouncements"></div>
+
+                <h2 class="portal-view-title portal-view-title--small portal-view-title--spaced">Pending Events</h2>
+                <div class="news-list" id="adminPendingEvents"></div>
             </section>
         </main>
     </div>
@@ -532,6 +619,24 @@
             </div>
             <p class="profile-modal__bio" id="profile-modal-bio" hidden></p>
             <div class="profile-modal__grid" id="profile-modal-grid"></div>
+            <div class="profile-modal__admin-actions" id="profileModalAdminActions"></div>
+
+            <form class="profile-modal__edit" id="profileModalEditForm" hidden novalidate>
+                <div class="profile-photo-field">
+                    <span id="profileModalEditPhotoPreview"></span>
+                    <div>
+                        <label class="form-submit form-submit--inline form-submit--secondary" for="profile-modal-edit-photo-input">Change Photo</label>
+                        <input type="file" id="profile-modal-edit-photo-input" accept="image/*" hidden>
+                        <p class="profile-photo-field__hint">JPG or PNG. Square photos look best.</p>
+                    </div>
+                </div>
+                <div class="form-grid" id="profileModalEditFields"></div>
+                <p class="form-feedback" id="profileModalEditFeedback" role="status" aria-live="polite" hidden></p>
+                <div class="profile-modal__edit-actions">
+                    <button class="form-submit form-submit--secondary form-submit--inline" type="button" id="profileModalEditCancelBtn">Cancel</button>
+                    <button class="form-submit form-submit--inline" type="submit">Save Changes</button>
+                </div>
+            </form>
         </div>
     </dialog>
 
@@ -612,6 +717,97 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay" id="modal-pledge-class-form" aria-labelledby="modal-pledge-class-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-pledge-class-title">New Pledge Class</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="pledgeClassForm" novalidate>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="pledge-class-chapter">Chapter</label>
+                        <select class="form-select" id="pledge-class-chapter" name="chapter" required>
+                            <option value="">Select a chapter</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pledge-class-name">Class Name</label>
+                        <input class="form-input" id="pledge-class-name" name="className" type="text" placeholder="e.g. Alpha Iota Class" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pledge-class-term">Term</label>
+                        <select class="form-select" id="pledge-class-term" name="term" required>
+                            <option value="">Select a term</option>
+                            <option value="Fall">Fall</option>
+                            <option value="Spring">Spring</option>
+                            <option value="Summer">Summer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pledge-class-year">Year</label>
+                        <input class="form-input" id="pledge-class-year" name="year" type="number" min="1900" max="2100" required>
+                    </div>
+                </div>
+
+                <label class="form-label">Pledge Masters</label>
+                <div class="form-builder__options" id="pledgeMastersRows"></div>
+                <button class="news-card__action-btn" type="button" id="addPledgeMasterBtn">Add Another Pledge Master</button>
+
+                <div class="form-grid" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="pledge-warden-name">Pledge Warden Name</label>
+                        <input class="form-input" id="pledge-warden-name" name="pledgeWardenName" type="text">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="pledge-warden-pledge-name">Pledge Warden Pledge Name</label>
+                        <input class="form-input" id="pledge-warden-pledge-name" name="pledgeWardenPledgeName" type="text">
+                    </div>
+                </div>
+
+                <p class="form-error" id="pledge-class-form-error" role="alert" hidden></p>
+                <button class="form-submit" type="submit">Save Pledge Class</button>
+            </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal-overlay" id="modal-pledge-view" aria-labelledby="pledge-modal-name">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div class="profile-modal__header">
+                    <span id="pledgeModalAvatar"></span>
+                    <div>
+                        <h2 class="profile-modal__name" id="pledge-modal-name"></h2>
+                        <p class="profile-modal__pledge" id="pledge-modal-pledgename"></p>
+                    </div>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <p class="profile-modal__bio" id="pledge-modal-bio" hidden></p>
+            <div class="profile-modal__grid" id="pledge-modal-grid"></div>
+            <div class="profile-modal__admin-actions" id="pledgeModalAdminActions"></div>
+
+            <form class="profile-modal__edit" id="pledgeModalEditForm" hidden novalidate>
+                <div class="profile-photo-field">
+                    <span id="pledgeModalEditPhotoPreview"></span>
+                    <div>
+                        <label class="form-submit form-submit--inline form-submit--secondary" for="pledge-modal-edit-photo-input">Change Photo</label>
+                        <input type="file" id="pledge-modal-edit-photo-input" accept="image/*" hidden>
+                        <p class="profile-photo-field__hint">JPG or PNG. Square photos look best.</p>
+                    </div>
+                </div>
+                <div class="form-grid" id="pledgeModalEditFields"></div>
+                <p class="form-feedback" id="pledgeModalEditFeedback" role="status" aria-live="polite" hidden></p>
+                <div class="profile-modal__edit-actions">
+                    <button class="form-submit form-submit--secondary form-submit--inline" type="button" id="pledgeModalEditCancelBtn">Cancel</button>
+                    <button class="form-submit form-submit--inline" type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
     <dialog class="modal-overlay" id="modal-confirm" aria-labelledby="modalConfirmTitle" aria-describedby="modalConfirmBody">
         <div class="modal modal--confirm" role="alertdialog">
             <h2 class="modal__title" id="modalConfirmTitle">Are you sure?</h2>
@@ -637,6 +833,8 @@
     <script src="js/portal-events.js"></script>
     <script src="js/portal-forms.js"></script>
     <script src="js/portal-directory.js"></script>
+    <script src="js/portal-pledges.js"></script>
+    <script src="js/portal-admin.js"></script>
     <script src="js/portal-birthdays.js"></script>
     <script src="js/portal-overview.js"></script>
     <script src="js/portal-notifications.js"></script>

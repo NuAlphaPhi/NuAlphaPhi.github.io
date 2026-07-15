@@ -77,6 +77,7 @@
 
       var authorName = window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother");
       var isEdit = !!currentEditId;
+      var isAdmin = window.napIsAdmin();
       var writePromise;
       window.napSaveButtonStart(submitBtn, isEdit ? "Saving…" : "Posting…");
 
@@ -87,11 +88,14 @@
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
       } else {
+        /* Admin posts go live instantly; everyone else's wait in the Admin
+           tab's approval queue until an admin signs off. */
         writePromise = db.collection("announcements").add({
           authorUid: currentUid,
           authorName: authorName,
           title: title,
           body: body,
+          approved: isAdmin,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         });
@@ -99,7 +103,13 @@
 
       writePromise
         .then(function () {
-          window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
+          if (!isEdit && isAdmin && window.napQueueBrotherhoodEmail) {
+            window.napQueueBrotherhoodEmail(
+              "New announcement: " + title,
+              authorName + " posted a new announcement:\n\n" + title + "\n\n" + body + "\n\nRead it in the portal: https://nualphaphi.com/portal-home"
+            );
+          }
+          window.napSaveButtonDone(submitBtn, { savedLabel: isEdit || isAdmin ? "Saved" : "Sent for Approval" });
           window.setTimeout(function () {
             modal.close();
           }, 550);
@@ -158,6 +168,7 @@
 
     var isOwner = a.authorUid === currentUid;
     var comments = commentsById[id] || [];
+    var pendingBadge = a.approved === false ? '<span class="pending-badge">Pending Approval</span>' : "";
 
     var html =
       '<div class="news-card__meta">' +
@@ -165,7 +176,7 @@
       '<span class="news-card__date">' + formatDate(a.createdAt) + "</span>" +
       "</div>" +
       '<div class="news-card__header">' +
-      '<h3 class="news-card__title">' + escapeHtml(a.title) + "</h3>" +
+      '<h3 class="news-card__title">' + escapeHtml(a.title) + pendingBadge + "</h3>" +
       (isOwner
         ? '<div class="news-card__actions">' +
           '<button class="news-card__action-btn" type="button" data-edit-announcement="' + a.id + '" data-title="' + escapeHtml(a.title) + '" data-body="' + escapeHtml(a.body) + '">Edit</button>' +
@@ -495,9 +506,16 @@
     db.collection("announcements")
       .orderBy("createdAt", "desc")
       .onSnapshot(function (snap) {
-        allAnnouncements = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
-        });
+        /* Unapproved posts stay hidden from the feed, except to their own
+           author, who sees them with a "Pending Approval" badge. Docs from
+           before the approval feature (no approved field) count as approved. */
+        allAnnouncements = snap.docs
+          .map(function (doc) {
+            return Object.assign({ id: doc.id }, doc.data());
+          })
+          .filter(function (a) {
+            return a.approved !== false || a.authorUid === currentUid;
+          });
 
         var currentIds = allAnnouncements.map(function (a) {
           return a.id;

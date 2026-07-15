@@ -650,11 +650,17 @@
     } else {
       shareCollabSelect.disabled = false;
       shareAddCollabBtn.disabled = false;
-      shareCollabSelect.innerHTML = available
-        .map(function (b) {
-          return '<option value="' + escapeHtml(b.uid) + '">' + escapeHtml(window.napDisplayName(b, "Brother")) + "</option>";
-        })
-        .join("");
+      /* Explicit empty placeholder, always first and selected by default —
+         without this the <select> auto-selects whichever brother happens to
+         be first in the list, so clicking "Add" without deliberately
+         choosing someone would silently share with the wrong person. */
+      shareCollabSelect.innerHTML =
+        '<option value="">Choose a brother…</option>' +
+        available
+          .map(function (b) {
+            return '<option value="' + escapeHtml(b.uid) + '">' + escapeHtml(window.napDisplayName(b, "Brother")) + "</option>";
+          })
+          .join("");
     }
   }
 
@@ -676,11 +682,20 @@
   shareAddCollabBtn.addEventListener("click", function () {
     var uid = shareCollabSelect.value;
     if (!uid || !shareModalFormId) return;
+    var form = findForm(shareModalFormId);
     db.collection("forms")
       .doc(shareModalFormId)
       .update({
         collaboratorUids: firebase.firestore.FieldValue.arrayUnion(uid),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      })
+      .then(function () {
+        if (window.napNotifyFormShared) {
+          window.napNotifyFormShared({ recipientUid: uid, formId: shareModalFormId, formTitle: form ? form.title : "" });
+        }
+      })
+      .catch(function () {
+        window.alert("Couldn't add that collaborator. Please try again.");
       });
   });
 
@@ -710,6 +725,107 @@
   var responsesUnsub = null;
   var currentResponses = [];
   var selectedResponseId = null;
+
+  var exportCsvBtn = document.getElementById("formResponsesExportCsvBtn");
+  var exportPdfBtn = document.getElementById("formResponsesExportPdfBtn");
+
+  function safeFileName(title) {
+    return (title || "form-responses").trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "form-responses";
+  }
+
+  function answerPlainText(answer) {
+    if (answer === undefined || answer === null || answer === "") return "";
+    return Array.isArray(answer) ? answer.join(", ") : String(answer);
+  }
+
+  /* CSV: one row per response, one column per question, built and downloaded
+     entirely client-side — no server, no external library. */
+  function csvCell(value) {
+    var str = value === null || value === undefined ? "" : String(value);
+    if (/[",\n]/.test(str)) str = '"' + str.replace(/"/g, '""') + '"';
+    return str;
+  }
+
+  function exportResponsesCsv() {
+    var form = findForm(responsesPageFormId);
+    if (!form || !currentResponses.length) return;
+
+    var questions = form.questions || [];
+    var lines = [["Submitted At"].concat(questions.map(function (q) { return q.label; })).map(csvCell).join(",")];
+
+    currentResponses.forEach(function (r) {
+      var cells = [formatResponseTime(r.submittedAt)];
+      questions.forEach(function (q) {
+        cells.push(answerPlainText(r.answers ? r.answers[q.id] : undefined));
+      });
+      lines.push(cells.map(csvCell).join(","));
+    });
+
+    /* Leading BOM so Excel opens the UTF-8 file without mangling non-ASCII names. */
+    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = safeFileName(form.title) + "-responses.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /* PDF: rendered as a plain HTML page in a new tab, then handed to the
+     browser's own print dialog ("Save as PDF") — no PDF library to load,
+     and pagination across many responses/questions is the browser's problem,
+     not hand-rolled layout math. */
+  function exportResponsesPdf() {
+    var form = findForm(responsesPageFormId);
+    if (!form || !currentResponses.length) return;
+
+    var questions = form.questions || [];
+    var win = window.open("", "_blank");
+    if (!win) {
+      window.alert("Please allow pop-ups for this site to export as PDF.");
+      return;
+    }
+
+    var html =
+      "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" + escapeHtml(form.title || "Form Responses") + "</title><style>" +
+      "body{font-family:Arial,Helvetica,sans-serif;color:#222;max-width:800px;margin:0 auto;padding:2rem;}" +
+      "h1{font-size:1.4rem;margin:0 0 0.25rem;}" +
+      ".meta{color:#666;font-size:0.85rem;margin:0 0 2rem;}" +
+      ".response{border-bottom:1px solid #ddd;padding-bottom:1rem;margin-bottom:1.5rem;page-break-inside:avoid;}" +
+      ".response h2{font-size:0.95rem;color:#4c1e29;margin:0 0 0.75rem;}" +
+      ".qa{margin-bottom:0.6rem;}" +
+      ".qa .q{font-weight:600;font-size:0.85rem;margin:0 0 0.15rem;}" +
+      ".qa .a{margin:0;font-size:0.9rem;white-space:pre-wrap;}" +
+      "@media print{body{padding:0;}}" +
+      "</style></head><body>";
+    html += "<h1>" + escapeHtml(form.title || "Untitled form") + "</h1>";
+    html += '<p class="meta">' + currentResponses.length + " response" + (currentResponses.length === 1 ? "" : "s") + " &middot; exported " + escapeHtml(new Date().toLocaleString()) + "</p>";
+
+    currentResponses.forEach(function (r, i) {
+      html += '<div class="response"><h2>Response ' + (i + 1) + " &middot; " + escapeHtml(formatResponseTime(r.submittedAt)) + "</h2>";
+      questions.forEach(function (q) {
+        var text = answerPlainText(r.answers ? r.answers[q.id] : undefined);
+        html += '<div class="qa"><p class="q">' + escapeHtml(q.label) + '</p><p class="a">' + escapeHtml(text || "—") + "</p></div>";
+      });
+      html += "</div>";
+    });
+
+    html += "</body></html>";
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    /* Give the new tab a beat to actually paint before the print dialog steals focus. */
+    win.setTimeout(function () {
+      win.print();
+    }, 300);
+  }
+
+  if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportResponsesCsv);
+  if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportResponsesPdf);
 
   function answerText(answer) {
     if (answer === undefined || answer === null || answer === "") return "—";
@@ -789,6 +905,8 @@
 
     responsesPageTitleEl.textContent = form.title || "Responses";
     responsesPageCountEl.textContent = currentResponses.length + " response" + (currentResponses.length === 1 ? "" : "s");
+    if (exportCsvBtn) exportCsvBtn.disabled = !currentResponses.length;
+    if (exportPdfBtn) exportPdfBtn.disabled = !currentResponses.length;
 
     if (currentResponses.length && selectedResponseIndex() === -1) {
       selectedResponseId = currentResponses[0].id;
@@ -831,6 +949,11 @@
     currentResponses = [];
     selectedResponseId = null;
   }
+
+  /* Redirect target for the "a form was shared with you" notification. */
+  window.napOpenFormResponses = function (formId) {
+    openResponsesPage(formId);
+  };
 
   if (responsesBackBtn) {
     responsesBackBtn.addEventListener("click", function () {
@@ -876,20 +999,30 @@
   function startFormsListeners() {
     db.collection("forms")
       .where("createdByUid", "==", currentUid)
-      .onSnapshot(function (snap) {
-        myForms = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
-        });
-        renderFormsLists();
-      });
+      .onSnapshot(
+        function (snap) {
+          myForms = snap.docs.map(function (doc) {
+            return Object.assign({ id: doc.id }, doc.data());
+          });
+          renderFormsLists();
+        },
+        function () {
+          myListEl.innerHTML = '<p class="news-card__empty">Couldn’t load your forms — the site’s database permissions may need to be republished.</p>';
+        }
+      );
 
     db.collection("forms")
       .where("collaboratorUids", "array-contains", currentUid)
-      .onSnapshot(function (snap) {
-        sharedForms = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
-        });
-        renderFormsLists();
-      });
+      .onSnapshot(
+        function (snap) {
+          sharedForms = snap.docs.map(function (doc) {
+            return Object.assign({ id: doc.id }, doc.data());
+          });
+          renderFormsLists();
+        },
+        function () {
+          sharedListEl.innerHTML = '<p class="news-card__empty">Couldn’t load forms shared with you — the site’s database permissions may need to be republished.</p>';
+        }
+      );
   }
 })();

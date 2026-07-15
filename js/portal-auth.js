@@ -115,13 +115,47 @@
     document.addEventListener("nap:brothers-updated", handler);
   };
 
+  /* Disabled brothers (admin-removed accounts) are filtered out here, which
+     hides them from the directory, birthdays, author pickers, and email
+     blasts everywhere at once. */
   db.collection("users").onSnapshot(function (snap) {
-    window.NAP_ALL_BROTHERS = snap.docs.map(function (doc) {
-      return Object.assign({ uid: doc.id }, doc.data());
-    });
+    window.NAP_ALL_BROTHERS = snap.docs
+      .map(function (doc) {
+        return Object.assign({ uid: doc.id }, doc.data());
+      })
+      .filter(function (b) {
+        return b.disabled !== true;
+      });
     window.NAP_BROTHERS_READY = true;
     document.dispatchEvent(new CustomEvent("nap:brothers-updated"));
   });
+
+  window.napIsAdmin = function () {
+    return !!(window.NAP_CURRENT_PROFILE && window.NAP_CURRENT_PROFILE.isAdmin === true);
+  };
+
+  /* Queue one email per brother into the /mail collection, which the Firebase
+     "Trigger Email" extension picks up and sends. One doc per recipient keeps
+     addresses out of each other's To: lines. Brothers who turned off email
+     notifications in Settings (emailNotifications == false) are skipped.
+     If the extension isn't installed yet, the docs just sit there harmlessly. */
+  window.napQueueBrotherhoodEmail = function (subject, text) {
+    var recipients = (window.NAP_ALL_BROTHERS || []).filter(function (b) {
+      return b.email && b.emailNotifications !== false;
+    });
+    if (!recipients.length) return Promise.resolve();
+    var batch = db.batch();
+    recipients.forEach(function (b) {
+      batch.set(db.collection("mail").doc(), {
+        to: [b.email],
+        message: { subject: subject, text: text },
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    return batch.commit().catch(function () {
+      /* Email is best-effort — never block the post itself on it. */
+    });
+  };
 
   /* Renders a clickable "Name · Chapter · Semester Year" author badge, used on
      announcements, events, and comments. Falls back to the stored author name
@@ -260,6 +294,17 @@
 
     db.collection("users").doc(user.uid).get().then(function (snap) {
       var profile = snap.exists ? snap.data() : {};
+
+      /* Admin-removed account: sign them straight back out. Their Firebase
+         Auth login still exists (deleting that needs a server), but the
+         portal itself is a locked door. */
+      if (profile.disabled === true) {
+        auth.signOut().then(function () {
+          window.location.href = "portal";
+        });
+        return;
+      }
+
       window.NAP_CURRENT_PROFILE = profile;
 
       if (portalPledgeName) {
@@ -269,6 +314,9 @@
         portalUserAvatar.innerHTML = window.napAvatarHtml(profile, "sm");
       }
       if (portalApp) portalApp.hidden = false;
+
+      var adminNavBtn = document.getElementById("adminNavBtn");
+      if (adminNavBtn) adminNavBtn.hidden = profile.isAdmin !== true;
 
       window.NAP_AUTH_READY_DETAIL = { uid: user.uid, profile: profile };
       document.dispatchEvent(

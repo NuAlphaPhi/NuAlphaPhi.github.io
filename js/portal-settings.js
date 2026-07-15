@@ -95,8 +95,8 @@
       .doc(window.NAP_CURRENT_UID)
       .set(update, { merge: true })
       .then(function () {
-        window.NAP_CURRENT_PROFILE = Object.assign({}, window.NAP_CURRENT_PROFILE, update);
         pendingPhotoDataUrl = null;
+        window.NAP_CURRENT_PROFILE = Object.assign({}, window.NAP_CURRENT_PROFILE, update);
         var pledgeNameLabel = document.getElementById("portalPledgeName");
         if (pledgeNameLabel) {
           pledgeNameLabel.textContent = window.napDisplayName(window.NAP_CURRENT_PROFILE, "");

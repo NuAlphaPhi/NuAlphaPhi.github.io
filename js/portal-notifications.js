@@ -48,6 +48,25 @@
     });
   };
 
+  /* Called by portal-forms.js after a brother is added as a collaborator on
+     a form — otherwise they'd have no way to know a form was shared with
+     them short of happening to open the Forms tab themselves. */
+  window.napNotifyFormShared = function (opts) {
+    opts = opts || {};
+    if (!opts.recipientUid || opts.recipientUid === currentUid) return;
+
+    db.collection("notifications").add({
+      recipientUid: opts.recipientUid,
+      actorUid: currentUid,
+      actorName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
+      type: "form_shared",
+      postId: opts.formId,
+      postTitle: opts.formTitle || "",
+      read: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  };
+
   function renderBellDot() {
     var unreadCount = allNotifications.filter(function (n) {
       return !n.read;
@@ -66,15 +85,19 @@
     listEl.innerHTML = allNotifications
       .map(function (n) {
         var isEvent = n.type === "event_comment";
+        var isFormShare = n.type === "form_shared";
         var when = n.createdAt && n.createdAt.toDate ? window.napTimeAgo(n.createdAt.toDate()) : "";
+        var postType = isFormShare ? "form" : isEvent ? "event" : "announcement";
+        var text = isFormShare
+          ? "<strong>" + escapeHtml(n.actorName) + "</strong> shared the form “" + escapeHtml(n.postTitle) + "” with you"
+          : "<strong>" + escapeHtml(n.actorName) + "</strong> commented on " + (isEvent ? "your event " : "your announcement ") +
+            "“" + escapeHtml(n.postTitle) + "”: “" + escapeHtml(n.snippet) + "”";
         return (
           '<div class="notification-item' + (n.read ? "" : " is-unread") + '" data-notification-id="' + n.id + '">' +
           '<button class="notification-item__body" type="button" ' +
-          'data-post-type="' + (isEvent ? "event" : "announcement") + '" ' +
+          'data-post-type="' + postType + '" ' +
           'data-post-id="' + escapeHtml(n.postId) + '" data-comment-id="' + escapeHtml(n.commentId) + '">' +
-          '<p class="notification-item__text"><strong>' + escapeHtml(n.actorName) + "</strong> commented on " +
-          (isEvent ? "your event " : "your announcement ") +
-          '“' + escapeHtml(n.postTitle) + '”: “' + escapeHtml(n.snippet) + '”</p>' +
+          '<p class="notification-item__text">' + text + "</p>" +
           '<p class="notification-item__time">' + when + "</p>" +
           "</button>" +
           '<button class="notification-item__delete" type="button" data-delete-notification="' + n.id + '" aria-label="Delete notification">×</button>' +
@@ -169,6 +192,8 @@
       window.napOpenEvent(postId, { switchTab: true, expandComments: true, commentId: commentId });
     } else if (postType === "announcement" && window.napGoToAnnouncementComment) {
       window.napGoToAnnouncementComment(postId, commentId);
+    } else if (postType === "form" && window.napOpenFormResponses) {
+      window.napOpenFormResponses(postId);
     }
 
     db.collection("notifications").doc(item.getAttribute("data-notification-id")).delete();

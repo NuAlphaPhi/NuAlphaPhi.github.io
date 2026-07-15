@@ -5,49 +5,99 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Brother profiles: any signed-in brother can read (needed to show names on
-    // announcements/events/comments), only the owner can create/update their own doc.
-    match /users/{uid} {
-      allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
-      allow delete: if false;
+    // Admins are brothers whose own user doc carries isAdmin == true. The flag
+    // can only be set two ways (enforced below): another admin grants it, or
+    // the brother redeems the admin code — which lives HERE in the rules, not
+    // in the site's JS, so it isn't discoverable via View Source.
+    // .get() with a default everywhere a field may be absent: in rules,
+    // touching a missing property throws (which denies), it doesn't return null.
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
     }
 
+    // Brother profiles: any signed-in brother can read (needed to show names on
+    // announcements/events/comments). A brother manages their own doc; admins
+    // can edit anyone's (that's their "change info on other accounts" power)
+    // and can disable accounts. isAdmin/disabled are protected fields a normal
+    // brother can never set on themselves — except isAdmin via the code path.
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.get('isAdmin', false) != true
+        && request.resource.data.get('disabled', false) != true;
+      allow update: if isSignedIn() && (
+        isAdmin()
+        // Normal self-edit: anything except the protected fields, and only
+        // while the account isn't disabled.
+        || (request.auth.uid == uid
+          && resource.data.get('disabled', false) != true
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'disabled']))
+        // Admin-code redemption: may ONLY flip isAdmin (plus the transient
+        // adminCode field the client removes right afterwards).
+        || (request.auth.uid == uid
+          && resource.data.get('disabled', false) != true
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isAdmin', 'adminCode'])
+          && request.resource.data.get('isAdmin', false) == true
+          && request.resource.data.get('adminCode', '') == 'virodabest')
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Announcements go through admin approval: non-admins can only create with
+    // approved == false (a pending request), admins create approved == true
+    // directly. Only admins may ever change the approved field — an author
+    // editing their own post can touch anything except it.
     match /announcements/{id} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid
+        && (request.resource.data.get('approved', false) == false || (request.resource.data.get('approved', false) == true && isAdmin()));
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || (resource.data.authorUid == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved']))
+      );
+      allow delete: if isSignedIn() && (resource.data.authorUid == request.auth.uid || isAdmin());
 
-      // Delete is also allowed for the announcement's own author, not just the
-      // comment's — deleting an announcement cascades to delete every comment
-      // underneath it (see deleteAnnouncementCascade), including ones the
-      // announcement author didn't write themselves.
+      // Delete is also allowed for the announcement's own author and admins,
+      // not just the comment's author — deleting an announcement cascades to
+      // delete every comment underneath it (see deleteAnnouncementCascade),
+      // including ones the announcement author didn't write themselves.
       match /comments/{cid} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
         allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid;
         allow delete: if isSignedIn() && (
           resource.data.authorUid == request.auth.uid ||
-          get(/databases/$(database)/documents/announcements/$(id)).data.authorUid == request.auth.uid
+          get(/databases/$(database)/documents/announcements/$(id)).data.authorUid == request.auth.uid ||
+          isAdmin()
         );
       }
     }
 
+    // Events follow the same approval flow as announcements.
     match /events/{id} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.createdByUid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid
+        && (request.resource.data.get('approved', false) == false || (request.resource.data.get('approved', false) == true && isAdmin()));
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || (resource.data.createdByUid == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved']))
+      );
+      allow delete: if isSignedIn() && (resource.data.createdByUid == request.auth.uid || isAdmin());
 
       // RSVP doc ID must equal the writer's own uid for create/update — you can
       // only ever set your own RSVP. Delete is also allowed for the event's
-      // owner, since deleting an event cascades to delete every RSVP under it
-      // (see deleteEventCascade), including brothers' RSVPs other than their own.
+      // owner and admins, since deleting an event cascades to delete every RSVP
+      // under it (see deleteEventCascade), including other brothers' RSVPs.
       match /rsvps/{rsvpUid} {
         allow read: if isSignedIn();
         allow create, update: if isSignedIn() && request.auth.uid == rsvpUid;
         allow delete: if isSignedIn() && (
           request.auth.uid == rsvpUid ||
-          get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid
+          get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid ||
+          isAdmin()
         );
       }
 
@@ -58,9 +108,31 @@ service cloud.firestore {
         allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid;
         allow delete: if isSignedIn() && (
           resource.data.authorUid == request.auth.uid ||
-          get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid
+          get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid ||
+          isAdmin()
         );
       }
+    }
+
+    // Pledge classes + the pledges within them: every brother can read (this
+    // is brotherhood history, not private), but only admins can create or
+    // change any of it.
+    match /pledgeClasses/{classId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+
+      match /pledges/{pledgeId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // Outgoing email queue, consumed by the Firebase "Trigger Email" extension
+    // (which reads with admin privileges, bypassing these rules). Portal
+    // clients only ever enqueue; nobody can read the queue back.
+    match /mail/{id} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
     }
 
     // Comment notifications: the commenter (actor) creates the doc for the
@@ -102,7 +174,7 @@ service cloud.firestore {
       // Only the form's owner or collaborators can read the responses back.
       match /responses/{responseId} {
         allow create: if get(/databases/$(database)/documents/forms/$(formId)).data.published == true
-          && (get(/databases/$(database)/documents/forms/$(formId)).data.requireSignIn != true || isSignedIn());
+          && (get(/databases/$(database)/documents/forms/$(formId)).data.get('requireSignIn', false) != true || isSignedIn());
         allow read: if isSignedIn() && (
           get(/databases/$(database)/documents/forms/$(formId)).data.createdByUid == request.auth.uid ||
           (get(/databases/$(database)/documents/forms/$(formId)).data.collaboratorUids is list &&

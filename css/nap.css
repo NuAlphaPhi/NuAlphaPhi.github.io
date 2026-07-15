@@ -907,6 +907,10 @@ a:focus-visible {
   resize: vertical;
 }
 
+.form-submit[hidden] {
+  display: none;
+}
+
 .form-submit {
   display: inline-flex;
   align-items: center;
@@ -2620,6 +2624,11 @@ dialog.modal-overlay[open] .modal {
   transition: border-color var(--transition), color var(--transition);
 }
 
+.news-card__action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .news-card__action-btn:hover,
 .news-card__action-btn:focus-visible {
   border-color: var(--maroon);
@@ -2930,6 +2939,10 @@ dialog.modal-overlay[open] .modal {
    height (not min-height) + overflow hidden keeps this pinned to the
    viewport so the sidebar never scrolls away with the main content —
    only .portal-shell__main scrolls internally. */
+.portal-shell[hidden] {
+  display: none;
+}
+
 .portal-shell {
   display: flex;
   height: 100vh;
@@ -2980,6 +2993,10 @@ dialog.modal-overlay[open] .modal {
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
+}
+
+.portal-shell__nav-btn[hidden] {
+  display: none;
 }
 
 .portal-shell__nav-btn {
@@ -3046,6 +3063,10 @@ dialog.modal-overlay[open] .modal {
   justify-content: space-between;
   gap: 1.5rem;
   margin-bottom: 2rem;
+}
+
+.portal-view-header--spaced {
+  margin-top: 2.25rem;
 }
 
 .portal-view-title {
@@ -3257,6 +3278,39 @@ html[data-theme="dark"] .modal__img {
   margin-bottom: 1.5rem;
 }
 
+/* Approval workflow: badge on posts awaiting an admin's sign-off */
+.pending-badge {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.2rem 0.55rem;
+  vertical-align: middle;
+  background: var(--grey-100);
+  border: 1px solid var(--grey-200);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--grey-600);
+  white-space: nowrap;
+}
+
+/* Admin-only actions row at the bottom of the profile popup */
+.profile-modal__admin-actions[hidden] {
+  display: none;
+}
+
+.profile-modal__admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.profile-modal__admin-actions:empty {
+  display: none;
+}
+
 .profile-photo-field__hint {
   margin: 0.5rem 0 0;
   font-size: 0.8rem;
@@ -3379,10 +3433,30 @@ html[data-theme="dark"] .modal__img {
   line-height: 1.6;
 }
 
+.profile-modal__grid[hidden] {
+  display: none;
+}
+
 .profile-modal__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem 1.5rem;
+}
+
+.profile-modal__edit {
+  margin-top: 1.25rem;
+}
+
+.profile-modal__edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.profile-modal__edit-actions .form-submit {
+  width: auto;
+  margin-top: 0;
 }
 
 .profile-modal__field {

@@ -38,19 +38,29 @@
     return timestamp.toDate().toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
+  /* Fetch a few extra beyond the 3 shown so that filtering out pending
+     (unapproved) posts still leaves a full list. */
   db.collection("announcements")
     .orderBy("createdAt", "desc")
-    .limit(3)
+    .limit(10)
     .onSnapshot(function (snap) {
-      if (snap.empty) {
+      var recent = snap.docs
+        .map(function (doc) {
+          return Object.assign({ id: doc.id }, doc.data());
+        })
+        .filter(function (a) {
+          return a.approved !== false;
+        })
+        .slice(0, 3);
+
+      if (!recent.length) {
         announcementsListEl.innerHTML = '<p class="overview-card__empty">No announcements yet.</p>';
         return;
       }
-      announcementsListEl.innerHTML = snap.docs
-        .map(function (doc) {
-          var a = doc.data();
+      announcementsListEl.innerHTML = recent
+        .map(function (a) {
           return (
-            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-announcement="' + doc.id + '">' +
+            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-announcement="' + a.id + '">' +
             '<p class="overview-card__item-title">' + escapeHtml(a.title) + "</p>" +
             '<p class="overview-card__item-meta">' + escapeHtml(a.authorName) + " · " + formatDate(a.createdAt) + "</p>" +
             "</button>"
@@ -75,7 +85,7 @@
           return Object.assign({ id: doc.id }, doc.data());
         })
         .filter(function (ev) {
-          return ev.endAt.toDate() >= now;
+          return ev.endAt.toDate() >= now && ev.approved !== false;
         })
         .slice(0, 3);
 
@@ -120,7 +130,7 @@
         return Object.assign({ uid: doc.id }, doc.data());
       })
       .filter(function (b) {
-        return !!b.birthday;
+        return !!b.birthday && b.disabled !== true;
       })
       .map(function (b) {
         return { brother: b, days: daysUntilNextBirthday(b.birthday, today) };
