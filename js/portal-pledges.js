@@ -699,12 +699,21 @@
 
       var school = massAddSchoolEl ? massAddSchoolEl.value.trim() : "";
       var pledgesRef = db.collection("pledgeClasses").doc(currentClassId).collection("pledges");
+
+      // Number In Line follows paste order, continuing after whatever numbers
+      // already exist in the class so a mass-add never collides with them.
+      var existingNums = currentClassPledges
+        .map(function (p) { return Number(p.numberInLine); })
+        .filter(function (n) { return !isNaN(n); });
+      var nextNum = existingNums.length ? Math.max.apply(null, existingNums) + 1 : 1;
+
       var batch = db.batch();
-      parsed.rows.forEach(function (row) {
+      parsed.rows.forEach(function (row, i) {
         var docRef = pledgesRef.doc();
         var data = {
           name: row.name,
           pledgeName: row.pledgeName,
+          numberInLine: nextNum + i,
           createdByUid: currentUid,
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         };
