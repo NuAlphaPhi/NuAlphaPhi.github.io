@@ -127,6 +127,15 @@ service cloud.firestore {
       }
     }
 
+    // Family tree: lineage (who picked up whom) across every chapter and
+    // year. Every brother can read; only admins can add, edit, or delete
+    // nodes. bigId points at the parent node's doc id, or is absent/null
+    // for a lineage root.
+    match /familyTree/{memberId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     // Outgoing email queue, consumed by the Firebase "Trigger Email" extension
     // (which reads with admin privileges, bypassing these rules). Portal
     // clients only ever enqueue; nobody can read the queue back.
