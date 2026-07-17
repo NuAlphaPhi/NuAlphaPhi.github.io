@@ -47,6 +47,15 @@
     });
   }
 
+  // Classes created before multi-warden support only have a single
+  // `pledgeWarden` object; fold that into the array shape everywhere else reads.
+  function wardensOf(cls) {
+    if (!cls) return [];
+    if (cls.pledgeWardens && cls.pledgeWardens.length) return cls.pledgeWardens;
+    if (cls.pledgeWarden && cls.pledgeWarden.name) return [cls.pledgeWarden];
+    return [];
+  }
+
   window.napOnAuthReady(function (detail) {
     currentUid = detail.uid;
     if (!started) {
@@ -188,6 +197,8 @@
   var classChapterSelect = document.getElementById("pledge-class-chapter");
   var pledgeMastersRowsEl = document.getElementById("pledgeMastersRows");
   var addPledgeMasterBtn = document.getElementById("addPledgeMasterBtn");
+  var pledgeWardensRowsEl = document.getElementById("pledgeWardensRows");
+  var addPledgeWardenBtn = document.getElementById("addPledgeWardenBtn");
 
   window.NAP_CHAPTERS.forEach(function (chapter) {
     var opt = document.createElement("option");
@@ -238,6 +249,47 @@
     renderPledgeMasterRows();
   });
 
+  var pledgeWardenRows = [];
+
+  function renderPledgeWardenRows() {
+    pledgeWardensRowsEl.innerHTML = pledgeWardenRows
+      .map(function (row, i) {
+        return (
+          '<div class="form-builder__option-row" data-warden-index="' + i + '">' +
+          '<input class="form-input" data-warden-name placeholder="Pledge Warden Name" value="' + escapeHtml(row.name) + '">' +
+          '<input class="form-input" data-warden-pledgename placeholder="Pledge Warden Pledge Name" value="' + escapeHtml(row.pledgeName) + '">' +
+          (pledgeWardenRows.length > 1
+            ? '<button class="form-builder__option-remove" type="button" data-remove-warden aria-label="Remove pledge warden">&times;</button>'
+            : "") +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  pledgeWardensRowsEl.addEventListener("input", function (e) {
+    var row = e.target.closest("[data-warden-index]");
+    if (!row) return;
+    var idx = Number(row.getAttribute("data-warden-index"));
+    if (!pledgeWardenRows[idx]) return;
+    if (e.target.hasAttribute("data-warden-name")) pledgeWardenRows[idx].name = e.target.value;
+    if (e.target.hasAttribute("data-warden-pledgename")) pledgeWardenRows[idx].pledgeName = e.target.value;
+  });
+
+  pledgeWardensRowsEl.addEventListener("click", function (e) {
+    var removeBtn = e.target.closest("[data-remove-warden]");
+    if (!removeBtn) return;
+    var row = removeBtn.closest("[data-warden-index]");
+    var idx = Number(row.getAttribute("data-warden-index"));
+    pledgeWardenRows.splice(idx, 1);
+    renderPledgeWardenRows();
+  });
+
+  addPledgeWardenBtn.addEventListener("click", function () {
+    pledgeWardenRows.push({ name: "", pledgeName: "" });
+    renderPledgeWardenRows();
+  });
+
   function openClassModal(cls) {
     currentEditClassId = cls ? cls.id : null;
     classModalTitleEl.textContent = cls ? "Edit Pledge Class" : "New Pledge Class";
@@ -246,8 +298,6 @@
     classForm.querySelector('[name="className"]').value = cls ? cls.className : "";
     classForm.querySelector('[name="term"]').value = cls ? cls.term : "";
     classForm.querySelector('[name="year"]').value = cls ? cls.year : "";
-    classForm.querySelector('[name="pledgeWardenName"]').value = (cls && cls.pledgeWarden && cls.pledgeWarden.name) || "";
-    classForm.querySelector('[name="pledgeWardenPledgeName"]').value = (cls && cls.pledgeWarden && cls.pledgeWarden.pledgeName) || "";
     classForm.querySelector('[name="crossed"]').checked = !!(cls && cls.crossed);
 
     pledgeMasterRows =
@@ -260,6 +310,14 @@
             { name: "", pledgeName: "" },
           ];
     renderPledgeMasterRows();
+
+    var existingWardens = wardensOf(cls);
+    pledgeWardenRows = existingWardens.length
+      ? existingWardens.map(function (w) {
+          return { name: w.name || "", pledgeName: w.pledgeName || "" };
+        })
+      : [{ name: "", pledgeName: "" }];
+    renderPledgeWardenRows();
 
     classFormErrorEl.hidden = true;
     classModal.showModal();
@@ -278,8 +336,6 @@
     var className = classForm.querySelector('[name="className"]').value.trim();
     var term = classForm.querySelector('[name="term"]').value;
     var year = classForm.querySelector('[name="year"]').value;
-    var wardenName = classForm.querySelector('[name="pledgeWardenName"]').value.trim();
-    var wardenPledgeName = classForm.querySelector('[name="pledgeWardenPledgeName"]').value.trim();
     var crossed = classForm.querySelector('[name="crossed"]').checked;
 
     if (!chapter || !className || !term || !year) {
@@ -302,8 +358,16 @@
       return;
     }
 
-    if (!wardenName) {
-      classFormErrorEl.textContent = "Enter the pledge warden's name.";
+    var cleanedWardens = pledgeWardenRows
+      .map(function (w) {
+        return { name: w.name.trim(), pledgeName: w.pledgeName.trim() };
+      })
+      .filter(function (w) {
+        return w.name;
+      });
+
+    if (!cleanedWardens.length) {
+      classFormErrorEl.textContent = "Add at least one pledge warden.";
       classFormErrorEl.hidden = false;
       return;
     }
@@ -316,7 +380,7 @@
       term: term,
       year: Number(year),
       pledgeMasters: cleanedMasters,
-      pledgeWarden: { name: wardenName, pledgeName: wardenPledgeName },
+      pledgeWardens: cleanedWardens,
       crossed: crossed,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
@@ -406,13 +470,18 @@
         return m.name + (m.pledgeName ? ' "' + m.pledgeName + '"' : "");
       })
       .join(", ");
-    var warden = cls.pledgeWarden ? cls.pledgeWarden.name + (cls.pledgeWarden.pledgeName ? ' "' + cls.pledgeWarden.pledgeName + '"' : "") : "";
+    var wardenList = wardensOf(cls);
+    var wardens = wardenList
+      .map(function (w) {
+        return w.name + (w.pledgeName ? ' "' + w.pledgeName + '"' : "");
+      })
+      .join(", ");
 
     var infoFields = [
       ["Chapter", cls.chapter],
       ["Term", cls.term + " " + cls.year],
       ["Pledge Master" + ((cls.pledgeMasters || []).length > 1 ? "s" : ""), masters],
-      ["Pledge Warden", warden],
+      ["Pledge Warden" + (wardenList.length > 1 ? "s" : ""), wardens],
     ];
 
     pledgeClassInfoGridEl.innerHTML = infoFields
