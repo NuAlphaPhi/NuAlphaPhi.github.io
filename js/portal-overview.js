@@ -6,6 +6,7 @@
   if (!grid) return;
 
   var nudgeEl = document.getElementById("overviewNudge");
+  var statsEl = document.getElementById("overviewStats");
 
   function escapeHtml(value) {
     var div = document.createElement("div");
@@ -25,13 +26,44 @@
   birthdaysCard.className = "overview-card";
   birthdaysCard.innerHTML = '<h2 class="overview-card__title">Birthdays</h2><div class="overview-card__list" id="overviewBirthdays"></div>';
 
+  var chaptersCard = document.createElement("div");
+  chaptersCard.className = "overview-card";
+  chaptersCard.innerHTML = '<h2 class="overview-card__title">Chapters</h2><div class="chapter-bars" id="overviewChapters"></div>';
+
   grid.appendChild(announcementsCard);
   grid.appendChild(eventsCard);
   grid.appendChild(birthdaysCard);
+  grid.appendChild(chaptersCard);
 
   var announcementsListEl = document.getElementById("overviewAnnouncements");
   var eventsListEl = document.getElementById("overviewEvents");
   var birthdaysListEl = document.getElementById("overviewBirthdays");
+  var chaptersListEl = document.getElementById("overviewChapters");
+
+  /* Stats tiles pull from whichever of the three listeners below last
+     reported in — each updates its own slice and re-renders the row. */
+  var stats = { brothers: null, chapters: null, upcomingEvents: null, birthdaysThisMonth: null };
+
+  function renderStats() {
+    if (!statsEl) return;
+    var tiles = [
+      ["Active Brothers", stats.brothers],
+      ["Chapters Active", stats.chapters],
+      ["Upcoming Events", stats.upcomingEvents],
+      ["Birthdays This Month", stats.birthdaysThisMonth],
+    ];
+    statsEl.innerHTML = tiles
+      .map(function (t) {
+        return (
+          '<div class="stat-tile">' +
+          '<p class="stat-tile__value">' + (t[1] === null ? "—" : t[1]) + "</p>" +
+          '<p class="stat-tile__label">' + t[0] + "</p>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+  renderStats();
 
   function formatDate(timestamp) {
     if (!timestamp || !timestamp.toDate) return "";
@@ -80,14 +112,18 @@
     .limit(15)
     .onSnapshot(function (snap) {
       var now = new Date();
-      var upcoming = snap.docs
+      var upcomingAll = snap.docs
         .map(function (doc) {
           return Object.assign({ id: doc.id }, doc.data());
         })
         .filter(function (ev) {
           return ev.endAt.toDate() >= now && ev.approved !== false;
-        })
-        .slice(0, 3);
+        });
+
+      stats.upcomingEvents = upcomingAll.length;
+      renderStats();
+
+      var upcoming = upcomingAll.slice(0, 3);
 
       if (!upcoming.length) {
         eventsListEl.innerHTML = '<p class="overview-card__empty">Nothing on the calendar yet.</p>';
@@ -125,12 +161,57 @@
 
   db.collection("users").onSnapshot(function (snap) {
     var today = new Date();
-    var upcoming = snap.docs
+    var allBrothers = snap.docs
       .map(function (doc) {
         return Object.assign({ uid: doc.id }, doc.data());
       })
       .filter(function (b) {
-        return !!b.birthday && b.disabled !== true;
+        return b.disabled !== true;
+      });
+
+    stats.brothers = allBrothers.length;
+    stats.birthdaysThisMonth = allBrothers.filter(function (b) {
+      return !!b.birthday && Number(b.birthday.split("-")[1]) - 1 === today.getMonth();
+    }).length;
+
+    var chapterCounts = window.NAP_CHAPTERS.map(function (chapter) {
+      return {
+        chapter: chapter,
+        count: allBrothers.filter(function (b) {
+          return b.chapter === chapter;
+        }).length,
+      };
+    }).filter(function (c) {
+      return c.count > 0;
+    });
+    stats.chapters = chapterCounts.length;
+    renderStats();
+
+    if (chaptersListEl) {
+      if (!chapterCounts.length) {
+        chaptersListEl.innerHTML = '<p class="overview-card__empty">No chapter data yet.</p>';
+      } else {
+        var maxCount = Math.max.apply(null, chapterCounts.map(function (c) { return c.count; }));
+        chaptersListEl.innerHTML = chapterCounts
+          .map(function (c) {
+            var pct = Math.round((c.count / maxCount) * 100);
+            return (
+              '<div>' +
+              '<div class="chapter-bar__row">' +
+              '<span class="chapter-bar__name">' + escapeHtml(c.chapter) + "</span>" +
+              '<span class="chapter-bar__count">' + c.count + "</span>" +
+              "</div>" +
+              '<div class="chapter-bar__track"><div class="chapter-bar__fill" style="width:' + pct + '%"></div></div>' +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+    }
+
+    var upcoming = allBrothers
+      .filter(function (b) {
+        return !!b.birthday;
       })
       .map(function (b) {
         return { brother: b, days: daysUntilNextBirthday(b.birthday, today) };

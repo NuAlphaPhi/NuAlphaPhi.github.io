@@ -3669,6 +3669,94 @@ html[data-theme="dark"] .modal__img {
   letter-spacing: 0.04em;
 }
 
+/* Stat tiles — used on Overview and Birthdays */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.stat-tiles[hidden] {
+  display: none;
+}
+
+.stat-tile {
+  padding: 1.1rem 1.25rem;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+}
+
+.stat-tile__value {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--maroon);
+  line-height: 1.1;
+}
+
+.stat-tile__label {
+  margin: 0.3rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--grey-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Chapter breakdown bars (Overview "Chapters" card) */
+.chapter-bars {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.chapter-bar__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.chapter-bar__name {
+  font-weight: 600;
+  color: var(--black);
+}
+
+.chapter-bar__count {
+  color: var(--grey-400);
+}
+
+.chapter-bar__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--grey-100);
+  overflow: hidden;
+}
+
+.chapter-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--maroon);
+}
+
+/* Birthdays — month group headers (sit inside .birthday-list's grid, whose
+   gap already spaces them from the item above/below) */
+.birthday-month-heading {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--grey-600);
+}
+
+.birthday-month-heading:first-child {
+  margin-top: 0;
+}
+
 /* Overview */
 .overview-nudge {
   display: flex;
