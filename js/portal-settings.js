@@ -26,6 +26,7 @@
     "bigName",
     "bigPledgeName",
     "occupation",
+    "school",
     "major",
     "graduationYear",
     "hometown",
