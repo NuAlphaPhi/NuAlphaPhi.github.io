@@ -440,6 +440,7 @@
   var pledgeClassInfoGridEl = document.getElementById("pledgeClassInfoGrid");
   var pledgeClassBackBtn = document.getElementById("pledgeClassBackBtn");
   var newPledgeBtn = document.getElementById("newPledgeBtn");
+  var massAddPledgesBtn = document.getElementById("massAddPledgesBtn");
   var pledgeGridEl = document.getElementById("pledgeGrid");
 
   var currentClassId = null;
@@ -559,6 +560,7 @@
   function renderPledgeGrid() {
     var admin = isAdmin();
     if (newPledgeBtn) newPledgeBtn.hidden = !admin;
+    if (massAddPledgesBtn) massAddPledgesBtn.hidden = !admin;
 
     if (!currentClassPledges.length) {
       pledgeGridEl.innerHTML = '<p class="directory-empty">No pledges added yet.</p>';
@@ -606,6 +608,126 @@
   if (newPledgeBtn) {
     newPledgeBtn.addEventListener("click", function () {
       openPledgeProfile(null);
+    });
+  }
+
+  /* ---------- Mass Add: paste "Pledge Name<tab>First Last" rows ---------- */
+  var massAddModal = document.getElementById("modal-pledge-mass-add");
+  var massAddForm = document.getElementById("pledgeMassAddForm");
+  var massAddTextEl = document.getElementById("pledge-mass-add-text");
+  var massAddSchoolEl = document.getElementById("pledge-mass-add-school");
+  var massAddPreviewEl = document.getElementById("pledgeMassAddPreview");
+  var massAddErrorEl = document.getElementById("pledge-mass-add-error");
+  var massAddSubmitBtn = massAddForm ? massAddForm.querySelector('button[type="submit"]') : null;
+
+  // Splits one line into [pledgeName, ...nameParts] — tabs first (pasting
+  // from a spreadsheet), falling back to whitespace so plain typed rows work.
+  function splitMassAddRow(line) {
+    var tabParts = line
+      .split("\t")
+      .map(function (p) { return p.trim(); })
+      .filter(Boolean);
+    if (tabParts.length >= 2) return tabParts;
+    return line.trim().split(/\s+/).filter(Boolean);
+  }
+
+  function parseMassAddText(text) {
+    var lines = text.split(/\r?\n/).filter(function (line) {
+      return line.trim() !== "";
+    });
+    var rows = [];
+    var badLines = [];
+    lines.forEach(function (line, i) {
+      var parts = splitMassAddRow(line);
+      if (parts.length < 2) {
+        badLines.push(i + 1);
+        return;
+      }
+      rows.push({ pledgeName: parts[0], name: parts.slice(1).join(" ") });
+    });
+    return { rows: rows, badLines: badLines };
+  }
+
+  if (massAddPledgesBtn) {
+    massAddPledgesBtn.addEventListener("click", function () {
+      if (massAddForm) massAddForm.reset();
+      if (massAddErrorEl) massAddErrorEl.hidden = true;
+      if (massAddPreviewEl) massAddPreviewEl.hidden = true;
+      massAddModal.showModal();
+    });
+  }
+
+  if (massAddTextEl) {
+    massAddTextEl.addEventListener("input", function () {
+      var parsed = parseMassAddText(massAddTextEl.value);
+      if (!massAddPreviewEl) return;
+      if (!parsed.rows.length && !parsed.badLines.length) {
+        massAddPreviewEl.hidden = true;
+        return;
+      }
+      massAddPreviewEl.hidden = false;
+      massAddPreviewEl.className = "form-feedback";
+      massAddPreviewEl.textContent =
+        "Will add " + parsed.rows.length + " pledge" + (parsed.rows.length === 1 ? "" : "s") +
+        (parsed.badLines.length ? " — line" + (parsed.badLines.length === 1 ? " " : "s ") + parsed.badLines.join(", ") + " need a pledge name and a real name." : ".");
+    });
+  }
+
+  if (massAddForm) {
+    massAddForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!currentClassId) return;
+
+      var parsed = parseMassAddText(massAddTextEl.value);
+      if (massAddErrorEl) massAddErrorEl.hidden = true;
+
+      if (parsed.badLines.length) {
+        if (massAddErrorEl) {
+          massAddErrorEl.textContent = "Line" + (parsed.badLines.length === 1 ? " " : "s ") + parsed.badLines.join(", ") + " need both a pledge name and a real name — fix or remove " + (parsed.badLines.length === 1 ? "it" : "them") + " before adding.";
+          massAddErrorEl.hidden = false;
+        }
+        return;
+      }
+
+      if (!parsed.rows.length) {
+        if (massAddErrorEl) {
+          massAddErrorEl.textContent = "Paste at least one pledge — pledge name, then real name.";
+          massAddErrorEl.hidden = false;
+        }
+        return;
+      }
+
+      var school = massAddSchoolEl ? massAddSchoolEl.value.trim() : "";
+      var pledgesRef = db.collection("pledgeClasses").doc(currentClassId).collection("pledges");
+      var batch = db.batch();
+      parsed.rows.forEach(function (row) {
+        var docRef = pledgesRef.doc();
+        var data = {
+          name: row.name,
+          pledgeName: row.pledgeName,
+          createdByUid: currentUid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+        if (school) data.school = school;
+        batch.set(docRef, data);
+      });
+
+      window.napSaveButtonStart(massAddSubmitBtn, "Adding…");
+      batch
+        .commit()
+        .then(function () {
+          window.napSaveButtonDone(massAddSubmitBtn, { savedLabel: "Added" });
+          window.setTimeout(function () {
+            massAddModal.close();
+          }, 550);
+        })
+        .catch(function () {
+          window.napSaveButtonDone(massAddSubmitBtn, { error: true });
+          if (massAddErrorEl) {
+            massAddErrorEl.textContent = "Something went wrong. Please try again.";
+            massAddErrorEl.hidden = false;
+          }
+        });
     });
   }
 

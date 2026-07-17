@@ -281,7 +281,10 @@
 
                 <div class="portal-view-header portal-view-header--spaced">
                     <h2 class="portal-view-title portal-view-title--small">Pledges</h2>
-                    <button class="form-submit form-submit--small" id="newPledgeBtn" type="button" hidden>Add Pledge</button>
+                    <div class="news-card__actions">
+                        <button class="news-card__action-btn" id="massAddPledgesBtn" type="button" hidden>Mass Add</button>
+                        <button class="form-submit form-submit--small" id="newPledgeBtn" type="button" hidden>Add Pledge</button>
+                    </div>
                 </div>
                 <div class="directory-grid" id="pledgeGrid"></div>
             </section>
@@ -837,6 +840,30 @@
                     <button class="form-submit form-submit--secondary form-submit--inline" type="button" id="pledgeModalEditCancelBtn">Cancel</button>
                     <button class="form-submit form-submit--inline" type="submit">Save Changes</button>
                 </div>
+            </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal-overlay" id="modal-pledge-mass-add" aria-labelledby="modal-pledge-mass-add-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-pledge-mass-add-title">Mass Add Pledges</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="pledgeMassAddForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="pledge-mass-add-text">One pledge per line: Pledge Name, then First Name, Last Name (tab or space separated)</label>
+                    <textarea class="form-textarea" id="pledge-mass-add-text" name="rows" rows="10" placeholder="Smokey&#9;Anthony&#9;Chang&#10;Shaolin&#9;Dave&#9;Ferrer"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="pledge-mass-add-school">School (applied to everyone added)</label>
+                    <input class="form-input" id="pledge-mass-add-school" name="school" type="text" placeholder="Optional — e.g. UC Berkeley">
+                </div>
+                <p class="form-feedback" id="pledgeMassAddPreview" role="status" aria-live="polite" hidden></p>
+                <p class="form-error" id="pledge-mass-add-error" role="alert" hidden></p>
+                <button class="form-submit" type="submit">Add Pledges</button>
             </form>
         </div>
     </dialog>
