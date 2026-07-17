@@ -802,6 +802,23 @@ a:focus-visible {
   color: var(--black);
 }
 
+.form-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--black);
+  cursor: pointer;
+}
+
+.form-checkbox-row input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #991b1b;
+  cursor: pointer;
+}
+
 .form-input,
 .form-textarea,
 .form-select {
@@ -3368,6 +3385,19 @@ html[data-theme="dark"] .modal__img {
   gap: 1rem;
 }
 
+.pledges-section-heading {
+  margin: 2rem 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--black);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--grey-200);
+}
+
+.pledges-section-heading[hidden] {
+  display: none;
+}
+
 .bro-card {
   display: flex;
   align-items: center;
@@ -3399,6 +3429,28 @@ html[data-theme="dark"] .modal__img {
   color: var(--grey-600);
 }
 
+.bro-card__line {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--maroon);
+}
+
+.bro-card--dropped {
+  background: #fef2f2;
+  border-color: #991b1b;
+}
+
+.bro-card--dropped:hover,
+.bro-card--dropped:focus-visible {
+  border-color: #991b1b;
+}
+
+.bro-card--dropped .bro-card__name,
+.bro-card--dropped .bro-card__meta,
+.bro-card--dropped .bro-card__line {
+  color: #991b1b;
+}
+
 .directory-empty {
   padding: 2rem 1rem;
   text-align: center;
@@ -3425,6 +3477,15 @@ html[data-theme="dark"] .modal__img {
   color: var(--maroon);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.profile-modal__name--dropped {
+  color: #991b1b;
+}
+
+.profile-modal__field-value--danger {
+  color: #991b1b;
+  font-weight: 700;
 }
 
 .profile-modal__bio {

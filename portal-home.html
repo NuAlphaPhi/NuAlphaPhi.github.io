@@ -261,6 +261,9 @@
                     <button class="form-submit form-submit--small" id="newPledgeClassBtn" type="button" hidden>New Pledge Class</button>
                 </div>
                 <div class="forms-grid" id="pledgeClassGrid"></div>
+
+                <h2 class="pledges-section-heading" id="pastPledgeClassesHeading" hidden>Past Pledge Classes</h2>
+                <div class="forms-grid" id="pastPledgeClassGrid"></div>
             </section>
 
             <section class="portal-tab-panel" id="panel-pledge-class" data-panel="pledge-class" hidden>
@@ -795,6 +798,13 @@
                         <label class="form-label" for="pledge-warden-pledge-name">Pledge Warden Pledge Name</label>
                         <input class="form-input" id="pledge-warden-pledge-name" name="pledgeWardenPledgeName" type="text">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-checkbox-row" for="pledge-class-crossed">
+                        <input type="checkbox" id="pledge-class-crossed" name="crossed">
+                        <span>This class has crossed — move to Past Pledge Classes</span>
+                    </label>
                 </div>
 
                 <p class="form-error" id="pledge-class-form-error" role="alert" hidden></p>

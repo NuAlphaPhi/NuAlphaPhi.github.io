@@ -9,7 +9,23 @@
   var classGridEl = document.getElementById("pledgeClassGrid");
   if (!classGridEl) return;
 
+  var pastClassGridEl = document.getElementById("pastPledgeClassGrid");
+  var pastClassHeadingEl = document.getElementById("pastPledgeClassesHeading");
   var newClassBtn = document.getElementById("newPledgeClassBtn");
+
+  // Chronological rank within a year, for "most recent first" sorting —
+  // Spring runs before Summer which runs before Fall on the calendar.
+  var TERM_RANK = { Spring: 0, Summer: 1, Fall: 2 };
+
+  function sortClassesRecentFirst(classes) {
+    return classes.slice().sort(function (a, b) {
+      return (
+        (b.year || 0) - (a.year || 0) ||
+        (TERM_RANK.hasOwnProperty(b.term) ? TERM_RANK[b.term] : -1) - (TERM_RANK.hasOwnProperty(a.term) ? TERM_RANK[a.term] : -1) ||
+        (a.className || "").localeCompare(b.className || "")
+      );
+    });
+  }
 
   var currentUid = null;
   var allClasses = [];
@@ -66,7 +82,7 @@
       '<h3 class="forms-card__title">' + escapeHtml(cls.className) + "</h3>" +
       '<span class="forms-card__badge is-published">' + escapeHtml(cls.chapter) + "</span>" +
       "</div>";
-    html += '<p class="forms-card__meta">' + escapeHtml(cls.term) + " " + escapeHtml(cls.year) + "</p>";
+    html += '<p class="forms-card__meta">' + escapeHtml(cls.term) + " " + escapeHtml(cls.year) + (cls.crossed ? " · Crossed" : "") + "</p>";
     html += '<div class="forms-card__actions">';
     html += '<button class="news-card__action-btn" type="button" data-class-open="' + cls.id + '">View Pledges</button>';
     if (admin) {
@@ -84,20 +100,37 @@
 
     if (!allClasses.length) {
       classGridEl.innerHTML = '<p class="news-card__empty">No pledge classes yet.</p>';
+      if (pastClassGridEl) pastClassGridEl.innerHTML = "";
+      if (pastClassHeadingEl) pastClassHeadingEl.hidden = true;
       return;
     }
 
-    var sorted = allClasses.slice().sort(function (a, b) {
-      return (b.year || 0) - (a.year || 0) || (a.className || "").localeCompare(b.className || "");
+    var active = allClasses.filter(function (c) {
+      return !c.crossed;
     });
-    classGridEl.innerHTML = sorted
-      .map(function (cls) {
-        return classCardHtml(cls, admin);
-      })
-      .join("");
+    var past = allClasses.filter(function (c) {
+      return !!c.crossed;
+    });
+
+    classGridEl.innerHTML = active.length
+      ? sortClassesRecentFirst(active)
+          .map(function (cls) {
+            return classCardHtml(cls, admin);
+          })
+          .join("")
+      : '<p class="news-card__empty">No pledge classes yet.</p>';
+
+    if (pastClassGridEl) {
+      pastClassGridEl.innerHTML = sortClassesRecentFirst(past)
+        .map(function (cls) {
+          return classCardHtml(cls, admin);
+        })
+        .join("");
+    }
+    if (pastClassHeadingEl) pastClassHeadingEl.hidden = !past.length;
   }
 
-  classGridEl.addEventListener("click", function (e) {
+  function onClassGridClick(e) {
     var openBtn = e.target.closest("[data-class-open]");
     var editBtn = e.target.closest("[data-class-edit]");
     var deleteBtn = e.target.closest("[data-class-delete]");
@@ -117,7 +150,10 @@
         if (confirmed) deleteClassCascade(classId);
       });
     }
-  });
+  }
+
+  classGridEl.addEventListener("click", onClassGridClick);
+  if (pastClassGridEl) pastClassGridEl.addEventListener("click", onClassGridClick);
 
   function deleteClassCascade(classId) {
     var classRef = db.collection("pledgeClasses").doc(classId);
@@ -212,6 +248,7 @@
     classForm.querySelector('[name="year"]').value = cls ? cls.year : "";
     classForm.querySelector('[name="pledgeWardenName"]').value = (cls && cls.pledgeWarden && cls.pledgeWarden.name) || "";
     classForm.querySelector('[name="pledgeWardenPledgeName"]').value = (cls && cls.pledgeWarden && cls.pledgeWarden.pledgeName) || "";
+    classForm.querySelector('[name="crossed"]').checked = !!(cls && cls.crossed);
 
     pledgeMasterRows =
       cls && cls.pledgeMasters && cls.pledgeMasters.length
@@ -243,6 +280,7 @@
     var year = classForm.querySelector('[name="year"]').value;
     var wardenName = classForm.querySelector('[name="pledgeWardenName"]').value.trim();
     var wardenPledgeName = classForm.querySelector('[name="pledgeWardenPledgeName"]').value.trim();
+    var crossed = classForm.querySelector('[name="crossed"]').checked;
 
     if (!chapter || !className || !term || !year) {
       classFormErrorEl.textContent = "Fill out chapter, class name, term, and year.";
@@ -279,6 +317,7 @@
       year: Number(year),
       pledgeMasters: cleanedMasters,
       pledgeWarden: { name: wardenName, pledgeName: wardenPledgeName },
+      crossed: crossed,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -435,17 +474,28 @@
       return;
     }
 
+    var bounds = lineBounds(currentClassPledges);
     var sorted = currentClassPledges.slice().sort(function (a, b) {
+      var aDropped = !!a.dropped, bDropped = !!b.dropped;
+      if (aDropped !== bDropped) return aDropped ? 1 : -1;
+      var aNum = a.numberInLine === null || a.numberInLine === undefined || a.numberInLine === "" || isNaN(Number(a.numberInLine)) ? Infinity : Number(a.numberInLine);
+      var bNum = b.numberInLine === null || b.numberInLine === undefined || b.numberInLine === "" || isNaN(Number(b.numberInLine)) ? Infinity : Number(b.numberInLine);
+      if (aNum !== bNum) return aNum - bNum;
       return (a.name || "").localeCompare(b.name || "");
     });
     pledgeGridEl.innerHTML = sorted
       .map(function (p) {
+        var dropped = !!p.dropped;
+        var lineLabel = numberInLineLabel(p, bounds);
+        var metaHtml = dropped
+          ? "Dropped"
+          : [escapeHtml(p.pledgeName), escapeHtml(p.school)].filter(Boolean).join(" · ");
         return (
-          '<button class="bro-card" type="button" data-pledge-id="' + p.id + '">' +
+          '<button class="bro-card' + (dropped ? " bro-card--dropped" : "") + '" type="button" data-pledge-id="' + p.id + '">' +
           window.napAvatarHtml({ photoDataUrl: p.photoDataUrl, firstName: p.name }, "md") +
           "<span>" +
-          '<p class="bro-card__name">' + escapeHtml(p.name || "Unnamed") + "</p>" +
-          '<p class="bro-card__meta">' + [escapeHtml(p.pledgeName), escapeHtml(p.school)].filter(Boolean).join(" · ") + "</p>" +
+          '<p class="bro-card__name">' + escapeHtml(p.name || "Unnamed") + (lineLabel ? ' <span class="bro-card__line">' + escapeHtml(lineLabel) + "</span>" : "") + "</p>" +
+          '<p class="bro-card__meta">' + metaHtml + "</p>" +
           "</span>" +
           "</button>"
         );
@@ -493,16 +543,54 @@
     { name: "school", label: "School", type: "text" },
     { name: "instagram", label: "Instagram", type: "text", placeholder: "@handle" },
     { name: "pledgeName", label: "Pledge Name", type: "text" },
+    { name: "numberInLine", label: "Number In Line", type: "number", placeholder: "#1 = Captain, last = Co-Captain" },
     { name: "bigName", label: "Big Name", type: "text" },
     { name: "bigPledgeName", label: "Big Pledge Name", type: "text" },
     { name: "bio", label: "Bio", type: "textarea", full: true },
+    { name: "dropped", label: "Dropped from the line", type: "checkbox", full: true },
   ];
-  var PLEDGE_NUMBER_FIELDS = ["age"];
+  var PLEDGE_NUMBER_FIELDS = ["age", "numberInLine"];
+
+  // The line's min numberInLine is Captain and the max is Co-Captain — computed
+  // live from whoever currently holds those numbers, not stored on the pledge.
+  function lineBounds(pledges) {
+    var nums = pledges
+      .filter(function (p) {
+        return !p.dropped && p.numberInLine !== null && p.numberInLine !== undefined && p.numberInLine !== "";
+      })
+      .map(function (p) {
+        return Number(p.numberInLine);
+      })
+      .filter(function (n) {
+        return !isNaN(n);
+      });
+    if (!nums.length) return { min: null, max: null };
+    return { min: Math.min.apply(null, nums), max: Math.max.apply(null, nums) };
+  }
+
+  function numberInLineLabel(p, bounds) {
+    if (p.numberInLine === null || p.numberInLine === undefined || p.numberInLine === "") return "";
+    var n = Number(p.numberInLine);
+    if (isNaN(n)) return "";
+    if (n === 1) return "#1 · Captain";
+    if (bounds.max !== null && n === bounds.max && bounds.max !== bounds.min) return "#" + n + " · Co-Captain";
+    return "#" + n;
+  }
 
   function pledgeFieldHtml(spec, rawValue) {
     var id = "pledge-edit-" + spec.name;
-    var value = rawValue === null || rawValue === undefined ? "" : rawValue;
     var groupClass = "form-group" + (spec.full ? " form-group--full" : "");
+    if (spec.type === "checkbox") {
+      return (
+        '<div class="' + groupClass + '">' +
+        '<label class="form-checkbox-row" for="' + id + '">' +
+        '<input type="checkbox" id="' + id + '" name="' + spec.name + '"' + (rawValue ? " checked" : "") + ">" +
+        "<span>" + spec.label + "</span>" +
+        "</label>" +
+        "</div>"
+      );
+    }
+    var value = rawValue === null || rawValue === undefined ? "" : rawValue;
     var html = '<div class="' + groupClass + '">';
     html += '<label class="form-label" for="' + id + '">' + spec.label + "</label>";
     if (spec.type === "textarea") {
@@ -527,8 +615,10 @@
   }
 
   function renderPledgeView(p) {
+    var dropped = !!p.dropped;
     pledgeModalAvatarEl.innerHTML = window.napAvatarHtml({ photoDataUrl: p.photoDataUrl, firstName: p.name }, "xl");
     pledgeModalNameEl.textContent = p.name || "Unnamed Pledge";
+    pledgeModalNameEl.classList.toggle("profile-modal__name--dropped", dropped);
     pledgeModalPledgeNameEl.textContent = p.pledgeName ? '"' + p.pledgeName + '"' : "";
 
     if (p.bio) {
@@ -538,7 +628,12 @@
       pledgeModalBioEl.hidden = true;
     }
 
+    var bounds = lineBounds(currentClassPledges);
+    var lineLabel = numberInLineLabel(p, bounds);
+
     var fields = [
+      ["Status", dropped ? "Dropped" : ""],
+      ["Number In Line", dropped ? "" : lineLabel],
       ["Age", p.age],
       ["School", p.school],
       ["Instagram", p.instagram],
@@ -550,10 +645,11 @@
         return f[1];
       })
       .map(function (f) {
+        var danger = f[0] === "Status" && f[1] === "Dropped";
         return (
           '<div class="profile-modal__field">' +
           '<p class="profile-modal__field-label">' + f[0] + "</p>" +
-          '<p class="profile-modal__field-value">' + escapeHtml(f[1]) + "</p>" +
+          '<p class="profile-modal__field-value' + (danger ? " profile-modal__field-value--danger" : "") + '">' + escapeHtml(f[1]) + "</p>" +
           "</div>"
         );
       })
@@ -632,7 +728,9 @@
       PLEDGE_FIELD_SPECS.forEach(function (spec) {
         var el = pledgeEditForm.querySelector('[name="' + spec.name + '"]');
         if (!el) return;
-        if (PLEDGE_NUMBER_FIELDS.indexOf(spec.name) !== -1) {
+        if (spec.type === "checkbox") {
+          update[spec.name] = el.checked;
+        } else if (PLEDGE_NUMBER_FIELDS.indexOf(spec.name) !== -1) {
           update[spec.name] = el.value ? Number(el.value) : null;
         } else {
           update[spec.name] = el.value.trim();
