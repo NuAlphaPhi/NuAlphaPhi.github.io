@@ -70,7 +70,14 @@
                 </div>
             </div>
 
-            <nav class="portal-shell__nav" aria-label="Portal sections">
+            <button class="portal-shell__nav-toggle" id="portalNavToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="portalNav">
+                <span id="portalNavToggleLabel">Overview</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6"></path>
+                </svg>
+            </button>
+
+            <nav class="portal-shell__nav" id="portalNav" aria-label="Portal sections">
                 <button class="portal-shell__nav-btn is-active" type="button" data-tab="overview">Overview</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="directory">Directory</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="announcements">Announcements</button>

@@ -3006,6 +3006,32 @@ dialog.modal-overlay[open] .modal {
   color: var(--black);
 }
 
+.portal-shell__nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--black);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.portal-shell__nav-toggle svg {
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+
+.portal-shell__nav-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
 .portal-shell__nav {
   display: flex;
   flex-direction: column;
@@ -4080,6 +4106,7 @@ html[data-theme="dark"] .modal__img {
   }
 
   .portal-shell__sidebar {
+    position: relative;
     width: 100%;
     flex-direction: row;
     align-items: center;
@@ -4104,22 +4131,36 @@ html[data-theme="dark"] .modal__img {
     border-bottom: none;
   }
 
-  .portal-shell__nav {
-    flex-direction: row;
-    flex: 1 1 100%;
+  /* Tabs collapse into a dropdown — the horizontal scrolling strip this
+     replaced made most tabs undiscoverable on a phone-width screen. */
+  .portal-shell__nav-toggle {
+    display: flex;
     order: 3;
-    overflow-x: auto;
+    flex: 1 1 100%;
   }
 
-  .portal-shell__nav-btn {
-    flex-shrink: 0;
-    border-left: none;
-    border-bottom: 3px solid transparent;
+  .portal-shell__nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+    order: 4;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--radius-md);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.16);
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 40;
   }
 
-  .portal-shell__nav-btn.is-active {
-    border-left-color: transparent;
-    border-bottom-color: var(--maroon);
+  .portal-shell__nav.is-open {
+    display: flex;
   }
 
   .portal-shell__signout {
