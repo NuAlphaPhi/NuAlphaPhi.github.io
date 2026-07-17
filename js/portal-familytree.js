@@ -664,6 +664,9 @@
   var chapterSelect = document.getElementById("familytree-form-chapter");
   var bigIdInput = document.getElementById("familytree-form-big");
   var bigSearchInput = document.getElementById("familytree-form-big-search");
+  var quickfillTextEl = document.getElementById("familytree-form-quickfill-text");
+  var quickfillBtn = document.getElementById("familytreeQuickfillBtn");
+  var quickfillErrorEl = document.getElementById("familytree-quickfill-error");
   var bigResultsEl = document.getElementById("familytreeBigResults");
 
   window.NAP_CHAPTERS.forEach(function (chapter) {
@@ -758,6 +761,72 @@
     }
   });
 
+  /* Quick Fill: paste 5 lines — Pledge Name, Name, Chapter, Class, Term
+     Year — and populate the fields below instead of typing each one in.
+     The Big still has to be picked by hand (see the picker above). */
+  function parseQuickfillText(text) {
+    var lines = text
+      .split(/\r?\n/)
+      .map(function (l) { return l.trim(); })
+      .filter(function (l) { return l !== ""; });
+    if (lines.length < 5) return null;
+
+    var termYearMatch = lines[4].match(/^(Fall|Spring|Summer)\s+(\d{4})$/i);
+    var term = "";
+    var year = "";
+    if (termYearMatch) {
+      term = termYearMatch[1].charAt(0).toUpperCase() + termYearMatch[1].slice(1).toLowerCase();
+      year = termYearMatch[2];
+    } else {
+      var termWordMatch = lines[4].match(/Fall|Spring|Summer/i);
+      if (termWordMatch) term = termWordMatch[0].charAt(0).toUpperCase() + termWordMatch[0].slice(1).toLowerCase();
+      var yearMatch = lines[4].match(/\d{4}/);
+      if (yearMatch) year = yearMatch[0];
+    }
+
+    return {
+      pledgeName: lines[0],
+      name: lines[1],
+      chapter: lines[2].replace(/\s*chapter\s*$/i, "").trim(),
+      pledgeClass: lines[3].replace(/\s*class\s*$/i, "").trim(),
+      term: term,
+      year: year,
+    };
+  }
+
+  if (quickfillBtn) {
+    quickfillBtn.addEventListener("click", function () {
+      var parsed = parseQuickfillText(quickfillTextEl.value);
+      quickfillErrorEl.hidden = true;
+
+      if (!parsed) {
+        quickfillErrorEl.textContent = "Paste all 5 lines: Pledge Name, Name, Chapter, Class, Term Year.";
+        quickfillErrorEl.hidden = false;
+        return;
+      }
+
+      form.querySelector('[name="pledgeName"]').value = parsed.pledgeName;
+      form.querySelector('[name="name"]').value = parsed.name;
+      form.querySelector('[name="pledgeClass"]').value = parsed.pledgeClass;
+      form.querySelector('[name="year"]').value = parsed.year;
+
+      var matchedChapter = window.NAP_CHAPTERS.find(function (c) { return c.toLowerCase() === parsed.chapter.toLowerCase(); });
+      chapterSelect.value = matchedChapter || "";
+
+      var termSelect = form.querySelector('[name="term"]');
+      var matchedTerm = ["Fall", "Spring", "Summer"].find(function (t) { return t.toLowerCase() === parsed.term.toLowerCase(); });
+      termSelect.value = matchedTerm || "";
+
+      if (!matchedChapter || !matchedTerm) {
+        var problems = [];
+        if (!matchedChapter) problems.push('chapter "' + parsed.chapter + '"');
+        if (!matchedTerm) problems.push('term "' + parsed.term + '"');
+        quickfillErrorEl.textContent = "Couldn't match " + problems.join(" or ") + " — the rest filled in, set that one manually.";
+        quickfillErrorEl.hidden = false;
+      }
+    });
+  }
+
   /* opts.editMember: person being edited (null = creating new).
      opts.presetBigId: pre-select this Big (used by "Add Little"). */
   function openPersonForm(editMember, presetBigId) {
@@ -765,6 +834,9 @@
     currentEditId = editMember ? editMember.id : null;
     formModalTitleEl.textContent = editMember ? "Edit Person" : "Add Person";
     formSubmitBtn.textContent = editMember ? "Save Changes" : "Save Person";
+
+    if (quickfillTextEl) quickfillTextEl.value = "";
+    if (quickfillErrorEl) quickfillErrorEl.hidden = true;
 
     /* Editing: a person can't become their own big, and can't become the
        big of one of their own descendants (that would create a cycle). */

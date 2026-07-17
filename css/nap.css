@@ -5115,6 +5115,19 @@ html[data-theme="dark"] .modal__img {
   position: relative;
 }
 
+.familytree-quickfill {
+  padding: 0.9rem 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  background: var(--grey-50);
+  border: 1px dashed var(--grey-200);
+  border-radius: var(--radius-sm);
+}
+
+.familytree-quickfill .form-textarea {
+  margin-bottom: 0.6rem;
+  min-height: 100px;
+}
+
 .familytree-search {
   flex: 1 1 240px;
   min-width: 200px;

@@ -909,6 +909,12 @@
                 <button class="modal__close-btn" type="button" data-close-modal>Close</button>
             </div>
             <form id="familytreeForm" novalidate>
+                <div class="form-group familytree-quickfill" id="familytreeQuickfill">
+                    <label class="form-label" for="familytree-form-quickfill-text">Quick Fill (optional)</label>
+                    <textarea class="form-textarea" id="familytree-form-quickfill-text" rows="5" placeholder="Pledge Name&#10;Full Name&#10;Chapter&#10;Class&#10;Term Year"></textarea>
+                    <button class="news-card__action-btn" type="button" id="familytreeQuickfillBtn">Fill In Fields Below</button>
+                    <p class="form-error" id="familytree-quickfill-error" role="alert" hidden></p>
+                </div>
                 <div class="form-group familytree-big-picker" id="familytreeBigPicker">
                     <label class="form-label" for="familytree-form-big-search">Big (who picked them up)</label>
                     <input class="form-input" id="familytree-form-big-search" type="text" autocomplete="off" placeholder="Search by name or pledge name…">
