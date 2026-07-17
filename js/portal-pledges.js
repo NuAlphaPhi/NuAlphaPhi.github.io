@@ -9,19 +9,22 @@
   var classGridEl = document.getElementById("pledgeClassGrid");
   if (!classGridEl) return;
 
-  var pastClassGroupsEl = document.getElementById("pastPledgeClassGroups");
+  var pastClassTabsEl = document.getElementById("pastPledgeClassTabs");
+  var pastClassGridEl = document.getElementById("pastPledgeClassGrid");
   var pastClassHeadingEl = document.getElementById("pastPledgeClassesHeading");
   var newClassBtn = document.getElementById("newPledgeClassBtn");
 
-  // Chronological rank within a year, for "most recent first" sorting —
-  // Spring runs before Summer which runs before Fall on the calendar.
+  var pastClassActiveChapter = null;
+
+  // Chronological rank within a year, for "earliest first" sorting — Spring
+  // runs before Summer which runs before Fall on the calendar.
   var TERM_RANK = { Spring: 0, Summer: 1, Fall: 2 };
 
-  function sortClassesRecentFirst(classes) {
+  function sortClassesEarliestFirst(classes) {
     return classes.slice().sort(function (a, b) {
       return (
-        (b.year || 0) - (a.year || 0) ||
-        (TERM_RANK.hasOwnProperty(b.term) ? TERM_RANK[b.term] : -1) - (TERM_RANK.hasOwnProperty(a.term) ? TERM_RANK[a.term] : -1) ||
+        (a.year || 0) - (b.year || 0) ||
+        (TERM_RANK.hasOwnProperty(a.term) ? TERM_RANK[a.term] : -1) - (TERM_RANK.hasOwnProperty(b.term) ? TERM_RANK[b.term] : -1) ||
         (a.className || "").localeCompare(b.className || "")
       );
     });
@@ -109,7 +112,8 @@
 
     if (!allClasses.length) {
       classGridEl.innerHTML = '<p class="news-card__empty">No pledge classes yet.</p>';
-      if (pastClassGroupsEl) pastClassGroupsEl.innerHTML = "";
+      if (pastClassTabsEl) pastClassTabsEl.innerHTML = "";
+      if (pastClassGridEl) pastClassGridEl.innerHTML = "";
       if (pastClassHeadingEl) pastClassHeadingEl.hidden = true;
       return;
     }
@@ -122,16 +126,15 @@
     });
 
     classGridEl.innerHTML = active.length
-      ? sortClassesRecentFirst(active)
+      ? sortClassesEarliestFirst(active)
           .map(function (cls) {
             return classCardHtml(cls, admin);
           })
           .join("")
       : '<p class="news-card__empty">No pledge classes yet.</p>';
 
-    if (pastClassGroupsEl) {
-      // Group by chapter, in Alpha→Kappa order, so a chapter only shows up
-      // once it actually has a crossed class.
+    if (pastClassTabsEl && pastClassGridEl) {
+      // Alpha→Kappa order, but only chapters that actually have a crossed class.
       var chapterOrder = window.NAP_CHAPTERS.filter(function (chapter) {
         return past.some(function (c) {
           return c.chapter === chapter;
@@ -141,22 +144,30 @@
         if (chapterOrder.indexOf(c.chapter) === -1) chapterOrder.push(c.chapter);
       });
 
-      pastClassGroupsEl.innerHTML = chapterOrder
-        .map(function (chapter) {
-          var chapterClasses = sortClassesRecentFirst(
-            past.filter(function (c) {
-              return c.chapter === chapter;
-            })
-          );
-          return (
-            '<div class="pledges-chapter-group">' +
-            '<h3 class="pledges-chapter-heading">' + escapeHtml(chapter) + "</h3>" +
-            '<div class="forms-grid">' +
-            chapterClasses.map(function (cls) { return classCardHtml(cls, admin); }).join("") +
-            "</div></div>"
-          );
-        })
-        .join("");
+      if (!chapterOrder.length) {
+        pastClassTabsEl.innerHTML = "";
+        pastClassGridEl.innerHTML = "";
+      } else {
+        if (!pastClassActiveChapter || chapterOrder.indexOf(pastClassActiveChapter) === -1) {
+          pastClassActiveChapter = chapterOrder[0];
+        }
+
+        pastClassTabsEl.innerHTML = chapterOrder
+          .map(function (chapter) {
+            return (
+              '<button class="pledges-chapter-tab' + (chapter === pastClassActiveChapter ? " is-active" : "") + '" type="button" data-past-chapter="' +
+              escapeHtml(chapter) + '">' + escapeHtml(chapter) + "</button>"
+            );
+          })
+          .join("");
+
+        var chapterClasses = sortClassesEarliestFirst(
+          past.filter(function (c) {
+            return c.chapter === pastClassActiveChapter;
+          })
+        );
+        pastClassGridEl.innerHTML = chapterClasses.map(function (cls) { return classCardHtml(cls, admin); }).join("");
+      }
     }
     if (pastClassHeadingEl) pastClassHeadingEl.hidden = !past.length;
   }
@@ -184,7 +195,16 @@
   }
 
   classGridEl.addEventListener("click", onClassGridClick);
-  if (pastClassGroupsEl) pastClassGroupsEl.addEventListener("click", onClassGridClick);
+  if (pastClassGridEl) pastClassGridEl.addEventListener("click", onClassGridClick);
+
+  if (pastClassTabsEl) {
+    pastClassTabsEl.addEventListener("click", function (e) {
+      var tabBtn = e.target.closest("[data-past-chapter]");
+      if (!tabBtn) return;
+      pastClassActiveChapter = tabBtn.getAttribute("data-past-chapter");
+      renderClassGrid();
+    });
+  }
 
   function deleteClassCascade(classId) {
     var classRef = db.collection("pledgeClasses").doc(classId);

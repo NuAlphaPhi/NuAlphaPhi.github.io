@@ -3425,21 +3425,40 @@ html[data-theme="dark"] .modal__img {
   display: none;
 }
 
-.pledges-chapter-group {
-  margin-bottom: 1.75rem;
+.pledges-chapter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
 }
 
-.pledges-chapter-group:last-child {
-  margin-bottom: 0;
+.pledges-chapter-tabs[hidden] {
+  display: none;
 }
 
-.pledges-chapter-heading {
-  margin: 0 0 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+.pledges-chapter-tab {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--grey-200);
+  border-radius: 999px;
+  background: var(--white);
   color: var(--grey-600);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.pledges-chapter-tab:hover,
+.pledges-chapter-tab:focus-visible {
+  border-color: var(--maroon);
+  color: var(--maroon);
+}
+
+.pledges-chapter-tab.is-active {
+  background: var(--maroon-soft);
+  border-color: var(--maroon);
+  color: var(--maroon);
 }
 
 .bro-card {
