@@ -2534,6 +2534,7 @@ dialog.modal-overlay[open] .modal {
   margin: 0;
   color: var(--grey-600);
   line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 @media (max-width: 700px) {
