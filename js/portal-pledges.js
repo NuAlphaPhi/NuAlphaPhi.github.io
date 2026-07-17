@@ -9,7 +9,7 @@
   var classGridEl = document.getElementById("pledgeClassGrid");
   if (!classGridEl) return;
 
-  var pastClassGridEl = document.getElementById("pastPledgeClassGrid");
+  var pastClassGroupsEl = document.getElementById("pastPledgeClassGroups");
   var pastClassHeadingEl = document.getElementById("pastPledgeClassesHeading");
   var newClassBtn = document.getElementById("newPledgeClassBtn");
 
@@ -109,7 +109,7 @@
 
     if (!allClasses.length) {
       classGridEl.innerHTML = '<p class="news-card__empty">No pledge classes yet.</p>';
-      if (pastClassGridEl) pastClassGridEl.innerHTML = "";
+      if (pastClassGroupsEl) pastClassGroupsEl.innerHTML = "";
       if (pastClassHeadingEl) pastClassHeadingEl.hidden = true;
       return;
     }
@@ -129,10 +129,32 @@
           .join("")
       : '<p class="news-card__empty">No pledge classes yet.</p>';
 
-    if (pastClassGridEl) {
-      pastClassGridEl.innerHTML = sortClassesRecentFirst(past)
-        .map(function (cls) {
-          return classCardHtml(cls, admin);
+    if (pastClassGroupsEl) {
+      // Group by chapter, in Alpha→Kappa order, so a chapter only shows up
+      // once it actually has a crossed class.
+      var chapterOrder = window.NAP_CHAPTERS.filter(function (chapter) {
+        return past.some(function (c) {
+          return c.chapter === chapter;
+        });
+      });
+      past.forEach(function (c) {
+        if (chapterOrder.indexOf(c.chapter) === -1) chapterOrder.push(c.chapter);
+      });
+
+      pastClassGroupsEl.innerHTML = chapterOrder
+        .map(function (chapter) {
+          var chapterClasses = sortClassesRecentFirst(
+            past.filter(function (c) {
+              return c.chapter === chapter;
+            })
+          );
+          return (
+            '<div class="pledges-chapter-group">' +
+            '<h3 class="pledges-chapter-heading">' + escapeHtml(chapter) + "</h3>" +
+            '<div class="forms-grid">' +
+            chapterClasses.map(function (cls) { return classCardHtml(cls, admin); }).join("") +
+            "</div></div>"
+          );
         })
         .join("");
     }
@@ -162,7 +184,7 @@
   }
 
   classGridEl.addEventListener("click", onClassGridClick);
-  if (pastClassGridEl) pastClassGridEl.addEventListener("click", onClassGridClick);
+  if (pastClassGroupsEl) pastClassGroupsEl.addEventListener("click", onClassGridClick);
 
   function deleteClassCascade(classId) {
     var classRef = db.collection("pledgeClasses").doc(classId);
@@ -610,6 +632,7 @@
     { name: "name", label: "Name", type: "text" },
     { name: "age", label: "Age", type: "number" },
     { name: "school", label: "School", type: "text" },
+    { name: "phone", label: "Phone Number", type: "tel", placeholder: "(555) 555-5555" },
     { name: "instagram", label: "Instagram", type: "text", placeholder: "@handle" },
     { name: "pledgeName", label: "Pledge Name", type: "text" },
     { name: "numberInLine", label: "Number In Line", type: "number", placeholder: "#1 = Captain, last = Co-Captain" },
@@ -705,6 +728,7 @@
       ["Number In Line", dropped ? "" : lineLabel],
       ["Age", p.age],
       ["School", p.school],
+      ["Phone Number", p.phone],
       ["Instagram", p.instagram],
       ["Big", [p.bigName, p.bigPledgeName ? '"' + p.bigPledgeName + '"' : ""].filter(Boolean).join(" ")],
     ];
@@ -748,6 +772,15 @@
     pendingPledgePhotoDataUrl = null;
     if (pledgeEditFeedbackEl) pledgeEditFeedbackEl.hidden = true;
     if (pledgeEditPhotoPreviewEl) pledgeEditPhotoPreviewEl.innerHTML = window.napAvatarHtml({ photoDataUrl: p.photoDataUrl, firstName: p.name }, "lg");
+
+    // The header/bio above the grid are only otherwise refreshed by
+    // renderPledgeView(), which a brand-new pledge never goes through —
+    // without this they'd keep showing whichever profile was last viewed.
+    pledgeModalAvatarEl.innerHTML = window.napAvatarHtml({ photoDataUrl: p.photoDataUrl, firstName: p.name }, "xl");
+    pledgeModalNameEl.textContent = p.name || (p.id ? "Unnamed Pledge" : "New Pledge");
+    pledgeModalNameEl.classList.toggle("profile-modal__name--dropped", !!p.dropped);
+    pledgeModalPledgeNameEl.textContent = p.pledgeName ? '"' + p.pledgeName + '"' : "";
+    pledgeModalBioEl.hidden = true;
     if (pledgeEditFieldsEl) {
       pledgeEditFieldsEl.innerHTML = PLEDGE_FIELD_SPECS.map(function (spec) {
         return pledgeFieldHtml(spec, p[spec.name]);

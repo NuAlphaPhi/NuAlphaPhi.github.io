@@ -3398,6 +3398,23 @@ html[data-theme="dark"] .modal__img {
   display: none;
 }
 
+.pledges-chapter-group {
+  margin-bottom: 1.75rem;
+}
+
+.pledges-chapter-group:last-child {
+  margin-bottom: 0;
+}
+
+.pledges-chapter-heading {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--grey-600);
+}
+
 .bro-card {
   display: flex;
   align-items: center;
