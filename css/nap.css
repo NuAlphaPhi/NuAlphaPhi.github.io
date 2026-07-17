@@ -4888,6 +4888,34 @@ html[data-theme="dark"] .modal__img {
   position: relative;
 }
 
+.familytree-search {
+  flex: 1 1 240px;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+/* Applied only while jumping to a search result — normal drag/wheel pan and
+   zoom stay instant, this is removed again right after the jump animates. */
+.familytree-viewport--animated {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes familytree-pulse {
+  0%,
+  100% {
+    stroke-width: 2;
+    stroke: var(--chapter-color, var(--grey-200));
+  }
+  50% {
+    stroke-width: 4;
+    stroke: var(--maroon);
+  }
+}
+
+.familytree-node--highlight .familytree-node__card {
+  animation: familytree-pulse 0.55s ease-in-out 3;
+}
+
 .familytree-big-picker__results[hidden] {
   display: none;
 }

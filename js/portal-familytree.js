@@ -20,6 +20,7 @@
   var allMembers = [];
   var started = false;
   var hasFitOnce = false;
+  var lastPositions = {};
 
   function escapeHtml(value) {
     var div = document.createElement("div");
@@ -264,6 +265,7 @@
     }
 
     var positions = layoutForest();
+    lastPositions = positions;
 
     document.getElementById("familytreeNodes").innerHTML = allMembers
       .map(function (m) {
@@ -385,6 +387,114 @@
       fitToView(layoutForest());
     });
   }
+
+  /* ---------- Search: type-to-find, then smoothly pan/zoom to them ---------- */
+  var searchInput = document.getElementById("familytreeSearchInput");
+  var searchResultsEl = document.getElementById("familytreeSearchResults");
+
+  function renderSearchResults(query) {
+    var q = query.trim().toLowerCase();
+    if (!q) {
+      searchResultsEl.innerHTML = "";
+      searchResultsEl.hidden = true;
+      return;
+    }
+
+    var matches = allMembers
+      .filter(function (m) {
+        return (m.name || "").toLowerCase().indexOf(q) !== -1 || (m.pledgeName || "").toLowerCase().indexOf(q) !== -1;
+      })
+      .slice(0, 8);
+
+    if (!matches.length) {
+      searchResultsEl.innerHTML = '<p class="familytree-big-picker__empty">No matches.</p>';
+      searchResultsEl.hidden = false;
+      return;
+    }
+
+    searchResultsEl.innerHTML = matches
+      .map(function (m) {
+        return (
+          '<button type="button" class="familytree-big-picker__option" data-search-result="' + escapeHtml(m.id) + '">' +
+          '<span class="familytree-chip__dot" style="background:' + colorFor(m.chapter) + '"></span>' +
+          escapeHtml(displayNameFor(m)) +
+          (m.chapter ? ' <span class="familytree-big-picker__chapter">(' + escapeHtml(m.chapter) + ")</span>" : "") +
+          "</button>"
+        );
+      })
+      .join("");
+    searchResultsEl.hidden = false;
+  }
+
+  /* Smoothly pans/zooms to a fixed, comfortable zoom level centered on the
+     person, then pulses their card a few times so they're easy to spot the
+     instant the view settles — regardless of where they were before. */
+  function focusOnMember(member) {
+    var pos = lastPositions[member.id];
+    if (!pos) return;
+
+    var stageW = stageEl.clientWidth || 800;
+    var stageH = stageEl.clientHeight || 500;
+    var targetZoom = 1;
+
+    var viewportEl = document.getElementById("familytreeViewport");
+    if (viewportEl) viewportEl.classList.add("familytree-viewport--animated");
+
+    zoom = targetZoom;
+    panX = stageW / 2 - pos.x * zoom;
+    panY = stageH / 2 - pos.y * zoom;
+    applyTransform();
+
+    window.setTimeout(function () {
+      if (viewportEl) viewportEl.classList.remove("familytree-viewport--animated");
+    }, 550);
+
+    var nodeEl = document.querySelector('[data-node-id="' + member.id + '"]');
+    if (nodeEl) {
+      nodeEl.classList.add("familytree-node--highlight");
+      window.setTimeout(function () {
+        nodeEl.classList.remove("familytree-node--highlight");
+      }, 1700);
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      renderSearchResults(searchInput.value);
+    });
+
+    searchInput.addEventListener("focus", function () {
+      if (searchInput.value.trim()) renderSearchResults(searchInput.value);
+    });
+
+    searchInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        var first = searchResultsEl.querySelector("[data-search-result]");
+        if (first) first.click();
+      } else if (e.key === "Escape") {
+        searchResultsEl.hidden = true;
+        searchInput.blur();
+      }
+    });
+  }
+
+  if (searchResultsEl) {
+    searchResultsEl.addEventListener("click", function (e) {
+      var opt = e.target.closest("[data-search-result]");
+      if (!opt) return;
+      var member = findMember(opt.getAttribute("data-search-result"));
+      searchResultsEl.hidden = true;
+      searchInput.value = "";
+      if (member) focusOnMember(member);
+    });
+  }
+
+  document.addEventListener("click", function (e) {
+    if (searchResultsEl && !searchResultsEl.hidden && !e.target.closest(".familytree-search")) {
+      searchResultsEl.hidden = true;
+    }
+  });
 
   /* ---------- Person detail modal ---------- */
   var personModal = document.getElementById("modal-familytree-person");
