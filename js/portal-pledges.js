@@ -462,14 +462,20 @@
   var newPledgeBtn = document.getElementById("newPledgeBtn");
   var massAddPledgesBtn = document.getElementById("massAddPledgesBtn");
   var pledgeGridEl = document.getElementById("pledgeGrid");
+  var pledgeMediaGalleryEl = document.getElementById("pledgeMediaGallery");
+  var pledgeMediaFeedbackEl = document.getElementById("pledgeMediaFeedback");
+  var pledgeMediaUploadInputEl = document.getElementById("pledgeMediaUploadInput");
 
   var currentClassId = null;
   var currentClassPledges = [];
+  var currentClassMedia = [];
   var pledgesUnsub = null;
+  var mediaUnsub = null;
 
   function openClassDetail(classId) {
     currentClassId = classId;
     currentClassPledges = [];
+    currentClassMedia = [];
     renderClassDetail();
     window.napSetTab("pledge-class", "pledges");
 
@@ -487,6 +493,29 @@
         });
         renderPledgeGrid();
       });
+
+    if (mediaUnsub) {
+      mediaUnsub();
+      mediaUnsub = null;
+    }
+    mediaUnsub = db
+      .collection("pledgeClasses")
+      .doc(classId)
+      .collection("media")
+      .orderBy("createdAt", "desc")
+      .onSnapshot(
+        function (snap) {
+          currentClassMedia = snap.docs.map(function (doc) {
+            return Object.assign({ id: doc.id }, doc.data());
+          });
+          renderMediaGallery();
+        },
+        function () {
+          if (pledgeMediaGalleryEl) {
+            pledgeMediaGalleryEl.innerHTML = '<p class="media-empty">Couldn’t load photos &amp; videos — the site’s database permissions may need to be republished.</p>';
+          }
+        }
+      );
   }
 
   function closeClassDetail() {
@@ -494,8 +523,13 @@
       pledgesUnsub();
       pledgesUnsub = null;
     }
+    if (mediaUnsub) {
+      mediaUnsub();
+      mediaUnsub = null;
+    }
     currentClassId = null;
     currentClassPledges = [];
+    currentClassMedia = [];
   }
 
   function renderClassDetail() {
@@ -757,6 +791,194 @@
             massAddErrorEl.hidden = false;
           }
         });
+    });
+  }
+
+  /* ---------- Photos & Videos: shared album, open to every brother (not
+     just admins) — files live in Cloud Storage, this collection is just the
+     gallery entries (download URL, uploader, timestamp). ---------- */
+  function formatMediaDate(timestamp) {
+    if (!timestamp || !timestamp.toDate) return "";
+    return timestamp.toDate().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function renderMediaGallery() {
+    if (!pledgeMediaGalleryEl) return;
+
+    if (!currentClassMedia.length) {
+      pledgeMediaGalleryEl.innerHTML = '<p class="media-empty">No photos or videos yet — be the first to add one.</p>';
+      return;
+    }
+
+    pledgeMediaGalleryEl.innerHTML = currentClassMedia
+      .map(function (m) {
+        var canDelete = m.uploadedByUid === currentUid || isAdmin();
+        var preview =
+          m.type === "video"
+            ? '<video src="' + escapeHtml(m.url) + '" controls preload="metadata"></video>'
+            : '<img src="' + escapeHtml(m.url) + '" alt="" loading="lazy">';
+        var when = formatMediaDate(m.createdAt);
+
+        return (
+          '<div class="media-card">' +
+          '<div class="media-card__preview">' + preview + "</div>" +
+          '<div class="media-card__footer">' +
+          '<p class="media-card__meta">' + escapeHtml(m.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
+          '<div class="media-card__actions">' +
+          '<button class="media-card__btn" type="button" data-media-download="' + m.id + '">Download</button>' +
+          (canDelete ? '<button class="media-card__btn media-card__btn--danger" type="button" data-media-delete="' + m.id + '">Delete</button>' : "") +
+          "</div></div></div>"
+        );
+      })
+      .join("");
+  }
+
+  function downloadMedia(media) {
+    fetch(media.url)
+      .then(function (res) {
+        return res.blob();
+      })
+      .then(function (blob) {
+        var objectUrl = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = objectUrl;
+        a.download = media.fileName || "download";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.setTimeout(function () {
+          URL.revokeObjectURL(objectUrl);
+        }, 1000);
+      })
+      .catch(function () {
+        window.alert("Couldn't download this file. Please try again.");
+      });
+  }
+
+  function deleteMedia(mediaId) {
+    var media = currentClassMedia.find(function (m) {
+      return m.id === mediaId;
+    });
+    var classId = currentClassId;
+    var storageDelete = media && media.storagePath ? storage.ref(media.storagePath).delete().catch(function () {}) : Promise.resolve();
+
+    storageDelete
+      .then(function () {
+        return db.collection("pledgeClasses").doc(classId).collection("media").doc(mediaId).delete();
+      })
+      .catch(function () {
+        window.alert("Couldn't delete this file. Please try again.");
+      });
+  }
+
+  if (pledgeMediaGalleryEl) {
+    pledgeMediaGalleryEl.addEventListener("click", function (e) {
+      var downloadBtn = e.target.closest("[data-media-download]");
+      var deleteBtn = e.target.closest("[data-media-delete]");
+
+      if (downloadBtn) {
+        var media = currentClassMedia.find(function (m) {
+          return m.id === downloadBtn.getAttribute("data-media-download");
+        });
+        if (media) downloadMedia(media);
+        return;
+      }
+
+      if (deleteBtn) {
+        var mediaId = deleteBtn.getAttribute("data-media-delete");
+        var toDelete = currentClassMedia.find(function (m) {
+          return m.id === mediaId;
+        });
+        var kind = toDelete && toDelete.type === "video" ? "video" : "photo";
+        window.napConfirm("This can't be undone.", { title: "Delete this " + kind + "?", confirmLabel: "Delete" }).then(function (confirmed) {
+          if (confirmed) deleteMedia(mediaId);
+        });
+      }
+    });
+  }
+
+  var MEDIA_MAX_BYTES = 100 * 1024 * 1024;
+
+  function uploadMediaFile(file, type, classId) {
+    var safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
+    var storagePath = "pledgeClassMedia/" + classId + "/" + Date.now() + "_" + Math.random().toString(36).slice(2) + "_" + safeName;
+    var uploadTask = storage.ref(storagePath).put(file, { customMetadata: { uploaderUid: currentUid } });
+
+    if (pledgeMediaFeedbackEl) {
+      pledgeMediaFeedbackEl.hidden = false;
+      pledgeMediaFeedbackEl.className = "form-feedback";
+      pledgeMediaFeedbackEl.textContent = 'Uploading "' + file.name + '"… 0%';
+    }
+
+    uploadTask.on(
+      "state_changed",
+      function (snapshot) {
+        var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        if (pledgeMediaFeedbackEl) pledgeMediaFeedbackEl.textContent = 'Uploading "' + file.name + '"… ' + pct + "%";
+      },
+      function () {
+        if (pledgeMediaFeedbackEl) {
+          pledgeMediaFeedbackEl.className = "form-feedback form-feedback--error";
+          pledgeMediaFeedbackEl.textContent = 'Couldn\'t upload "' + file.name + '". Please try again.';
+        }
+      },
+      function () {
+        uploadTask.snapshot.ref
+          .getDownloadURL()
+          .then(function (url) {
+            return db
+              .collection("pledgeClasses")
+              .doc(classId)
+              .collection("media")
+              .add({
+                type: type,
+                url: url,
+                storagePath: storagePath,
+                fileName: file.name,
+                uploadedByUid: currentUid,
+                uploadedByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+          })
+          .then(function () {
+            if (pledgeMediaFeedbackEl) {
+              pledgeMediaFeedbackEl.className = "form-feedback form-feedback--success";
+              pledgeMediaFeedbackEl.textContent = '"' + file.name + '" uploaded.';
+            }
+            window.setTimeout(function () {
+              if (pledgeMediaFeedbackEl) pledgeMediaFeedbackEl.hidden = true;
+            }, 2000);
+          })
+          .catch(function () {
+            if (pledgeMediaFeedbackEl) {
+              pledgeMediaFeedbackEl.className = "form-feedback form-feedback--error";
+              pledgeMediaFeedbackEl.textContent = 'Uploaded but couldn\'t save "' + file.name + '". Please try again.';
+            }
+          });
+      }
+    );
+  }
+
+  if (pledgeMediaUploadInputEl) {
+    pledgeMediaUploadInputEl.addEventListener("change", function () {
+      var files = Array.prototype.slice.call(pledgeMediaUploadInputEl.files || []);
+      pledgeMediaUploadInputEl.value = "";
+      if (!files.length || !currentClassId) return;
+
+      var classId = currentClassId;
+      files.forEach(function (file) {
+        var isImage = file.type.indexOf("image/") === 0;
+        var isVideo = file.type.indexOf("video/") === 0;
+        if (!isImage && !isVideo) {
+          window.alert('"' + file.name + '" isn\'t a photo or video — skipped.');
+          return;
+        }
+        if (file.size > MEDIA_MAX_BYTES) {
+          window.alert('"' + file.name + '" is over the 100MB limit — skipped.');
+          return;
+        }
+        uploadMediaFile(file, isVideo ? "video" : "image", classId);
+      });
     });
   }
 

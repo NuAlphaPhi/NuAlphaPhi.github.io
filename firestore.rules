@@ -125,6 +125,17 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow create, update, delete: if isAdmin();
       }
+
+      // Photos & videos: unlike the rest of a pledge class, any signed-in
+      // brother can add media (not just admins) — this is a shared photo
+      // album. Only the uploader or an admin can delete an item. The actual
+      // file bytes live in Cloud Storage (see storage.rules); this doc is
+      // just the gallery entry (download URL + who/when).
+      match /media/{mediaId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.uploadedByUid == request.auth.uid;
+        allow delete: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || isAdmin());
+      }
     }
 
     // Family tree: lineage (who picked up whom) across every chapter and

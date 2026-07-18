@@ -296,6 +296,16 @@
                     </div>
                 </div>
                 <div class="directory-grid" id="pledgeGrid"></div>
+
+                <div class="portal-view-header portal-view-header--spaced">
+                    <h2 class="portal-view-title portal-view-title--small">Photos &amp; Videos</h2>
+                    <div class="news-card__actions">
+                        <label class="form-submit form-submit--small form-submit--inline" for="pledgeMediaUploadInput">Upload</label>
+                        <input type="file" id="pledgeMediaUploadInput" accept="image/*,video/*" multiple hidden>
+                    </div>
+                </div>
+                <p class="form-feedback" id="pledgeMediaFeedback" role="status" aria-live="polite" hidden></p>
+                <div class="media-gallery" id="pledgeMediaGallery"></div>
             </section>
 
             <section class="portal-tab-panel" id="panel-family-tree" data-panel="family-tree" hidden>
@@ -974,6 +984,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/portal-auth.js"></script>
     <script src="js/portal-shell.js"></script>
