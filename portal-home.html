@@ -315,7 +315,10 @@
                         <h1 class="portal-view-title">Family Tree</h1>
                         <p class="portal-view-intro">Every brother's lineage. Drag to pan, scroll to zoom, click a name for details.</p>
                     </div>
-                    <button class="form-submit form-submit--small" id="newLineageBtn" type="button" hidden>New Lineage</button>
+                    <div class="news-card__actions">
+                        <button class="news-card__action-btn" type="button" id="familytreeStatsBtn">Statistics</button>
+                        <button class="form-submit form-submit--small" id="newLineageBtn" type="button" hidden>New Lineage</button>
+                    </div>
                 </div>
 
                 <div class="familytree-toolbar">
@@ -967,6 +970,26 @@
                 <p class="form-error" id="familytree-form-error" role="alert" hidden></p>
                 <button class="form-submit" type="submit">Save Person</button>
             </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal-overlay" id="modal-familytree-stats" aria-labelledby="modal-familytree-stats-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-familytree-stats-title">Family Tree Statistics</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <div class="stat-tiles" id="familytreeStatsTiles"></div>
+            <div class="familytree-stats-section">
+                <h3 class="familytree-stats-heading">By Chapter</h3>
+                <div class="chapter-bars" id="familytreeStatsChapters"></div>
+            </div>
+            <div class="familytree-stats-section">
+                <h3 class="familytree-stats-heading">Top Recruiters</h3>
+                <div class="familytree-stats-recruiters" id="familytreeStatsRecruiters"></div>
+            </div>
         </div>
     </dialog>
 

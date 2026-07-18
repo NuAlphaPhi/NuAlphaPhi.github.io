@@ -912,6 +912,107 @@
       });
   });
 
+  /* ---------- Statistics modal — read-only, open to every brother ---------- */
+  var statsBtn = document.getElementById("familytreeStatsBtn");
+  var statsModal = document.getElementById("modal-familytree-stats");
+  var statsTilesEl = document.getElementById("familytreeStatsTiles");
+  var statsChaptersEl = document.getElementById("familytreeStatsChapters");
+  var statsRecruitersEl = document.getElementById("familytreeStatsRecruiters");
+
+  function renderStats() {
+    var total = allMembers.length;
+    var roots = allMembers.filter(function (m) { return !m.bigId; }).length;
+
+    var littleCounts = {};
+    allMembers.forEach(function (m) {
+      if (m.bigId) littleCounts[m.bigId] = (littleCounts[m.bigId] || 0) + 1;
+    });
+    var bigsWithLittles = Object.keys(littleCounts).length;
+    var totalLittles = allMembers.filter(function (m) { return !!m.bigId; }).length;
+    var avgLittles = bigsWithLittles ? (totalLittles / bigsWithLittles).toFixed(1) : "0";
+
+    var chapterCounts = window.NAP_CHAPTERS.map(function (chapter) {
+      return {
+        chapter: chapter,
+        count: allMembers.filter(function (m) { return m.chapter === chapter; }).length,
+      };
+    }).filter(function (c) { return c.count > 0; });
+
+    if (statsTilesEl) {
+      var tiles = [
+        ["Total People", total],
+        ["Lineages", roots],
+        ["Chapters Represented", chapterCounts.length],
+        ["Avg Littles / Big", avgLittles],
+      ];
+      statsTilesEl.innerHTML = tiles
+        .map(function (t) {
+          return (
+            '<div class="stat-tile">' +
+            '<p class="stat-tile__value">' + t[1] + "</p>" +
+            '<p class="stat-tile__label">' + t[0] + "</p>" +
+            "</div>"
+          );
+        })
+        .join("");
+    }
+
+    if (statsChaptersEl) {
+      if (!chapterCounts.length) {
+        statsChaptersEl.innerHTML = '<p class="familytree-stats-empty">No chapter data yet.</p>';
+      } else {
+        var maxChapterCount = Math.max.apply(null, chapterCounts.map(function (c) { return c.count; }));
+        statsChaptersEl.innerHTML = chapterCounts
+          .map(function (c) {
+            var pct = Math.round((c.count / maxChapterCount) * 100);
+            return (
+              '<div>' +
+              '<div class="chapter-bar__row">' +
+              '<span class="chapter-bar__name">' + escapeHtml(c.chapter) + "</span>" +
+              '<span class="chapter-bar__count">' + c.count + "</span>" +
+              "</div>" +
+              '<div class="chapter-bar__track"><div class="chapter-bar__fill" style="width:' + pct + '%;background:' + colorFor(c.chapter) + '"></div></div>' +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+    }
+
+    if (statsRecruitersEl) {
+      var topRecruiters = allMembers
+        .filter(function (m) { return littleCounts[m.id]; })
+        .sort(function (a, b) { return littleCounts[b.id] - littleCounts[a.id]; })
+        .slice(0, 5);
+
+      if (!topRecruiters.length) {
+        statsRecruitersEl.innerHTML = '<p class="familytree-stats-empty">No lineages yet.</p>';
+      } else {
+        statsRecruitersEl.innerHTML = topRecruiters
+          .map(function (m, i) {
+            return (
+              '<div class="familytree-stats-recruiter">' +
+              '<span class="familytree-stats-recruiter__rank">#' + (i + 1) + "</span>" +
+              '<span class="familytree-stats-recruiter__name">' +
+              '<span class="familytree-chip__dot" style="background:' + colorFor(m.chapter) + '"></span>' +
+              escapeHtml(displayNameFor(m)) +
+              "</span>" +
+              '<span class="familytree-stats-recruiter__count">' + littleCounts[m.id] + (littleCounts[m.id] === 1 ? " little" : " littles") + "</span>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+    }
+  }
+
+  if (statsBtn) {
+    statsBtn.addEventListener("click", function () {
+      renderStats();
+      statsModal.showModal();
+    });
+  }
+
   /* Re-check admin status every time this tab is actually opened, rather
      than trusting whatever "New Lineage" button state rendering last left
      behind — render() only re-runs on Firestore data changes, so without

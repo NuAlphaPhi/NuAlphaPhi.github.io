@@ -5214,6 +5214,72 @@ html[data-theme="dark"] .modal__img {
   min-height: 100px;
 }
 
+/* Statistics modal */
+.familytree-stats-section {
+  margin-top: 1.75rem;
+}
+
+.familytree-stats-heading {
+  margin: 0 0 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--grey-600);
+}
+
+.familytree-stats-recruiters {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.familytree-stats-recruiter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--grey-50);
+  border-radius: var(--radius-sm);
+}
+
+.familytree-stats-recruiter__rank {
+  flex-shrink: 0;
+  width: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--grey-400);
+  text-align: center;
+}
+
+.familytree-stats-recruiter__name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.familytree-stats-recruiter__count {
+  flex-shrink: 0;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--maroon-soft);
+  color: var(--maroon);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.familytree-stats-empty {
+  font-size: 0.85rem;
+  color: var(--grey-400);
+}
+
 .familytree-search {
   flex: 1 1 240px;
   min-width: 200px;
