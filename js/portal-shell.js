@@ -30,10 +30,24 @@
     });
   }
 
+  var validNavTabs = Array.prototype.map.call(navBtns, function (btn) {
+    return btn.getAttribute("data-tab");
+  });
+
   /* navTab lets a sub-page with no nav button of its own (e.g. the form
      builder/responses pages, reached only from within the Forms tab) keep
-     that tab highlighted instead of leaving the sidebar with nothing active. */
-  function setTab(tab, navTab) {
+     that tab highlighted instead of leaving the sidebar with nothing active.
+
+     opts.fromHistory: this call came from a popstate (Back/Forward) event —
+     don't touch history again, that would fight the browser.
+     opts.replace: update the URL hash without adding a new history entry
+     (used only for the one-time restore-on-load below). Everything else
+     (an actual nav click, or any other setTab call — all of those represent
+     a real navigation the user took) pushes a new entry, so the URL hash
+     tracks the active tab and Back/Forward move between tabs instead of
+     leaving the app after a single press. */
+  function setTab(tab, navTab, opts) {
+    opts = opts || {};
     var activeNavTab = navTab || tab;
     navBtns.forEach(function (btn) {
       var isActive = btn.getAttribute("data-tab") === activeNavTab;
@@ -44,6 +58,17 @@
       panel.hidden = panel.getAttribute("data-panel") !== tab;
     });
     closeMobileNav();
+
+    if (!opts.fromHistory && validNavTabs.indexOf(activeNavTab) !== -1) {
+      var newHash = "#" + activeNavTab;
+      if (location.hash !== newHash) {
+        if (opts.replace) {
+          history.replaceState(null, "", newHash);
+        } else {
+          history.pushState(null, "", newHash);
+        }
+      }
+    }
   }
 
   window.napSetTab = setTab;
@@ -53,4 +78,19 @@
       setTab(btn.getAttribute("data-tab"));
     });
   });
+
+  window.addEventListener("popstate", function () {
+    var tabFromHash = (location.hash || "").replace(/^#/, "");
+    if (validNavTabs.indexOf(tabFromHash) !== -1) {
+      setTab(tabFromHash, undefined, { fromHistory: true });
+    }
+  });
+
+  /* Restore whichever tab the hash points to on a fresh load (a refresh, or
+     landing on a link with a #hash) instead of always defaulting to
+     Overview. Uses replaceState so this doesn't itself add a history entry. */
+  var initialTab = (location.hash || "").replace(/^#/, "");
+  if (validNavTabs.indexOf(initialTab) !== -1) {
+    setTab(initialTab, undefined, { replace: true });
+  }
 })();
