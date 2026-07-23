@@ -3461,6 +3461,83 @@ html[data-theme="dark"] .modal__img {
   color: var(--maroon);
 }
 
+/* Member Education accordion */
+.education-accordion {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.education-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--grey-400);
+}
+
+.education-item {
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.education-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.education-item__header:hover,
+.education-item__header:focus-visible {
+  background: var(--grey-50);
+}
+
+.education-item__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--black);
+}
+
+.education-item__chevron {
+  flex-shrink: 0;
+  transition: transform var(--transition);
+  color: var(--grey-400);
+}
+
+.education-item.is-open .education-item__chevron {
+  transform: rotate(180deg);
+}
+
+.education-item__body {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid var(--grey-200);
+}
+
+.education-item__body[hidden] {
+  display: none;
+}
+
+.education-item__desc {
+  margin: 1rem 0 0;
+  color: var(--grey-600);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.education-item__admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
 .bro-card {
   display: flex;
   align-items: center;

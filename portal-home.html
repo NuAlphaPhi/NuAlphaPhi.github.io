@@ -266,13 +266,31 @@
                         <h1 class="portal-view-title">Pledges</h1>
                         <p class="portal-view-intro">Pledge classes and the brothers they became.</p>
                     </div>
-                    <button class="form-submit form-submit--small" id="newPledgeClassBtn" type="button" hidden>New Pledge Class</button>
                 </div>
-                <div class="forms-grid" id="pledgeClassGrid"></div>
 
-                <h2 class="pledges-section-heading" id="pastPledgeClassesHeading" hidden>Past Pledge Classes</h2>
-                <div class="pledges-chapter-tabs" id="pastPledgeClassTabs"></div>
-                <div class="forms-grid" id="pastPledgeClassGrid"></div>
+                <div class="sub-tabs" id="pledgesSubTabs" role="tablist" aria-label="Pledges">
+                    <button class="sub-tabs__btn is-active" type="button" data-pledges-tab="classes" role="tab" aria-selected="true">Pledge Classes</button>
+                    <button class="sub-tabs__btn" type="button" data-pledges-tab="education" role="tab" aria-selected="false">Member Education</button>
+                </div>
+
+                <div id="pledgesClassesPanel" data-pledges-panel="classes">
+                    <div class="news-card__toolbar">
+                        <button class="form-submit form-submit--small" id="newPledgeClassBtn" type="button" hidden>New Pledge Class</button>
+                    </div>
+                    <div class="forms-grid" id="pledgeClassGrid"></div>
+
+                    <h2 class="pledges-section-heading" id="pastPledgeClassesHeading" hidden>Past Pledge Classes</h2>
+                    <div class="pledges-chapter-tabs" id="pastPledgeClassTabs"></div>
+                    <div class="forms-grid" id="pastPledgeClassGrid"></div>
+                </div>
+
+                <div id="pledgesEducationPanel" data-pledges-panel="education" hidden>
+                    <p class="portal-view-intro">What each pledge needs to have in their notebook to cross. This varies from chapter to chapter — the sections below are just a barebones starting layout for admins to build out.</p>
+                    <div class="news-card__toolbar">
+                        <button class="form-submit form-submit--small" id="newEducationSectionBtn" type="button" hidden>Add Section</button>
+                    </div>
+                    <div class="education-accordion" id="educationSectionsList"></div>
+                </div>
             </section>
 
             <section class="portal-tab-panel" id="panel-pledge-class" data-panel="pledge-class" hidden>
@@ -895,6 +913,29 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay" id="modal-education-section" aria-labelledby="modal-education-section-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-education-section-title">Add Section</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="educationSectionForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="education-section-title">Section Title</label>
+                    <input class="form-input" id="education-section-title" name="title" type="text" placeholder="e.g. Rules" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="education-section-description">What pledges need to write or do for this section</label>
+                    <textarea class="form-textarea" id="education-section-description" name="description" placeholder="e.g. Write out the Rules of Nu Alpha Phi, word for word." required></textarea>
+                </div>
+                <p class="form-error" id="education-section-form-error" role="alert" hidden></p>
+                <button class="form-submit" type="submit">Save Section</button>
+            </form>
+        </div>
+    </dialog>
+
     <dialog class="modal-overlay" id="modal-familytree-person" aria-labelledby="familytree-person-name">
         <div class="modal" role="document">
             <div class="modal__header">
@@ -1020,6 +1061,7 @@
     <script src="js/portal-forms.js"></script>
     <script src="js/portal-directory.js"></script>
     <script src="js/portal-pledges.js"></script>
+    <script src="js/portal-member-education.js"></script>
     <script src="js/portal-familytree.js"></script>
     <script src="js/portal-admin.js"></script>
     <script src="js/portal-birthdays.js"></script>

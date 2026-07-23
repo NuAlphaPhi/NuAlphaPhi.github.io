@@ -147,6 +147,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Member Education: what a pledge needs in their notebook to cross,
+    // broken into sections (e.g. "Rules"). Every brother can read; only
+    // admins can add, edit, or delete sections.
+    match /memberEducation/{sectionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     // Outgoing email queue, consumed by the Firebase "Trigger Email" extension
     // (which reads with admin privileges, bypassing these rules). Portal
     // clients only ever enqueue; nobody can read the queue back.
