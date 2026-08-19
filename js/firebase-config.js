@@ -30,5 +30,10 @@
 
   window.db = firebase.firestore();
   window.auth = firebase.auth();
-  window.storage = firebase.storage();
+  // Only portal-home.html loads the Storage SDK (it's the only page that
+  // needs it) — guard this so pages like the sign-in page, which share this
+  // same config file but skip that script tag, don't throw on load.
+  if (typeof firebase.storage === "function") {
+    window.storage = firebase.storage();
+  }
 })();

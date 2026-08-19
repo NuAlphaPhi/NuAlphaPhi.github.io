@@ -3683,6 +3683,74 @@ html[data-theme="dark"] .modal__img {
   color: #991b1b;
 }
 
+/* Gallery: album grid on the Gallery tab, photo grid reuses .media-gallery */
+.gallery-album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.gallery-album-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  text-align: left;
+}
+
+.gallery-album-card__cover {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--grey-100);
+}
+
+.gallery-album-card__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-album-card__cover--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--grey-400);
+}
+
+.gallery-album-card__cover--empty svg {
+  width: 40px;
+  height: 40px;
+}
+
+.gallery-album-card__body {
+  padding: 1rem 1.1rem;
+}
+
+.gallery-album-card__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gallery-album-card__meta {
+  margin: 0.3rem 0 0.85rem;
+  font-size: 0.8rem;
+  color: var(--grey-400);
+}
+
+.gallery-album-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 /* Profile view modal */
 .profile-modal__header {
   display: flex;

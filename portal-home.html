@@ -85,6 +85,7 @@
                 <button class="portal-shell__nav-btn" type="button" data-tab="forms">Forms</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="pledges">Pledges</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="family-tree">Family Tree</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="gallery">Gallery</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="birthdays">Birthdays</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
@@ -356,6 +357,37 @@
                     <svg class="familytree-svg" id="familytreeSvg"></svg>
                     <p class="familytree-empty" id="familytreeEmpty" hidden>No family tree data yet.</p>
                 </div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-gallery" data-panel="gallery" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Brotherhood</span>
+                        <h1 class="portal-view-title">Gallery</h1>
+                        <p class="portal-view-intro">Photo albums from the brotherhood — every bro can start one and add pics.</p>
+                    </div>
+                    <button class="form-submit form-submit--small" id="newAlbumBtn" type="button">New Album</button>
+                </div>
+                <div class="gallery-album-grid" id="galleryAlbumGrid"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-gallery-album" data-panel="gallery-album" hidden>
+                <button class="portal-back-btn" type="button" id="galleryAlbumBackBtn">&larr; Back to Gallery</button>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Album</span>
+                        <h1 class="portal-view-title" id="galleryAlbumPageTitle"></h1>
+                        <p class="portal-view-intro" id="galleryAlbumPageMeta"></p>
+                    </div>
+                    <div class="news-card__actions" id="galleryAlbumPageActions"></div>
+                </div>
+
+                <div class="news-card__toolbar">
+                    <label class="form-submit form-submit--small form-submit--inline" for="galleryPhotoUploadInput">Add Photos</label>
+                    <input type="file" id="galleryPhotoUploadInput" accept="image/*" multiple hidden>
+                </div>
+                <p class="form-feedback" id="galleryPhotoFeedback" role="status" aria-live="polite" hidden></p>
+                <div class="media-gallery" id="galleryPhotoGrid"></div>
             </section>
 
             <section class="portal-tab-panel" id="panel-birthdays" data-panel="birthdays" hidden>
@@ -936,6 +968,25 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay" id="modal-gallery-album-form" aria-labelledby="modal-gallery-album-form-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-gallery-album-form-title">New Album</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="galleryAlbumForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="gallery-album-title">Album Title</label>
+                    <input class="form-input" id="gallery-album-title" name="title" type="text" placeholder="e.g. Formal 2026" required>
+                </div>
+                <p class="form-error" id="gallery-album-form-error" role="alert" hidden></p>
+                <button class="form-submit" type="submit">Save Album</button>
+            </form>
+        </div>
+    </dialog>
+
     <dialog class="modal-overlay" id="modal-familytree-person" aria-labelledby="familytree-person-name">
         <div class="modal" role="document">
             <div class="modal__header">
@@ -1063,6 +1114,7 @@
     <script src="js/portal-pledges.js"></script>
     <script src="js/portal-member-education.js"></script>
     <script src="js/portal-familytree.js"></script>
+    <script src="js/portal-gallery.js"></script>
     <script src="js/portal-admin.js"></script>
     <script src="js/portal-birthdays.js"></script>
     <script src="js/portal-overview.js"></script>

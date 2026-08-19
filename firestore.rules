@@ -155,6 +155,30 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Gallery: photo albums any brother can start and add pics to — fully
+    // visible to every signed-in brother, no per-album privacy. Renaming or
+    // deleting an album is limited to whoever created it (or an admin); the
+    // denormalized coverUrl/photoCount on the album doc can be bumped by
+    // whoever's adding a photo, since anyone can add to any album. The
+    // actual image bytes live in Cloud Storage (see storage.rules); each
+    // photo doc here is just the gallery entry (download URL + who/when).
+    match /galleryAlbums/{albumId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
+      allow update: if isSignedIn() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverUrl', 'photoCount', 'updatedAt'])
+        || resource.data.createdByUid == request.auth.uid
+        || isAdmin()
+      );
+      allow delete: if isSignedIn() && (resource.data.createdByUid == request.auth.uid || isAdmin());
+
+      match /photos/{photoId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.uploadedByUid == request.auth.uid;
+        allow delete: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || isAdmin());
+      }
+    }
+
     // Outgoing email queue, consumed by the Firebase "Trigger Email" extension
     // (which reads with admin privileges, bypassing these rules). Portal
     // clients only ever enqueue; nobody can read the queue back.
