@@ -67,7 +67,7 @@
 
   function albumCardHtml(album) {
     var cover = album.coverUrl
-      ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(album.coverUrl) + '" alt="" loading="lazy"></div>'
+      ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(album.coverThumbUrl || album.coverUrl) + '" alt="" loading="lazy" decoding="async"></div>'
       : '<div class="gallery-album-card__cover gallery-album-card__cover--empty">' + IMAGE_ICON_SVG + "</div>";
 
     var count = album.photoCount || 0;
@@ -127,9 +127,11 @@
       .collection("photos")
       .get()
       .then(function (snap) {
-        var storageDeletes = snap.docs.map(function (doc) {
+        var storageDeletes = [];
+        snap.docs.forEach(function (doc) {
           var data = doc.data();
-          return data.storagePath ? storage.ref(data.storagePath).delete().catch(function () {}) : Promise.resolve();
+          if (data.storagePath) storageDeletes.push(storage.ref(data.storagePath).delete().catch(function () {}));
+          if (data.thumbStoragePath) storageDeletes.push(storage.ref(data.thumbStoragePath).delete().catch(function () {}));
         });
         return Promise.all(storageDeletes).then(function () {
           var batch = db.batch();
@@ -202,6 +204,7 @@
         createdByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
         photoCount: 0,
         coverUrl: null,
+        coverThumbUrl: null,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
@@ -336,7 +339,7 @@
         var when = formatPhotoDate(p.createdAt);
         return (
           '<div class="media-card">' +
-          '<div class="media-card__preview"><img src="' + escapeHtml(p.url) + '" alt="" loading="lazy"></div>' +
+          '<div class="media-card__preview"><img src="' + escapeHtml(p.thumbUrl || p.url) + '" alt="" loading="lazy" decoding="async"></div>' +
           '<div class="media-card__footer">' +
           '<p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
           '<div class="media-card__actions">' +
@@ -376,9 +379,12 @@
     });
     var albumId = currentAlbumId;
     var album = findAlbum(albumId);
-    var storageDelete = photo && photo.storagePath ? storage.ref(photo.storagePath).delete().catch(function () {}) : Promise.resolve();
+    var storageDeletes = [
+      photo && photo.storagePath ? storage.ref(photo.storagePath).delete().catch(function () {}) : Promise.resolve(),
+      photo && photo.thumbStoragePath ? storage.ref(photo.thumbStoragePath).delete().catch(function () {}) : Promise.resolve(),
+    ];
 
-    storageDelete
+    Promise.all(storageDeletes)
       .then(function () {
         return db.collection("galleryAlbums").doc(albumId).collection("photos").doc(photoId).delete();
       })
@@ -389,6 +395,7 @@
             return p.id !== photoId;
           });
           update.coverUrl = nextCover ? nextCover.url : null;
+          update.coverThumbUrl = nextCover ? nextCover.thumbUrl || nextCover.url : null;
         }
         return db.collection("galleryAlbums").doc(albumId).update(update);
       })
@@ -423,7 +430,10 @@
 
   function uploadPhotoFile(file, albumId) {
     var safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    var storagePath = "galleryAlbums/" + albumId + "/" + Date.now() + "_" + Math.random().toString(36).slice(2) + "_" + safeName;
+    var base = Date.now() + "_" + Math.random().toString(36).slice(2) + "_" + safeName;
+    var storagePath = "galleryAlbums/" + albumId + "/" + base;
+    var thumbStoragePath = "galleryAlbums/" + albumId + "/" + base + "_thumb.jpg";
+
     var uploadTask = storage.ref(storagePath).put(file, { customMetadata: { uploaderUid: currentUid } });
 
     if (photoFeedbackEl) {
@@ -432,58 +442,83 @@
       photoFeedbackEl.textContent = 'Uploading "' + file.name + '"… 0%';
     }
 
-    uploadTask.on(
-      "state_changed",
-      function (snapshot) {
-        var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        if (photoFeedbackEl) photoFeedbackEl.textContent = 'Uploading "' + file.name + '"… ' + pct + "%";
-      },
-      function () {
+    uploadTask.on("state_changed", function (snapshot) {
+      var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      if (photoFeedbackEl) photoFeedbackEl.textContent = 'Uploading "' + file.name + '"… ' + pct + "%";
+    });
+
+    /* A small thumbnail uploads alongside the full-res original — the grid
+       renders this instead, so scrolling a big album doesn't mean decoding
+       dozens of multi-MB photos at once. No separate progress UI for it;
+       it's tiny and fast. Falls back to the full photo (thumbUrl null) if
+       the browser can't produce a blob for some reason. */
+    var thumbUploadPromise = new Promise(function (resolve) {
+      window.napResizeImageToBlob(file, 480, 0.75, function (blob) {
+        if (!blob) {
+          resolve(null);
+          return;
+        }
+        storage
+          .ref(thumbStoragePath)
+          .put(blob, { customMetadata: { uploaderUid: currentUid } })
+          .then(function (snapshot) {
+            return snapshot.ref.getDownloadURL();
+          })
+          .then(resolve)
+          .catch(function () {
+            resolve(null);
+          });
+      });
+    });
+
+    Promise.all([
+      uploadTask.then(function (snapshot) {
+        return snapshot.ref.getDownloadURL();
+      }),
+      thumbUploadPromise,
+    ])
+      .then(function (results) {
+        var url = results[0];
+        var thumbUrl = results[1];
+        return db
+          .collection("galleryAlbums")
+          .doc(albumId)
+          .collection("photos")
+          .add({
+            url: url,
+            storagePath: storagePath,
+            thumbUrl: thumbUrl || null,
+            thumbStoragePath: thumbUrl ? thumbStoragePath : null,
+            fileName: file.name,
+            uploadedByUid: currentUid,
+            uploadedByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          })
+          .then(function () {
+            var album = findAlbum(albumId);
+            var update = { photoCount: firebase.firestore.FieldValue.increment(1), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+            if (album && !album.coverUrl) {
+              update.coverUrl = url;
+              update.coverThumbUrl = thumbUrl || url;
+            }
+            return db.collection("galleryAlbums").doc(albumId).update(update);
+          });
+      })
+      .then(function () {
+        if (photoFeedbackEl) {
+          photoFeedbackEl.className = "form-feedback form-feedback--success";
+          photoFeedbackEl.textContent = '"' + file.name + '" uploaded.';
+        }
+        window.setTimeout(function () {
+          if (photoFeedbackEl) photoFeedbackEl.hidden = true;
+        }, 2000);
+      })
+      .catch(function () {
         if (photoFeedbackEl) {
           photoFeedbackEl.className = "form-feedback form-feedback--error";
           photoFeedbackEl.textContent = 'Couldn\'t upload "' + file.name + '". Please try again.';
         }
-      },
-      function () {
-        uploadTask.snapshot.ref
-          .getDownloadURL()
-          .then(function (url) {
-            return db
-              .collection("galleryAlbums")
-              .doc(albumId)
-              .collection("photos")
-              .add({
-                url: url,
-                storagePath: storagePath,
-                fileName: file.name,
-                uploadedByUid: currentUid,
-                uploadedByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              })
-              .then(function () {
-                var album = findAlbum(albumId);
-                var update = { photoCount: firebase.firestore.FieldValue.increment(1), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-                if (album && !album.coverUrl) update.coverUrl = url;
-                return db.collection("galleryAlbums").doc(albumId).update(update);
-              });
-          })
-          .then(function () {
-            if (photoFeedbackEl) {
-              photoFeedbackEl.className = "form-feedback form-feedback--success";
-              photoFeedbackEl.textContent = '"' + file.name + '" uploaded.';
-            }
-            window.setTimeout(function () {
-              if (photoFeedbackEl) photoFeedbackEl.hidden = true;
-            }, 2000);
-          })
-          .catch(function () {
-            if (photoFeedbackEl) {
-              photoFeedbackEl.className = "form-feedback form-feedback--error";
-              photoFeedbackEl.textContent = 'Uploaded but couldn\'t save "' + file.name + '". Please try again.';
-            }
-          });
-      }
-    );
+      });
   }
 
   if (photoUploadInputEl) {

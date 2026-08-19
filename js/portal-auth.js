@@ -76,6 +76,39 @@
     reader.readAsDataURL(file);
   };
 
+  /* Fit (no crop) resize to a Blob rather than a data URL — for generating a
+     small thumbnail to upload to Storage alongside a full-res original, so
+     a photo grid renders tiny JPEGs instead of decoding every full photo
+     just to show it at thumbnail size (the cause of laggy scrolling in a
+     large gallery). callback(blob) receives null if the browser can't
+     produce a blob for some reason, so callers should fall back to the
+     original file/URL in that case. */
+  window.napResizeImageToBlob = function (file, maxSize, quality, callback) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+        var w = Math.max(1, Math.round(img.width * ratio));
+        var h = Math.max(1, Math.round(img.height * ratio));
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(callback, "image/jpeg", quality || 0.75);
+      };
+      img.onerror = function () {
+        callback(null);
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function () {
+      callback(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
   window.napIsProfileComplete = function (profile) {
     if (!profile) return false;
     var required = ["firstName", "lastName", "pledgeName", "chapter", "semesterCrossed", "yearCrossed", "major", "birthday"];

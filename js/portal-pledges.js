@@ -816,7 +816,7 @@
         var preview =
           m.type === "video"
             ? '<video src="' + escapeHtml(m.url) + '" controls preload="metadata"></video>'
-            : '<img src="' + escapeHtml(m.url) + '" alt="" loading="lazy">';
+            : '<img src="' + escapeHtml(m.thumbUrl || m.url) + '" alt="" loading="lazy" decoding="async">';
         var when = formatMediaDate(m.createdAt);
 
         return (
@@ -860,9 +860,12 @@
       return m.id === mediaId;
     });
     var classId = currentClassId;
-    var storageDelete = media && media.storagePath ? storage.ref(media.storagePath).delete().catch(function () {}) : Promise.resolve();
+    var storageDeletes = [
+      media && media.storagePath ? storage.ref(media.storagePath).delete().catch(function () {}) : Promise.resolve(),
+      media && media.thumbStoragePath ? storage.ref(media.thumbStoragePath).delete().catch(function () {}) : Promise.resolve(),
+    ];
 
-    storageDelete
+    Promise.all(storageDeletes)
       .then(function () {
         return db.collection("pledgeClasses").doc(classId).collection("media").doc(mediaId).delete();
       })
@@ -901,7 +904,10 @@
 
   function uploadMediaFile(file, type, classId) {
     var safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    var storagePath = "pledgeClassMedia/" + classId + "/" + Date.now() + "_" + Math.random().toString(36).slice(2) + "_" + safeName;
+    var base = Date.now() + "_" + Math.random().toString(36).slice(2) + "_" + safeName;
+    var storagePath = "pledgeClassMedia/" + classId + "/" + base;
+    var thumbStoragePath = "pledgeClassMedia/" + classId + "/" + base + "_thumb.jpg";
+
     var uploadTask = storage.ref(storagePath).put(file, { customMetadata: { uploaderUid: currentUid } });
 
     if (pledgeMediaFeedbackEl) {
@@ -910,53 +916,78 @@
       pledgeMediaFeedbackEl.textContent = 'Uploading "' + file.name + '"… 0%';
     }
 
-    uploadTask.on(
-      "state_changed",
-      function (snapshot) {
-        var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        if (pledgeMediaFeedbackEl) pledgeMediaFeedbackEl.textContent = 'Uploading "' + file.name + '"… ' + pct + "%";
-      },
-      function () {
+    uploadTask.on("state_changed", function (snapshot) {
+      var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+      if (pledgeMediaFeedbackEl) pledgeMediaFeedbackEl.textContent = 'Uploading "' + file.name + '"… ' + pct + "%";
+    });
+
+    /* Images (not video) also get a small thumbnail uploaded alongside the
+       original — the grid renders that instead, so scrolling a class with a
+       lot of photos doesn't mean decoding dozens of multi-MB images at
+       once. Falls back to the full photo if the browser can't produce a
+       blob for some reason. */
+    var thumbUploadPromise =
+      type === "video"
+        ? Promise.resolve(null)
+        : new Promise(function (resolve) {
+            window.napResizeImageToBlob(file, 480, 0.75, function (blob) {
+              if (!blob) {
+                resolve(null);
+                return;
+              }
+              storage
+                .ref(thumbStoragePath)
+                .put(blob, { customMetadata: { uploaderUid: currentUid } })
+                .then(function (snapshot) {
+                  return snapshot.ref.getDownloadURL();
+                })
+                .then(resolve)
+                .catch(function () {
+                  resolve(null);
+                });
+            });
+          });
+
+    Promise.all([
+      uploadTask.then(function (snapshot) {
+        return snapshot.ref.getDownloadURL();
+      }),
+      thumbUploadPromise,
+    ])
+      .then(function (results) {
+        var url = results[0];
+        var thumbUrl = results[1];
+        return db
+          .collection("pledgeClasses")
+          .doc(classId)
+          .collection("media")
+          .add({
+            type: type,
+            url: url,
+            storagePath: storagePath,
+            thumbUrl: thumbUrl || null,
+            thumbStoragePath: thumbUrl ? thumbStoragePath : null,
+            fileName: file.name,
+            uploadedByUid: currentUid,
+            uploadedByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          });
+      })
+      .then(function () {
+        if (pledgeMediaFeedbackEl) {
+          pledgeMediaFeedbackEl.className = "form-feedback form-feedback--success";
+          pledgeMediaFeedbackEl.textContent = '"' + file.name + '" uploaded.';
+        }
+        window.setTimeout(function () {
+          if (pledgeMediaFeedbackEl) pledgeMediaFeedbackEl.hidden = true;
+        }, 2000);
+      })
+      .catch(function () {
         if (pledgeMediaFeedbackEl) {
           pledgeMediaFeedbackEl.className = "form-feedback form-feedback--error";
           pledgeMediaFeedbackEl.textContent = 'Couldn\'t upload "' + file.name + '". Please try again.';
         }
-      },
-      function () {
-        uploadTask.snapshot.ref
-          .getDownloadURL()
-          .then(function (url) {
-            return db
-              .collection("pledgeClasses")
-              .doc(classId)
-              .collection("media")
-              .add({
-                type: type,
-                url: url,
-                storagePath: storagePath,
-                fileName: file.name,
-                uploadedByUid: currentUid,
-                uploadedByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              });
-          })
-          .then(function () {
-            if (pledgeMediaFeedbackEl) {
-              pledgeMediaFeedbackEl.className = "form-feedback form-feedback--success";
-              pledgeMediaFeedbackEl.textContent = '"' + file.name + '" uploaded.';
-            }
-            window.setTimeout(function () {
-              if (pledgeMediaFeedbackEl) pledgeMediaFeedbackEl.hidden = true;
-            }, 2000);
-          })
-          .catch(function () {
-            if (pledgeMediaFeedbackEl) {
-              pledgeMediaFeedbackEl.className = "form-feedback form-feedback--error";
-              pledgeMediaFeedbackEl.textContent = 'Uploaded but couldn\'t save "' + file.name + '". Please try again.';
-            }
-          });
-      }
-    );
+      });
   }
 
   if (pledgeMediaUploadInputEl) {
