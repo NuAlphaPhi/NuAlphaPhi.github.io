@@ -85,7 +85,10 @@
           window.NAP_CURRENT_PROFILE = Object.assign({}, window.NAP_CURRENT_PROFILE, { isAdmin: true });
           var adminNavBtn = document.getElementById("adminNavBtn");
           if (adminNavBtn) adminNavBtn.hidden = false;
+          var blogNavBtn = document.getElementById("blogNavBtn");
+          if (blogNavBtn) blogNavBtn.hidden = false;
           if (window.napStartAdminListeners) window.napStartAdminListeners();
+          if (window.napStartBlogListener) window.napStartBlogListener();
           window.napSaveButtonDone(submitBtn, { savedLabel: "Activated" });
           adminCodeForm.reset();
           window.setTimeout(refreshAdminPanel, 700);
@@ -118,11 +121,14 @@
             window.NAP_CURRENT_PROFILE = Object.assign({}, window.NAP_CURRENT_PROFILE, { isAdmin: false });
             var adminNavBtn = document.getElementById("adminNavBtn");
             if (adminNavBtn) adminNavBtn.hidden = true;
-            /* Bounce out of the Admin tab if it's open — the nav button that
-               would lead there is now hidden, so staying on it would strand
-               them on a dead-end panel. */
+            var blogNavBtn = document.getElementById("blogNavBtn");
+            if (blogNavBtn) blogNavBtn.hidden = true;
+            /* Bounce out of the Admin/Blog tab if either is open — the nav
+               button that would lead there is now hidden, so staying on it
+               would strand them on a dead-end panel. */
             var adminPanel = document.getElementById("panel-admin");
-            if (adminPanel && !adminPanel.hidden) window.napSetTab("settings");
+            var blogPanel = document.getElementById("panel-blog");
+            if ((adminPanel && !adminPanel.hidden) || (blogPanel && !blogPanel.hidden)) window.napSetTab("settings");
             window.napSaveButtonDone(removeAdminBtn, { savedLabel: "Removed" });
             window.setTimeout(refreshAdminPanel, 700);
           })

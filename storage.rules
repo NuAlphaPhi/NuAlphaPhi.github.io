@@ -39,5 +39,20 @@ service firebase.storage {
         && (resource.metadata.uploaderUid == request.auth.uid
           || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true);
     }
+
+    // Blog photos: unlike everything else here, these are genuinely public —
+    // the main website's blog page displays them to visitors who aren't
+    // signed in at all. Only admins can upload or delete.
+    match /blogPhotos/{postId}/{fileName} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        && request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+
+      allow delete: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
   }
 }

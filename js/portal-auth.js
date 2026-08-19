@@ -350,6 +350,8 @@
 
       var adminNavBtn = document.getElementById("adminNavBtn");
       if (adminNavBtn) adminNavBtn.hidden = profile.isAdmin !== true;
+      var blogNavBtn = document.getElementById("blogNavBtn");
+      if (blogNavBtn) blogNavBtn.hidden = profile.isAdmin !== true;
 
       window.NAP_AUTH_READY_DETAIL = { uid: user.uid, profile: profile };
       document.dispatchEvent(

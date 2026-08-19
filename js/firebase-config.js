@@ -29,10 +29,13 @@
   firebase.initializeApp(firebaseConfig);
 
   window.db = firebase.firestore();
-  window.auth = firebase.auth();
-  // Only portal-home.html loads the Storage SDK (it's the only page that
-  // needs it) — guard this so pages like the sign-in page, which share this
-  // same config file but skip that script tag, don't throw on load.
+  // Not every page that loads this shared config file also loads every
+  // Firebase SDK script tag — blog.html is public/read-only and skips auth
+  // entirely, portal-home.html is the only page that needs Storage. Guard
+  // each one so a page missing that SDK doesn't throw on load.
+  if (typeof firebase.auth === "function") {
+    window.auth = firebase.auth();
+  }
   if (typeof firebase.storage === "function") {
     window.storage = firebase.storage();
   }

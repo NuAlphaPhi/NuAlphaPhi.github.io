@@ -89,6 +89,7 @@
                 <button class="portal-shell__nav-btn" type="button" data-tab="birthdays">Birthdays</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="blog" id="blogNavBtn" hidden>Blog</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="admin" id="adminNavBtn" hidden>Admin</button>
             </nav>
 
@@ -633,6 +634,18 @@
                 </div>
             </section>
 
+            <section class="portal-tab-panel" id="panel-blog" data-panel="blog" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Content</span>
+                        <h1 class="portal-view-title">Blog</h1>
+                        <p class="portal-view-intro">Published posts show up in the Blog section of the main website.</p>
+                    </div>
+                    <button class="form-submit form-submit--small" id="newBlogPostBtn" type="button">New Post</button>
+                </div>
+                <div class="blog-admin-grid" id="blogPostGrid"></div>
+            </section>
+
             <section class="portal-tab-panel" id="panel-admin" data-panel="admin" hidden>
                 <div class="portal-view-header">
                     <div>
@@ -987,6 +1000,52 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay" id="modal-blog-post-form" aria-labelledby="modal-blog-post-form-title">
+        <div class="modal" role="document">
+            <div class="modal__header">
+                <div>
+                    <h2 class="modal__title" id="modal-blog-post-form-title">New Post</h2>
+                </div>
+                <button class="modal__close-btn" type="button" data-close-modal>Close</button>
+            </div>
+            <form id="blogPostForm" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="blog-post-title">Title</label>
+                    <input class="form-input" id="blog-post-title" name="title" type="text" placeholder="e.g. Brothers Cross Into the Nu Class" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="blog-post-author">Author</label>
+                    <input class="form-input" id="blog-post-author" name="author" type="text" placeholder="e.g. Nu Alpha Phi National" required>
+                </div>
+
+                <label class="form-label">Co-Authors (optional)</label>
+                <div class="form-builder__options" id="blogCoAuthorRows"></div>
+                <button class="news-card__action-btn" type="button" id="addBlogCoAuthorBtn">Add Co-Author</button>
+
+                <div class="form-group" style="margin-top:1.25rem;">
+                    <label class="form-label" for="blog-post-body">Post Content</label>
+                    <textarea class="form-textarea" id="blog-post-body" name="body" rows="10" placeholder="Write the post here…"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Photos (up to 4)</label>
+                    <div class="blog-photo-slots" id="blogPhotoSlots"></div>
+                    <input type="file" id="blogPhotoInput" accept="image/*" multiple hidden>
+                    <button class="news-card__action-btn" type="button" id="blogAddPhotosBtn">Add Photos</button>
+                </div>
+
+                <p class="form-feedback" id="blogPostFeedback" role="status" aria-live="polite" hidden></p>
+                <p class="form-error" id="blog-post-form-error" role="alert" hidden></p>
+
+                <div class="profile-modal__edit-actions">
+                    <button class="form-submit form-submit--secondary form-submit--inline" type="button" id="blogSaveDraftBtn">Save Draft</button>
+                    <button class="form-submit form-submit--inline" type="button" id="blogPublishBtn">Publish</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
     <dialog class="modal-overlay" id="modal-familytree-person" aria-labelledby="familytree-person-name">
         <div class="modal" role="document">
             <div class="modal__header">
@@ -1116,6 +1175,7 @@
     <script src="js/portal-familytree.js"></script>
     <script src="js/portal-gallery.js"></script>
     <script src="js/portal-admin.js"></script>
+    <script src="js/portal-blog.js"></script>
     <script src="js/portal-birthdays.js"></script>
     <script src="js/portal-overview.js"></script>
     <script src="js/portal-notifications.js"></script>

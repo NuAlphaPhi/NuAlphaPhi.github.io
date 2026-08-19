@@ -2953,6 +2953,133 @@ dialog.modal-overlay[open] .modal {
   margin: 0;
 }
 
+/* Blog (public site) */
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.75rem;
+  margin-top: 2.5rem;
+}
+
+.blog-grid__empty,
+.blog-grid__loading {
+  grid-column: 1 / -1;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--grey-400);
+  font-size: 1rem;
+}
+
+.blog-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow var(--transition), transform var(--transition);
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+.blog-card:hover,
+.blog-card:focus-visible {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.blog-card__cover {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: var(--grey-100);
+}
+
+.blog-card__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.blog-card__body {
+  padding: 1.5rem;
+}
+
+.blog-card__date {
+  margin: 0 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--maroon);
+}
+
+.blog-card__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--black);
+}
+
+.blog-card__byline {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--grey-400);
+}
+
+.blog-card__excerpt {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--grey-600);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Blog post detail modal */
+.modal--blog-post {
+  width: min(720px, 100%);
+}
+
+.blog-post-modal__byline {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+  color: var(--grey-400);
+}
+
+.blog-post-modal__photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.blog-post-modal__photos:empty {
+  display: none;
+  margin: 0;
+}
+
+.blog-post-modal__photos img {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  cursor: zoom-in;
+}
+
+.blog-post-modal__body {
+  white-space: pre-wrap;
+}
+
 /* Portal — sidebar app shell
    height (not min-height) + overflow hidden keeps this pinned to the
    viewport so the sidebar never scrolls away with the main content —
@@ -3749,6 +3876,147 @@ html[data-theme="dark"] .modal__img {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* Blog (portal admin side — public rendering lives in css/nap.css's
+   marketing-site "Blog (public site)" section instead) */
+.blog-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.blog-admin-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.blog-admin-card__cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--grey-100);
+}
+
+.blog-admin-card__cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.blog-admin-card__cover--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--grey-400);
+}
+
+.blog-admin-card__cover--empty svg {
+  width: 36px;
+  height: 36px;
+}
+
+.blog-admin-card__body {
+  padding: 1rem 1.1rem;
+}
+
+.blog-admin-card__status {
+  display: inline-block;
+  margin-bottom: 0.6rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.blog-admin-card__status--draft {
+  background: var(--grey-100);
+  color: var(--grey-600);
+}
+
+.blog-admin-card__status--published {
+  background: rgba(34, 139, 87, 0.14);
+  color: #1c8a52;
+}
+
+.blog-admin-card__status--hidden {
+  background: rgba(153, 27, 27, 0.1);
+  color: #991b1b;
+}
+
+.blog-admin-card__title {
+  margin: 0 0 0.3rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--black);
+}
+
+.blog-admin-card__meta {
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  color: var(--grey-400);
+}
+
+.blog-admin-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Blog post editor: up to 4 photo slots */
+.blog-photo-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.blog-photo-slots:empty {
+  display: none;
+}
+
+.blog-photo-slot {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--grey-100);
+}
+
+.blog-photo-slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.blog-photo-slot__remove {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--white);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.blog-photo-slot__remove:hover,
+.blog-photo-slot__remove:focus-visible {
+  background: #991b1b;
 }
 
 /* Profile view modal */

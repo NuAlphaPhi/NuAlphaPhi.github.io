@@ -179,6 +179,15 @@ service cloud.firestore {
       }
     }
 
+    // Blog: admin-authored posts shown publicly on the main website. A
+    // published post is readable by anyone, signed in or not — that's what
+    // powers the public blog page. Drafts/hidden posts are only readable by
+    // admins (from the portal's Blog tab). Only admins can write at all.
+    match /blogPosts/{postId} {
+      allow read: if resource.data.status == 'published' || (isSignedIn() && isAdmin());
+      allow create, update, delete: if isSignedIn() && isAdmin();
+    }
+
     // Outgoing email queue, consumed by the Firebase "Trigger Email" extension
     // (which reads with admin privileges, bypassing these rules). Portal
     // clients only ever enqueue; nobody can read the queue back.
