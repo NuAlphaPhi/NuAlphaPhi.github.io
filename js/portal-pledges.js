@@ -834,25 +834,21 @@
   }
 
   function downloadMedia(media) {
-    fetch(media.url)
-      .then(function (res) {
-        return res.blob();
-      })
-      .then(function (blob) {
-        var objectUrl = URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.href = objectUrl;
-        a.download = media.fileName || "download";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.setTimeout(function () {
-          URL.revokeObjectURL(objectUrl);
-        }, 1000);
-      })
-      .catch(function () {
-        window.alert("Couldn't download this file. Please try again.");
-      });
+    /* fetch()+blob() used to build this, but Firebase Storage's download
+       URLs don't reliably send back CORS headers, so the fetch itself was
+       failing before it ever got to the blob step. Uploads now set
+       Content-Disposition: attachment (see uploadMediaFile), which makes
+       the browser download the file on a plain navigation regardless of
+       CORS; target=_blank is the fallback for anything uploaded before
+       that existed, so it opens in a new tab instead of erroring. */
+    var a = document.createElement("a");
+    a.href = media.url;
+    a.download = media.fileName || "download";
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   function deleteMedia(mediaId) {
@@ -908,7 +904,10 @@
     var storagePath = "pledgeClassMedia/" + classId + "/" + base;
     var thumbStoragePath = "pledgeClassMedia/" + classId + "/" + base + "_thumb.jpg";
 
-    var uploadTask = storage.ref(storagePath).put(file, { customMetadata: { uploaderUid: currentUid } });
+    var uploadTask = storage.ref(storagePath).put(file, {
+      customMetadata: { uploaderUid: currentUid },
+      contentDisposition: 'attachment; filename="' + file.name.replace(/"/g, "") + '"',
+    });
 
     if (pledgeMediaFeedbackEl) {
       pledgeMediaFeedbackEl.hidden = false;

@@ -273,6 +273,9 @@
     }
     currentAlbumId = null;
     currentAlbumPhotos = [];
+    /* The lightbox <dialog> lives at the top level of the page, not nested
+       inside this panel, so hiding the panel alone wouldn't close it. */
+    if (lightboxModal && lightboxModal.open) lightboxModal.close();
   }
 
   document.querySelectorAll(".portal-shell__nav-btn").forEach(function (btn) {
@@ -330,6 +333,7 @@
 
     if (!currentAlbumPhotos.length) {
       photoGridEl.innerHTML = '<p class="media-empty">No photos yet — be the first to add one.</p>';
+      syncLightboxWithPhotos();
       return;
     }
 
@@ -339,7 +343,8 @@
         var when = formatPhotoDate(p.createdAt);
         return (
           '<div class="media-card">' +
-          '<div class="media-card__preview"><img src="' + escapeHtml(p.thumbUrl || p.url) + '" alt="" loading="lazy" decoding="async"></div>' +
+          '<div class="media-card__preview media-card__preview--clickable" data-photo-open="' + p.id + '">' +
+          '<img src="' + escapeHtml(p.thumbUrl || p.url) + '" alt="" loading="lazy" decoding="async"></div>' +
           '<div class="media-card__footer">' +
           '<p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
           '<div class="media-card__actions">' +
@@ -349,28 +354,27 @@
         );
       })
       .join("");
+
+    syncLightboxWithPhotos();
   }
 
   function downloadPhoto(photo) {
-    fetch(photo.url)
-      .then(function (res) {
-        return res.blob();
-      })
-      .then(function (blob) {
-        var objectUrl = URL.createObjectURL(blob);
-        var a = document.createElement("a");
-        a.href = objectUrl;
-        a.download = photo.fileName || "download";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.setTimeout(function () {
-          URL.revokeObjectURL(objectUrl);
-        }, 1000);
-      })
-      .catch(function () {
-        window.alert("Couldn't download this photo. Please try again.");
-      });
+    /* fetch()+blob() used to build this, but Firebase Storage's download
+       URLs don't reliably send back CORS headers, so the fetch itself was
+       failing before it ever got to the blob step — every download just
+       said "failed". Uploads now set Content-Disposition: attachment (see
+       uploadPhotoFile), which makes the browser download the file on a
+       plain navigation regardless of CORS; target=_blank is the fallback
+       for anything uploaded before that existed, so it opens in a new tab
+       instead of erroring. */
+    var a = document.createElement("a");
+    a.href = photo.url;
+    a.download = photo.fileName || "download";
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   function deletePhoto(photoId) {
@@ -408,6 +412,7 @@
     photoGridEl.addEventListener("click", function (e) {
       var downloadBtn = e.target.closest("[data-photo-download]");
       var deleteBtn = e.target.closest("[data-photo-delete]");
+      var openTrigger = e.target.closest("[data-photo-open]");
 
       if (downloadBtn) {
         var photo = currentAlbumPhotos.find(function (p) {
@@ -422,8 +427,99 @@
         window.napConfirm("This can't be undone.", { title: "Delete this photo?", confirmLabel: "Delete" }).then(function (confirmed) {
           if (confirmed) deletePhoto(photoId);
         });
+        return;
+      }
+
+      if (openTrigger) {
+        openLightbox(openTrigger.getAttribute("data-photo-open"));
       }
     });
+  }
+
+  /* ---------- Lightbox: click a photo to expand it, arrows/keys to step
+     through the rest of the album ---------- */
+  var lightboxModal = document.getElementById("modal-gallery-lightbox");
+  var lightboxImg = document.getElementById("galleryLightboxImg");
+  var lightboxMeta = document.getElementById("galleryLightboxMeta");
+  var lightboxPrevBtn = document.getElementById("galleryLightboxPrevBtn");
+  var lightboxNextBtn = document.getElementById("galleryLightboxNextBtn");
+  var lightboxDownloadBtn = document.getElementById("galleryLightboxDownloadBtn");
+  var lightboxIndex = -1;
+  var lightboxPhotoId = null; // tracks identity, not just position — see syncLightboxWithPhotos
+
+  function renderLightbox() {
+    var photo = currentAlbumPhotos[lightboxIndex];
+    if (!photo) return;
+
+    lightboxPhotoId = photo.id;
+    lightboxImg.src = photo.url;
+    lightboxImg.alt = "";
+
+    var when = formatPhotoDate(photo.createdAt);
+    var whoWhen = [photo.uploadedByName || "A brother", when].filter(Boolean).join(" · ");
+    lightboxMeta.textContent = whoWhen + " — " + (lightboxIndex + 1) + " of " + currentAlbumPhotos.length;
+
+    var multiple = currentAlbumPhotos.length > 1;
+    lightboxPrevBtn.hidden = !multiple;
+    lightboxNextBtn.hidden = !multiple;
+  }
+
+  function openLightbox(photoId) {
+    var idx = currentAlbumPhotos.findIndex(function (p) {
+      return p.id === photoId;
+    });
+    if (idx === -1) return;
+    lightboxIndex = idx;
+    renderLightbox();
+    lightboxModal.showModal();
+  }
+
+  function stepLightbox(delta) {
+    if (!currentAlbumPhotos.length) return;
+    lightboxIndex = (lightboxIndex + delta + currentAlbumPhotos.length) % currentAlbumPhotos.length;
+    renderLightbox();
+  }
+
+  if (lightboxPrevBtn) lightboxPrevBtn.addEventListener("click", function () { stepLightbox(-1); });
+  if (lightboxNextBtn) lightboxNextBtn.addEventListener("click", function () { stepLightbox(1); });
+
+  if (lightboxDownloadBtn) {
+    lightboxDownloadBtn.addEventListener("click", function () {
+      var photo = currentAlbumPhotos[lightboxIndex];
+      if (photo) downloadPhoto(photo);
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (!lightboxModal || !lightboxModal.open) return;
+    if (e.key === "ArrowLeft") stepLightbox(-1);
+    else if (e.key === "ArrowRight") stepLightbox(1);
+  });
+
+  /* The album's photo list can change (uploads/deletes) while the lightbox
+     is open — called from renderPhotoGrid so the lightbox never shows a
+     stale photo, and closes itself if the one being viewed was just
+     deleted. Looks the photo up by id (lightboxPhotoId), not by re-using
+     lightboxIndex against the already-mutated array — indexing with the
+     old position into the new array would silently land on whichever
+     photo now happens to occupy that slot instead of detecting the photo
+     is gone. */
+  function syncLightboxWithPhotos() {
+    if (!lightboxModal || !lightboxModal.open) return;
+
+    var stillThereIdx = lightboxPhotoId
+      ? currentAlbumPhotos.findIndex(function (p) {
+          return p.id === lightboxPhotoId;
+        })
+      : -1;
+
+    if (!currentAlbumPhotos.length || stillThereIdx === -1) {
+      lightboxModal.close();
+      return;
+    }
+
+    lightboxIndex = stillThereIdx;
+    renderLightbox();
   }
 
   var PHOTO_MAX_BYTES = 100 * 1024 * 1024;
@@ -434,7 +530,10 @@
     var storagePath = "galleryAlbums/" + albumId + "/" + base;
     var thumbStoragePath = "galleryAlbums/" + albumId + "/" + base + "_thumb.jpg";
 
-    var uploadTask = storage.ref(storagePath).put(file, { customMetadata: { uploaderUid: currentUid } });
+    var uploadTask = storage.ref(storagePath).put(file, {
+      customMetadata: { uploaderUid: currentUid },
+      contentDisposition: 'attachment; filename="' + file.name.replace(/"/g, "") + '"',
+    });
 
     if (photoFeedbackEl) {
       photoFeedbackEl.hidden = false;

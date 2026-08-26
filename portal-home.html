@@ -1000,6 +1000,23 @@
         </div>
     </dialog>
 
+    <dialog class="modal-overlay modal-overlay--lightbox" id="modal-gallery-lightbox" aria-label="Photo viewer">
+        <button class="lightbox__close" type="button" data-close-modal aria-label="Close">&times;</button>
+        <button class="lightbox__nav lightbox__nav--prev" type="button" id="galleryLightboxPrevBtn" aria-label="Previous photo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+        </button>
+        <div class="lightbox" role="document">
+            <img class="lightbox__img" id="galleryLightboxImg" src="" alt="">
+            <div class="lightbox__footer">
+                <p class="lightbox__meta" id="galleryLightboxMeta"></p>
+                <button class="lightbox__download" type="button" id="galleryLightboxDownloadBtn">Download</button>
+            </div>
+        </div>
+        <button class="lightbox__nav lightbox__nav--next" type="button" id="galleryLightboxNextBtn" aria-label="Next photo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </button>
+    </dialog>
+
     <dialog class="modal-overlay" id="modal-blog-post-form" aria-labelledby="modal-blog-post-form-title">
         <div class="modal" role="document">
             <div class="modal__header">
