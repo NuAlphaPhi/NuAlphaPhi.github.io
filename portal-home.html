@@ -90,6 +90,7 @@
                 <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="blog" id="blogNavBtn" hidden>Blog</button>
+                <button class="portal-shell__nav-btn" type="button" data-tab="linktree" id="linktreeNavBtn" hidden>Chapter Links</button>
                 <button class="portal-shell__nav-btn" type="button" data-tab="admin" id="adminNavBtn" hidden>Admin</button>
             </nav>
 
@@ -646,6 +647,74 @@
                 <div class="blog-admin-grid" id="blogPostGrid"></div>
             </section>
 
+            <section class="portal-tab-panel" id="panel-linktree" data-panel="linktree" hidden>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label">Content</span>
+                        <h1 class="portal-view-title">Chapter Links</h1>
+                        <p class="portal-view-intro">Each chapter's public link page — nualphaphi.com/alpha, /beta, and so on. Swap this in for a Linktree link in your chapter's Instagram bio.</p>
+                    </div>
+                </div>
+                <div class="linktree-admin-grid" id="linktreeChapterGrid"></div>
+            </section>
+
+            <section class="portal-tab-panel" id="panel-linktree-chapter" data-panel="linktree-chapter" hidden>
+                <button class="portal-back-btn" type="button" id="linktreeChapterBackBtn">&larr; Back to Chapter Links</button>
+                <div class="portal-view-header">
+                    <div>
+                        <span class="section-label" id="linktreeChapterPageLabel"></span>
+                        <h1 class="portal-view-title" id="linktreeChapterPageTitle"></h1>
+                        <p class="portal-view-intro">
+                            Live at <a id="linktreeChapterPageUrl" href="#" target="_blank" rel="noopener"></a>
+                        </p>
+                    </div>
+                </div>
+
+                <form id="linktreeChapterForm" novalidate>
+                    <div class="linktree-editor-profile">
+                        <div class="profile-photo-field">
+                            <span id="linktreeAvatarPreview"></span>
+                            <div>
+                                <label class="form-submit form-submit--inline form-submit--secondary" for="linktree-avatar-input">Change Avatar</label>
+                                <input type="file" id="linktree-avatar-input" accept="image/*" hidden>
+                                <p class="profile-photo-field__hint">Square photos look best. Optional — falls back to the chapter's initial.</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="linktree-display-name">Display Name</label>
+                            <input class="form-input" id="linktree-display-name" name="displayName" type="text" placeholder="e.g. Nu Alpha Phi — Alpha Chapter">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="linktree-subtitle">Subtitle / Bio</label>
+                            <textarea class="form-textarea" id="linktree-subtitle" name="subtitle" placeholder="A short line under the chapter name"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="portal-view-header portal-view-header--spaced">
+                        <h2 class="portal-view-title portal-view-title--small">Links</h2>
+                        <button class="news-card__action-btn" type="button" id="addLinktreeLinkBtn">Add Link</button>
+                    </div>
+                    <div class="linktree-editor-links" id="linktreeLinkRows"></div>
+
+                    <p class="form-feedback" id="linktreeChapterFeedback" role="status" aria-live="polite" hidden></p>
+                    <p class="form-error" id="linktree-chapter-form-error" role="alert" hidden></p>
+                    <button class="form-submit form-submit--inline" type="submit">Save Changes</button>
+                </form>
+
+                <div id="linktreeEditorsSection" hidden>
+                    <div class="portal-view-header portal-view-header--spaced">
+                        <h2 class="portal-view-title portal-view-title--small">Editors</h2>
+                    </div>
+                    <p class="portal-view-intro">Brothers who can edit this chapter's page without needing full admin access.</p>
+                    <div class="linktree-editors-list" id="linktreeEditorsList"></div>
+                    <div class="form-group familytree-big-picker" id="linktreeEditorPicker">
+                        <label class="form-label" for="linktree-editor-search">Add an editor</label>
+                        <input class="form-input" id="linktree-editor-search" type="text" autocomplete="off" placeholder="Search by name or pledge name…">
+                        <div class="familytree-big-picker__results" id="linktreeEditorResults" hidden></div>
+                    </div>
+                </div>
+            </section>
+
             <section class="portal-tab-panel" id="panel-admin" data-panel="admin" hidden>
                 <div class="portal-view-header">
                     <div>
@@ -1193,6 +1262,7 @@
     <script src="js/portal-gallery.js"></script>
     <script src="js/portal-admin.js"></script>
     <script src="js/portal-blog.js"></script>
+    <script src="js/portal-linktree.js"></script>
     <script src="js/portal-birthdays.js"></script>
     <script src="js/portal-overview.js"></script>
     <script src="js/portal-notifications.js"></script>

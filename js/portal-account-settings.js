@@ -89,6 +89,7 @@
           if (blogNavBtn) blogNavBtn.hidden = false;
           if (window.napStartAdminListeners) window.napStartAdminListeners();
           if (window.napStartBlogListener) window.napStartBlogListener();
+          if (window.napRefreshLinktreeNav) window.napRefreshLinktreeNav();
           window.napSaveButtonDone(submitBtn, { savedLabel: "Activated" });
           adminCodeForm.reset();
           window.setTimeout(refreshAdminPanel, 700);
@@ -125,10 +126,13 @@
             if (blogNavBtn) blogNavBtn.hidden = true;
             /* Bounce out of the Admin/Blog tab if either is open — the nav
                button that would lead there is now hidden, so staying on it
-               would strand them on a dead-end panel. */
+               would strand them on a dead-end panel. Chapter Links is its
+               own case (a brother can still be a per-chapter editor after
+               losing admin), so it re-checks and bounces itself. */
             var adminPanel = document.getElementById("panel-admin");
             var blogPanel = document.getElementById("panel-blog");
             if ((adminPanel && !adminPanel.hidden) || (blogPanel && !blogPanel.hidden)) window.napSetTab("settings");
+            if (window.napRefreshLinktreeNav) window.napRefreshLinktreeNav();
             window.napSaveButtonDone(removeAdminBtn, { savedLabel: "Removed" });
             window.setTimeout(refreshAdminPanel, 700);
           })

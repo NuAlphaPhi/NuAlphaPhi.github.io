@@ -188,6 +188,22 @@ service cloud.firestore {
       allow create, update, delete: if isSignedIn() && isAdmin();
     }
 
+    // Chapter link pages (nualphaphi.com/alpha, /beta, ... /kappa) — a
+    // Linktree-style page per chapter, doc id is the chapter name. Fully
+    // public read (that's the whole point — it replaces a Linktree link in
+    // an Instagram bio). Only admins can create/delete a chapter's doc or
+    // change who's an editor; an admin OR a listed editor can update
+    // anything else (profile text, avatar, links) on their chapter(s).
+    match /chapterLinktrees/{chapter} {
+      allow read: if true;
+      allow create, delete: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() && (
+        isAdmin()
+        || (request.auth.uid in resource.data.get('editorUids', [])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['editorUids']))
+      );
+    }
+
     // Outgoing email queue, consumed by the Firebase "Trigger Email" extension
     // (which reads with admin privileges, bypassing these rules). Portal
     // clients only ever enqueue; nobody can read the queue back.
