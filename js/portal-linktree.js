@@ -73,6 +73,13 @@
 
   window.napOnAuthReady(function (detail) {
     currentUid = detail.uid;
+    /* isAdmin() alone is enough to show the tab — don't wait on the
+       chapterLinktrees listener to resolve first. Without this, an admin
+       whose account predates a rules republish (or who just hasn't
+       republished chapterLinktrees's rules yet) would never see the tab
+       at all: the only other place that unhides it is this listener's
+       success callback, which never runs if the read is denied. */
+    updateNavVisibility();
     startChaptersListener();
     startBrothersListener();
   });
@@ -94,6 +101,7 @@
         }
       },
       function () {
+        updateNavVisibility();
         chapterGridEl.innerHTML = '<p class="news-card__empty">Couldn’t load Chapter Links — the site’s database permissions may need to be republished.</p>';
       }
     );
