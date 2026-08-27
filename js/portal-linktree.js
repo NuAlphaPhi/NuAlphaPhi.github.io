@@ -24,8 +24,13 @@
     Kappa: "#C1440E",
   };
 
-  function colorFor(chapter) {
+  function defaultColorFor(chapter) {
     return CHAPTER_COLORS[chapter] || "#8A8A8A";
+  }
+
+  function colorFor(chapter) {
+    var doc = allChapterDocs[chapter];
+    return (doc && doc.backgroundColor) || defaultColorFor(chapter);
   }
 
   function escapeHtml(value) {
@@ -161,6 +166,8 @@
   var form = document.getElementById("linktreeChapterForm");
   var displayNameInput = document.getElementById("linktree-display-name");
   var subtitleInput = document.getElementById("linktree-subtitle");
+  var bgColorInput = document.getElementById("linktree-bg-color");
+  var bgColorResetBtn = document.getElementById("linktreeColorResetBtn");
   var avatarPreviewEl = document.getElementById("linktreeAvatarPreview");
   var avatarInputEl = document.getElementById("linktree-avatar-input");
   var linkRowsEl = document.getElementById("linktreeLinkRows");
@@ -261,6 +268,12 @@
     addLinkBtn.addEventListener("click", function () {
       currentLinks.push({ id: genLinkId(), title: "", url: "" });
       renderLinkRows();
+    });
+  }
+
+  if (bgColorResetBtn) {
+    bgColorResetBtn.addEventListener("click", function () {
+      if (bgColorInput && currentChapter) bgColorInput.value = defaultColorFor(currentChapter);
     });
   }
 
@@ -420,6 +433,7 @@
 
     displayNameInput.value = doc.displayName || "Nu Alpha Phi — " + chapter + " Chapter";
     subtitleInput.value = doc.subtitle || "";
+    if (bgColorInput) bgColorInput.value = doc.backgroundColor || colorFor(chapter);
 
     if (avatarState.pendingPreviewUrl) URL.revokeObjectURL(avatarState.pendingPreviewUrl);
     avatarState = { url: doc.avatarUrl || null, storagePath: doc.avatarStoragePath || null, pendingFile: null, pendingPreviewUrl: null };
@@ -518,6 +532,7 @@
           var payload = {
             displayName: displayName,
             subtitle: subtitle,
+            backgroundColor: (bgColorInput && bgColorInput.value) || defaultColorFor(chapter),
             links: cleanedLinks,
             avatarUrl: avatarResult ? avatarResult.url : avatarState.url,
             avatarStoragePath: avatarResult ? avatarResult.storagePath : avatarState.storagePath,

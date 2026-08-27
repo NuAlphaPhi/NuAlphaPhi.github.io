@@ -4359,6 +4359,45 @@ html[data-theme="dark"] .modal__img {
   margin-bottom: 1.5rem;
 }
 
+.linktree-color-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.linktree-color-input {
+  width: 48px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--grey-200, #ddd);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+
+.linktree-color-input::-webkit-color-swatch-wrapper {
+  padding: 3px;
+}
+
+.linktree-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 5px;
+}
+
+.linktree-color-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--grey-500, #767676);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.linktree-color-reset:hover {
+  color: var(--maroon);
+}
+
 .linktree-editor-links {
   display: grid;
   gap: 0.75rem;

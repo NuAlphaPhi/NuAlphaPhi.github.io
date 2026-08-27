@@ -22,6 +22,10 @@
     titleEl.textContent = (doc && doc.displayName) || "Nu Alpha Phi — " + chapter + " Chapter";
     subtitleEl.textContent = (doc && doc.subtitle) || "";
 
+    if (doc && doc.backgroundColor) {
+      document.body.style.setProperty("--chapter-color", doc.backgroundColor);
+    }
+
     if (doc && doc.avatarUrl) {
       avatarEl.innerHTML = '<img src="' + escapeHtml(doc.avatarUrl) + '" alt="">';
     } else {
