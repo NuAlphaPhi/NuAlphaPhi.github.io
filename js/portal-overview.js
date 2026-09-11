@@ -16,19 +16,19 @@
 
   var announcementsCard = document.createElement("div");
   announcementsCard.className = "overview-card";
-  announcementsCard.innerHTML = '<h2 class="overview-card__title">Recent Announcements</h2><div class="overview-card__list" id="overviewAnnouncements"></div>';
+  announcementsCard.innerHTML = '<div class="portal-card-heading"><h2 class="overview-card__title">Recent Announcements</h2><button type="button" data-portal-go="announcements" aria-label="View all recent announcements">View all &rarr;</button></div><div class="overview-card__list" id="overviewAnnouncements"></div>';
 
   var eventsCard = document.createElement("div");
   eventsCard.className = "overview-card";
-  eventsCard.innerHTML = '<h2 class="overview-card__title">Upcoming Events</h2><div class="overview-card__list" id="overviewEvents"></div>';
+  eventsCard.innerHTML = '<div class="portal-card-heading"><h2 class="overview-card__title">Upcoming Events</h2><button type="button" data-portal-go="events" aria-label="View all upcoming events">View all &rarr;</button></div><div class="overview-card__list" id="overviewEvents"></div>';
 
   var birthdaysCard = document.createElement("div");
   birthdaysCard.className = "overview-card";
-  birthdaysCard.innerHTML = '<h2 class="overview-card__title">Birthdays</h2><div class="overview-card__list" id="overviewBirthdays"></div>';
+  birthdaysCard.innerHTML = '<div class="portal-card-heading"><h2 class="overview-card__title">Birthdays</h2><button type="button" data-portal-go="birthdays" aria-label="View all birthdays">View all &rarr;</button></div><div class="overview-card__list" id="overviewBirthdays"></div>';
 
   var chaptersCard = document.createElement("div");
   chaptersCard.className = "overview-card";
-  chaptersCard.innerHTML = '<h2 class="overview-card__title">Chapters</h2><div class="chapter-bars" id="overviewChapters"></div>';
+  chaptersCard.innerHTML = '<div class="portal-card-heading"><h2 class="overview-card__title">Chapters</h2><button type="button" data-portal-go="directory" aria-label="View all chapters">View all &rarr;</button></div><div class="chapter-bars" id="overviewChapters"></div>';
 
   grid.appendChild(announcementsCard);
   grid.appendChild(eventsCard);
@@ -53,9 +53,9 @@
       ["Birthdays This Month", stats.birthdaysThisMonth],
     ];
     statsEl.innerHTML = tiles
-      .map(function (t) {
+      .map(function (t, index) {
         return (
-          '<div class="stat-tile">' +
+          '<div class="stat-tile"><span class="stat-tile__index" aria-hidden="true">0' + (index + 1) + '</span>' +
           '<p class="stat-tile__value">' + (t[1] === null ? "—" : t[1]) + "</p>" +
           '<p class="stat-tile__label">' + t[0] + "</p>" +
           "</div>"
@@ -108,8 +108,7 @@
   });
 
   db.collection("events")
-    .orderBy("startAt", "asc")
-    .limit(15)
+    .where("endAt", ">=", new Date())
     .onSnapshot(function (snap) {
       var now = new Date();
       var upcomingAll = snap.docs
@@ -117,8 +116,9 @@
           return Object.assign({ id: doc.id }, doc.data());
         })
         .filter(function (ev) {
-          return ev.endAt.toDate() >= now && ev.approved !== false;
-        });
+          return ev.endAt && ev.endAt.toDate && ev.startAt && ev.startAt.toDate && ev.endAt.toDate() >= now && ev.approved !== false;
+        })
+        .sort(function (a, b) { return a.startAt.toDate() - b.startAt.toDate(); });
 
       stats.upcomingEvents = upcomingAll.length;
       renderStats();
@@ -134,9 +134,10 @@
         .map(function (ev) {
           var start = ev.startAt.toDate();
           return (
-            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-event="' + ev.id + '">' +
-            '<p class="overview-card__item-title">' + escapeHtml(ev.name) + "</p>" +
-            '<p class="overview-card__item-meta">' + escapeHtml(ev.location) + " · " + start.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + "</p>" +
+            '<button class="overview-card__item overview-card__item--clickable portal-event-row" type="button" data-open-event="' + ev.id + '">' +
+            '<span class="portal-date-badge" aria-hidden="true">' + start.toLocaleDateString(undefined, { month: 'short' }) + '<strong>' + start.getDate() + '</strong></span><span>' +
+            '<span class="overview-card__item-title">' + escapeHtml(ev.name) + "</span>" +
+            '<span class="overview-card__item-meta">' + escapeHtml(ev.location) + " · " + start.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + "</span></span>" +
             "</button>"
           );
         })

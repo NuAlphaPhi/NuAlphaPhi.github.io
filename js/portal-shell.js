@@ -30,6 +30,13 @@
     });
   }
 
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && navEl && navEl.classList.contains("is-open")) {
+      closeMobileNav();
+      if (navToggleBtn) navToggleBtn.focus();
+    }
+  });
+
   var validNavTabs = Array.prototype.map.call(navBtns, function (btn) {
     return btn.getAttribute("data-tab");
   });
@@ -48,24 +55,38 @@
      leaving the app after a single press. */
   function setTab(tab, navTab, opts) {
     opts = opts || {};
+    if (!Array.prototype.some.call(panels, function (panel) { return panel.getAttribute("data-panel") === tab; })) return;
     var activeNavTab = navTab || tab;
     navBtns.forEach(function (btn) {
       var isActive = btn.getAttribute("data-tab") === activeNavTab;
       btn.classList.toggle("is-active", isActive);
+      if (isActive) btn.setAttribute("aria-current", "page");
+      else btn.removeAttribute("aria-current");
       if (isActive && navToggleLabelEl) navToggleLabelEl.textContent = btn.textContent;
+      var breadcrumb = document.getElementById("portalCurrentSection");
+      if (isActive && breadcrumb) breadcrumb.textContent = btn.textContent;
     });
     panels.forEach(function (panel) {
       panel.hidden = panel.getAttribute("data-panel") !== tab;
     });
     closeMobileNav();
+    var activePanel = document.querySelector('.portal-tab-panel:not([hidden])');
+    var heading = activePanel && activePanel.querySelector("h1");
+    if (heading && !opts.replace) {
+      heading.setAttribute("tabindex", "-1");
+      heading.focus({ preventScroll: true });
+    }
+    var main = document.querySelector(".portal-shell__main");
+    if (main) main.scrollTop = 0;
 
     if (!opts.fromHistory && validNavTabs.indexOf(activeNavTab) !== -1) {
       var newHash = "#" + activeNavTab;
+      var nextUrl = location.pathname + location.search + newHash;
       if (location.hash !== newHash) {
         if (opts.replace) {
-          history.replaceState(null, "", newHash);
+          history.replaceState(null, "", nextUrl);
         } else {
-          history.pushState(null, "", newHash);
+          history.pushState(null, "", nextUrl);
         }
       }
     }
@@ -80,7 +101,7 @@
   });
 
   window.addEventListener("popstate", function () {
-    var tabFromHash = (location.hash || "").replace(/^#/, "");
+    var tabFromHash = (location.hash || "#overview").replace(/^#/, "");
     if (validNavTabs.indexOf(tabFromHash) !== -1) {
       setTab(tabFromHash, undefined, { fromHistory: true });
     }
@@ -89,7 +110,7 @@
   /* Restore whichever tab the hash points to on a fresh load (a refresh, or
      landing on a link with a #hash) instead of always defaulting to
      Overview. Uses replaceState so this doesn't itself add a history entry. */
-  var initialTab = (location.hash || "").replace(/^#/, "");
+  var initialTab = (location.hash || "#overview").replace(/^#/, "");
   if (validNavTabs.indexOf(initialTab) !== -1) {
     setTab(initialTab, undefined, { replace: true });
   }

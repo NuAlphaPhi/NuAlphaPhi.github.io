@@ -9,15 +9,7 @@
     <meta name="referrer" content="origin">
     <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
     <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Portal | NAPhi</title>
-    <base href="https://nualphaphi.com/">
-    <script>
-      (function () {
-        var host = location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
-          document.querySelector('base').href = location.origin + '/';
-        }
-      })();
-    </script>
+    <base href="/">
     <script>
       (function () {
         try {
@@ -33,8 +25,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <link href="css/nap.css" rel="stylesheet">
+    <link href="css/portal-design.css" rel="stylesheet">
 </head>
-<body>
+<body class="portal-design">
 
     <a class="skip-link" href="#main">Skip to content</a>
 
@@ -47,12 +40,16 @@
         </header>
 
         <main id="main" class="portal-auth-main">
+            <section class="portal-auth-story" aria-label="Nu Alpha Phi brotherhood">
+                <img class="portal-auth-story__photo" src="img/portal/hero-bg.jpg" alt="Nu Alpha Phi brothers together" fetchpriority="high">
+                <div class="portal-auth-story__content"><span class="portal-auth-story__eyebrow">NU ALPHA PHI · EST. 1994</span><h2>Brotherhood.<br>Beyond campus.</h2><p>One place to stay connected.<br>Every chapter. Every generation.</p><span class="portal-auth-story__signature">In unity we stand strong.</span></div>
+            </section>
             <div class="portal-panel">
-                <span class="section-label">Brothers Only</span>
-                <h1 class="section-title">NAΦ Portal</h1>
-                <p class="portal-panel__text">Sign in to see brotherhood announcements and events.</p>
+                <span class="section-label">National Brother Portal</span>
+                <h1 class="section-title">Welcome home.</h1>
+                <p class="portal-panel__text">Sign in to reconnect with the brotherhood.</p>
 
-                <div class="portal-auth__toggle" role="tablist">
+                <div class="portal-auth__toggle" role="tablist" aria-label="Account access">
                     <button class="portal-auth__toggle-btn is-active" type="button" data-auth-view="signin" role="tab" aria-selected="true">Sign In</button>
                     <button class="portal-auth__toggle-btn" type="button" data-auth-view="signup" role="tab" aria-selected="false">Create Account</button>
                 </div>

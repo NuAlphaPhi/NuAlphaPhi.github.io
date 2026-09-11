@@ -9,15 +9,7 @@
     <meta name="referrer" content="origin">
     <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png">
     <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Portal | NAPhi</title>
-    <base href="https://nualphaphi.com/">
-    <script>
-      (function () {
-        var host = location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
-          document.querySelector('base').href = location.origin + '/';
-        }
-      })();
-    </script>
+    <base href="/">
     <script>
       (function () {
         try {
@@ -33,22 +25,57 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <link href="css/nap.css" rel="stylesheet">
+    <link href="css/portal-design.css" rel="stylesheet">
 </head>
-<body>
+<body class="portal-design">
 
     <a class="skip-link" href="#main">Skip to content</a>
 
     <div class="portal-shell" id="portal-app" hidden>
         <aside class="portal-shell__sidebar">
-            <a href="index" class="portal-shell__brand">
-                <img src="img/letters.png" alt="Nu Alpha Phi — Home">
+            <a href="index" class="portal-shell__brand" aria-label="Nu Alpha Phi — Home">
+                <span class="portal-brand-mark" aria-hidden="true">ΝΑΦ</span><span class="portal-brand-copy">Nu Alpha Phi<small>National Portal</small></span>
             </a>
+
+
+
+            <button class="portal-shell__nav-toggle" id="portalNavToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="portalNav">
+                <span id="portalNavToggleLabel">Overview</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6"></path>
+                </svg>
+            </button>
+
+<nav class="portal-shell__nav" id="portalNav" aria-label="Portal sections">
+                <div class="portal-nav-group"><p class="portal-nav-group__label">Workspace</p>
+                    <button class="portal-shell__nav-btn is-active" type="button" data-tab="overview"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Overview</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="announcements"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 15-5v14L3 14zm3 5 2 6h4l-2-5M21 9v6"/></svg><span>Announcements</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="events"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18m-12 5h2m3 0h2"/></svg><span>Events</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="forms"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7zM14 2v6h5M8 12h8m-8 4h6"/></svg><span>Forms</span></button>
+                </div>
+                <div class="portal-nav-group"><p class="portal-nav-group__label">Brotherhood</p>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="directory"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span>Directory</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="pledges"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5zm4 3v6c3 3 9 3 12 0v-6m4-3v8"/></svg><span>Pledges</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="family-tree"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-5h14v5"/></svg><span>Family Tree</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="gallery"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg><span>Gallery</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="birthdays"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-9h16v9H4zm0-5c3 3 5-3 8 0s5-3 8 0M8 12V8m8 4V8M8 5V3m8 2V3M12 12V5"/></svg><span>Birthdays</span></button>
+                </div>
+                <div class="portal-nav-group"><p class="portal-nav-group__label">Account</p>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="myinfo"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>My Information</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="settings"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 3-1 3-3 1-3 3 2 2-1 3 3 3 3-1 2 4 3-2 1-3 3-1 2-3-2-2V6l-4-1-2-3z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span></button>
+                </div>
+                <div class="portal-nav-group"><p class="portal-nav-group__label">Management</p>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="blog" id="blogNavBtn" hidden><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-12 12H4v-5zM14 5l5 5"/></svg><span>Blog</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="linktree" id="linktreeNavBtn" hidden><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 13 4-4m-6 6-1 1a4 4 0 0 1-6-6l5-5a4 4 0 0 1 6 0m0 14a4 4 0 0 0 6 0l5-5a4 4 0 0 0-6-6l-1 1" transform="translate(1 0) scale(.9)"/></svg><span>Chapter Links</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="admin" id="adminNavBtn" hidden><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 4v6c0 5-9 10-9 10S3 17 3 12V6zM8 12l3 3 5-6"/></svg><span>Admin</span></button>
+                </div>
+            </nav>
 
             <div class="portal-shell__user">
                 <div class="portal-shell__user-row">
                     <span id="portalUserAvatar"></span>
                     <div>
-                        <p class="portal-shell__user-label">Logged in as</p>
+                        <p class="portal-shell__user-label">Brother account</p>
                         <p class="portal-shell__user-name" id="portalPledgeName"></p>
                     </div>
                     <div class="notification-bell">
@@ -69,44 +96,24 @@
                     </div>
                 </div>
             </div>
-
-            <button class="portal-shell__nav-toggle" id="portalNavToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="portalNav">
-                <span id="portalNavToggleLabel">Overview</span>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M6 9l6 6 6-6"></path>
-                </svg>
-            </button>
-
-            <nav class="portal-shell__nav" id="portalNav" aria-label="Portal sections">
-                <button class="portal-shell__nav-btn is-active" type="button" data-tab="overview">Overview</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="directory">Directory</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="announcements">Announcements</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="events">Events</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="forms">Forms</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="pledges">Pledges</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="family-tree">Family Tree</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="gallery">Gallery</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="birthdays">Birthdays</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="myinfo">My Information</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="settings">Settings</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="blog" id="blogNavBtn" hidden>Blog</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="linktree" id="linktreeNavBtn" hidden>Chapter Links</button>
-                <button class="portal-shell__nav-btn" type="button" data-tab="admin" id="adminNavBtn" hidden>Admin</button>
-            </nav>
-
-            <button class="portal-shell__signout" id="portalSignOut" type="button">Sign Out</button>
+            <button class="portal-shell__signout" id="portalSignOut" type="button"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H3v16h6m6-13 5 5-5 5M8 12h12"/></svg>Sign Out</button>
         </aside>
 
         <main id="main" class="portal-shell__main">
+            <header class="portal-workbar">
+                <p class="portal-breadcrumb">National Portal <span>/</span> <strong id="portalCurrentSection">Overview</strong></p>
+                <div class="portal-workbar__actions"><time id="portalToday"></time><button class="portal-icon-button" id="portalQuickTheme" type="button" aria-label="Switch to light mode"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a href="index" class="portal-site-link">Main site <svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
+            </header>
 
             <section class="portal-tab-panel" id="panel-overview" data-panel="overview">
                 <div class="portal-view-header">
                     <div>
-                        <span class="section-label">Welcome</span>
-                        <h1 class="portal-view-title">Overview</h1>
-                        <p class="portal-view-intro">A quick look at what's new across the chapter.</p>
+                        <span class="section-label">The brotherhood, connected</span>
+                        <h1 class="portal-view-title" id="portalGreeting">Welcome back.</h1>
+                        <p class="portal-view-intro">Your people. Your chapter. Everything happening across Nu Alpha Phi.</p>
                     </div>
                 </div>
+                <div class="portal-shortcuts" aria-label="Quick links"><button type="button" data-portal-go="directory"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg>Find a brother</button><button type="button" data-portal-go="events"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18m-12 5h2m3 0h2"/></svg>View events</button><button type="button" data-portal-go="gallery"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>Explore the gallery</button></div>
                 <div id="overviewNudge"></div>
                 <div class="stat-tiles" id="overviewStats"></div>
                 <div class="overview-grid" id="overviewGrid"></div>
@@ -122,11 +129,11 @@
                 </div>
 
                 <div class="directory-filters">
-                    <input class="form-input" id="directorySearch" type="search" placeholder="Search by name or pledge name…">
-                    <select class="form-select" id="directoryChapterFilter">
+                    <input class="form-input" id="directorySearch" type="search" aria-label="Search brothers" placeholder="Search by name or pledge name…">
+                    <select class="form-select" id="directoryChapterFilter" aria-label="Filter by chapter">
                         <option value="">All Chapters</option>
                     </select>
-                    <select class="form-select" id="directoryClassFilter">
+                    <select class="form-select" id="directoryClassFilter" aria-label="Filter by class">
                         <option value="">All Classes</option>
                     </select>
                 </div>
@@ -599,7 +606,7 @@
                             <p class="theme-toggle__label">Dark Mode</p>
                             <p class="theme-toggle__desc">Applies across the whole portal on this device.</p>
                         </div>
-                        <button class="theme-toggle__switch" id="themeToggleBtn" type="button" aria-pressed="false"></button>
+                        <button class="theme-toggle__switch" id="themeToggleBtn" type="button" aria-label="Dark mode" aria-pressed="false"></button>
                     </div>
                 </div>
 
@@ -610,7 +617,7 @@
                             <p class="theme-toggle__label">Email Notifications</p>
                             <p class="theme-toggle__desc">Get an email whenever a new announcement or event is posted.</p>
                         </div>
-                        <button class="theme-toggle__switch" id="emailNotifToggleBtn" type="button" aria-pressed="true"></button>
+                        <button class="theme-toggle__switch" id="emailNotifToggleBtn" type="button" aria-label="Email notifications" aria-pressed="true"></button>
                     </div>
                     <p class="form-feedback" id="email-notif-feedback" role="status" aria-live="polite" hidden></p>
                 </div>
@@ -1273,6 +1280,7 @@
     <script src="js/portal-birthdays.js"></script>
     <script src="js/portal-overview.js"></script>
     <script src="js/portal-notifications.js"></script>
+    <script src="js/portal-design.js"></script>
     <script src="js/site.js"></script>
 </body>
 </html>

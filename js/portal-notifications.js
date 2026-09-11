@@ -121,10 +121,14 @@
 
   function positionDropdown() {
     var rect = bellBtn.getBoundingClientRect();
-    var width = 320;
-    var left = Math.min(rect.left, window.innerWidth - width - 16);
-    left = Math.max(left, 16);
-    dropdown.style.top = rect.bottom + 8 + "px";
+    var width = dropdown.getBoundingClientRect().width || 320;
+    var height = dropdown.getBoundingClientRect().height;
+    var left = Math.max(16, Math.min(rect.left, window.innerWidth - width - 16));
+    var below = rect.bottom + 8;
+    var top = below + height <= window.innerHeight - 16 ? below : rect.top - height - 8;
+    dropdown.style.top = Math.max(16, top) + "px";
+    dropdown.style.bottom = "auto";
+    dropdown.style.right = "auto";
     dropdown.style.left = left + "px";
   }
 

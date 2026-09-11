@@ -18,7 +18,9 @@
       if (panels[key]) panels[key].hidden = key !== view;
     });
     toggleBtns.forEach(function (btn) {
-      btn.classList.toggle("is-active", btn.getAttribute("data-auth-view") === view);
+      var active = btn.getAttribute("data-auth-view") === view;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
     });
   }
 

@@ -203,7 +203,7 @@
 
     html +=
       '<div class="rsvp-event-card__header">' +
-      '<h3 class="rsvp-event-card__title">' + escapeHtml(ev.name) + pendingBadge + "</h3>" +
+      '<h3 class="rsvp-event-card__title"><button class="rsvp-event-card__title-btn" type="button" data-open-event="' + escapeHtml(ev.id) + '">' + escapeHtml(ev.name) + '</button>' + pendingBadge + "</h3>" +
       (isOwner
         ? '<div class="news-card__actions">' +
           '<button class="news-card__action-btn" type="button" data-edit-event="' + ev.id + '">Edit</button>' +
