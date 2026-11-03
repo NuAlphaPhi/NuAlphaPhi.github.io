@@ -394,7 +394,7 @@
     const form = P.el("form", "p-post-composer"),
       text = P.field(
         kind === "announcement"
-          ? "National announcement"
+          ? "Announcement"
           : "What’s happening, brother?",
         "textarea",
       ),
@@ -407,7 +407,7 @@
     text.input.oninput = () => localStorage.setItem(key, text.input.value);
     P.mentionPicker(text.input);
     const send = P.button(
-      kind === "announcement" ? "Publish announcement" : "Post",
+      kind === "announcement" ? (P.me.isAdmin ? "Publish announcement" : "Submit for approval") : "Post",
       () => form.requestSubmit(),
       "p-btn primary",
     );
@@ -475,6 +475,7 @@
         send.disabled = true;
         pendingID = pendingID || crypto.randomUUID();
         try {
+          let result;
           const ref = db.doc("forumPosts/" + pendingID);
           if (!(await ref.get()).exists) {
             let photoPath = "";
@@ -484,7 +485,7 @@
                 "postPhotos/" + pendingID + "/" + P.uid + ".jpg",
                 status,
               );
-            await ref.set({
+            const data = {
               authorUid: P.uid,
               authorName: P.name(P.me),
               chapter: P.me.chapter || "",
@@ -493,7 +494,9 @@
               kind,
               createdAt: P.stamp(),
               ...P.mentions(text.input),
-            });
+            };
+            if (kind === "announcement") result = await P.call("announcementAction", {action:"submit", id:pendingID, body, photoPath, ...P.mentions(text.input)});
+            else await ref.set(data);
           }
           pendingID = null;
           text.input.value = "";
@@ -501,7 +504,7 @@
           attachment.replaceChildren();
           count.textContent = "";
           localStorage.removeItem(key);
-          status.textContent = "Posted.";
+          status.textContent = result?.status === "pending" ? "Submitted. An admin will review your announcement before it appears in the feed." : "Posted.";
         } finally {
           send.disabled = false;
         }
@@ -564,7 +567,7 @@
           kind === "home" ? "Home" : "Announcements",
           kind === "home"
             ? "The brotherhood, in one place."
-            : "Updates from National Board.",
+            : "Announcements from the brotherhood. Admins publish directly; other submissions are reviewed.",
         ),
       );
       const top = P.row();
@@ -587,11 +590,19 @@
       } else {
         const holder = P.el("div");
         r.append(holder);
-        document.addEventListener("p985:access", () => {
-          holder.replaceChildren();
-          if (P.grant.role === "nationalBoard")
-            holder.append(composer("announcement"));
-        });
+        holder.append(composer("announcement"));
+        const requests = P.el("div", "p-announcement-requests");
+        r.append(requests);
+        P.watch(db.collection("announcementRequests").where("authorUid", "==", P.uid), rows => {
+          requests.replaceChildren();
+          const pending = rows.filter(x => x.status !== "published");
+          if (pending.length) requests.append(P.el("h3", "", "Your submissions"));
+          pending.sort((a,b) => P.date(b.createdAt)-P.date(a.createdAt)).forEach(x => {
+            const row = P.el("div", "p-card");
+            row.append(P.el("strong", "", x.status === "pending" ? "Awaiting approval" : "Not approved"), P.el("p", "p-muted", x.body.slice(0,160)));
+            requests.append(row);
+          });
+        }, requests);
       }
       lists[kind] = P.el("div");
       r.append(

@@ -1,6 +1,7 @@
 (function () {
   "use strict";
   const P = P985;
+  let announcementRequests = [];
   let apps = [],
     audit = [],
     slots = {},
@@ -60,6 +61,7 @@
         ? [
             "Applications",
             "Events",
+            "Announcements",
             "Leadership",
             "Pledging",
             "Actives & alumni",
@@ -156,6 +158,26 @@
       if (!rows.length)
         content.append(P.empty("No events waiting for approval."));
       content.append(P.button("Manage all events", () => P.go("events")));
+    }
+    if (section === "Announcements") {
+      content.append(P.el("h2", "", "Announcement requests"), P.el("p", "p-muted", "Approved announcements appear in Home and Announcements, with the original brother as the author."));
+      const pending = announcementRequests.filter(r => r.status === "pending");
+      if (!pending.length) content.append(P.empty("No announcements waiting for approval."));
+      pending.forEach(item => {
+        const card = P.el("article", "p-card");
+        card.append(P.author(item.authorUid, item.authorName), P.el("small", "p-muted", item.chapter + " · " + P.when(item.createdAt)), P.text(item.body,item));
+        if (item.photoPath) card.append(P.image(item.photoPath));
+        const actions = P.row();
+        [["approve", "Approve & publish"], ["decline", "Decline"]].forEach(([action,label]) => {
+          const button = P.button(label, () => P.run(card, async () => {
+            [...actions.querySelectorAll("button")].forEach(b => b.disabled = true);
+            try { await P.call("announcementAction", {action,id:item.id}); }
+            finally { [...actions.querySelectorAll("button")].forEach(b => b.disabled = false); }
+          }), action === "approve" ? "p-btn primary" : "p-btn");
+          actions.append(button);
+        });
+        card.append(actions); content.append(card);
+      });
     }
     if (section === "Leadership") {
       const national = group(content, "National board", "Assign national officers and interns.");
@@ -359,11 +381,13 @@
     draw();
     const d = P.dialog(title, box);
   }
+  P.reviewAnnouncements = () => {section = "Announcements"; render(); P.go("admin");};
   function setup() {
     offs.forEach((f) => f());
     offs = [];
     if (P.me.isAdmin) {
       offs.push(
+        P.watch(db.collection("announcementRequests"), rows => {announcementRequests = rows; render();}, P.root("admin")),
         P.watch(
           db.collection("membershipApplications"),
           (r) => {
@@ -385,6 +409,7 @@
         ),
       );
     } else {
+      announcementRequests = [];
       apps = [];
       audit = [];
     }

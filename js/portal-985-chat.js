@@ -583,7 +583,7 @@
       (i) =>
         !P.blocks.has(i.actor) &&
         !mutes.has(i.roomID) &&
-        (["mentions", "replies", "applications"].includes(i.kind) || i.eventID),
+        (["mentions", "replies", "applications"].includes(i.kind) || i.eventID || i.announcementRequestID),
     );
     bell.hidden = !visible.some((i) => !i.read);
     list.replaceChildren();
@@ -597,6 +597,9 @@
               .update({ read: true });
             if (i.eventID) P.openEvent(i.eventID);
             else if (i.postID) P.openPost(i.postID);
+            else if (i.announcementRequestID) {
+              if (P.me.isAdmin) P.reviewAnnouncements(); else P.go("announcements");
+            }
             else if (i.roomID) {
               const r =
                 channels().find((r) => r.id === i.roomID) ||
