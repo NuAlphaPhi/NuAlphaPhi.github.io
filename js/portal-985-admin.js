@@ -7,6 +7,7 @@
     owner = "",
     section = "Applications",
     offs = [];
+  let selectedChapter = "Alpha", rosterSearch = "";
   const seats = [
     ["national-president", "National President"],
     ["national-vicePresident", "National Vice President"],
@@ -15,15 +16,31 @@
     ["national-brandDirector", "National Brand Director"],
     ["national-eventCoordinator", "National Event Coordinator"],
     ["national-brotherhood", "National Brotherhood"],
-    ["warden", "Pledge Warden"],
-    ...P.chapters.flatMap((c) => [
-      ["president-" + c, c + " Chapter President"],
-      ["master-" + c + "-1", c + " Pledge Master 1"],
-      ["master-" + c + "-2", c + " Pledge Master 2"],
-    ]),
   ];
+  function group(content, title, description) {
+    const area = P.el("section", "p-admin-group");
+    const header = P.el("div", "p-admin-section-heading");
+    header.append(P.el("h2", "", title), P.el("p", "p-muted", description));
+    const grid = P.el("div", "p-admin-grid");
+    area.append(header, grid); content.append(area); return grid;
+  }
+  function seatCard(slot, label, chapter) {
+    const c = P.el("div", "p-admin-seat");
+    c.append(P.el("h3", "", label));
+    const incumbent = slots[slot];
+    c.append(incumbent ? P.author(incumbent) : P.el("p", "p-admin-vacant", "Not assigned"));
+    const can = !slot.startsWith("national-") || P.uid === owner;
+    if (can) {
+      const actions = P.row(P.button(incumbent ? "Change" : "Assign brother", () =>
+        choose(label, uid => P.call("manageLeadership", {action:"assign", slot, uid, expectedUid:incumbent || ""}), b => !chapter || b.chapter === chapter), "p-btn"));
+      if (incumbent) actions.append(P.button("Remove", () => P.run(c, () => P.call("manageLeadership", {action:"assign", slot, uid:"", expectedUid:incumbent})), "p-btn p-admin-remove"));
+      c.append(actions);
+    } else c.append(P.el("small", "p-muted", "Only the account owner can change this position because it grants admin access."));
+    return c;
+  }
   function render() {
     const root = P.root("admin");
+    root.classList.add("p-admin-page");
     root.replaceChildren(
       P.header(
         "Administration",
@@ -38,13 +55,15 @@
       root.append(P.empty("Administrator access is required."));
       return;
     }
-    const tabs = P.el("div", "p-tabs"),
+    const tabs = P.el("div", "p-tabs p-admin-tabs"),
       options = P.me.isAdmin
         ? [
             "Applications",
             "Events",
             "Leadership",
+            "Pledging",
             "Actives & alumni",
+            "Alumni advisors",
             "Admins",
             "Activity",
           ]
@@ -139,52 +158,21 @@
       content.append(P.button("Manage all events", () => P.go("events")));
     }
     if (section === "Leadership") {
-      for (const [slot, label] of seats) {
-        const c = P.el("div", "p-card");
-        c.append(P.el("h3", "", label));
-        const incumbent = slots[slot];
-        c.append(
-          incumbent ? P.author(incumbent) : P.el("p", "p-muted", "Vacant"),
-        );
-        const can = !slot.startsWith("national-") || P.uid === owner;
-        if (can)
-          c.append(
-            P.button("Assign / change", () =>
-              choose(label, async (uid) =>
-                P.call("manageLeadership", {
-                  action: "assign",
-                  slot,
-                  uid,
-                  expectedUid: incumbent || "",
-                }),
-              ),
-            ),
-            incumbent
-              ? P.button("Clear position", () =>
-                  P.run(c, () =>
-                    P.call("manageLeadership", {
-                      action: "assign",
-                      slot,
-                      uid: "",
-                      expectedUid: incumbent,
-                    }),
-                  ),
-                )
-              : P.el("span"),
-          );
-        else
-          c.append(
-            P.el(
-              "small",
-              "",
-              "Only the account owner can assign roles that grant admin access.",
-            ),
-          );
-        content.append(c);
-      }
+      const national = group(content, "National board", "Assign national officers and interns.");
+      seats.forEach(([slot,label]) => national.append(seatCard(slot,label)));
+      const presidents = group(content, "Chapter presidents", "One president for each chapter, Alpha through Kappa.");
+      P.chapters.forEach(chapter => presidents.append(seatCard("president-" + chapter, chapter + " Chapter President", chapter)));
+    }
+    if (section === "Pledging") {
+      group(content, "National pledge warden", "One warden oversees pledging across the organization.").append(seatCard("warden", "National Pledge Warden"));
+      P.chapters.forEach(chapter => {
+        const grid = group(content, chapter + " Chapter", "Two pledge master positions.");
+        [1,2].forEach(n => grid.append(seatCard("master-" + chapter + "-" + n, "Pledge Master " + n, chapter)));
+      });
+    }
+    if (section === "Leadership" || section === "Alumni advisors") {
       for (const [prefix, label] of [
-        ["intern-", "National Interns"],
-        ["advisor-", "Alumni Advisors"],
+        ...(section === "Leadership" ? [["intern-", "National Interns"]] : [["advisor-", "Alumni Advisors"]]),
       ]) {
         const c = P.el("div", "p-card");
         c.append(
@@ -228,57 +216,44 @@
       }
     }
     if (section === "Actives & alumni") {
-      const search = P.field("Search brother", "search"),
-        list = P.el("div");
-      content.append(search.wrap, list);
+      const chapters = P.chapters.filter(c => P.me.isAdmin || slots["president-" + c] === P.uid);
+      if (!chapters.includes(selectedChapter)) selectedChapter = chapters[0];
+      content.append(P.el("h2", "", "Chapter active roster"), P.el("p", "p-muted", "Select the active brothers in each chapter. Everyone not selected is alumni. Changes save immediately."));
+      const chapterTabs = P.el("div", "p-admin-chapters");
+      chapters.forEach(c => {
+        const button = P.button(c, () => {selectedChapter = c; rosterSearch = ""; render();}, "p-btn" + (selectedChapter === c ? " selected" : ""));
+        button.setAttribute("aria-pressed", String(selectedChapter === c)); chapterTabs.append(button);
+      });
+      const search = P.field("Search this chapter", "search", rosterSearch), list = P.el("div", "p-admin-roster"), summary = P.el("p", "p-admin-roster-count");
+      content.append(chapterTabs, search.wrap, summary, list);
       function draw() {
+        const members = P.brothers.filter(b => b.chapter === selectedChapter).sort((a,b) => P.name(a).localeCompare(P.name(b)));
+        const activeCount = members.filter(b => b.membershipStanding === "active").length;
+        summary.textContent = selectedChapter + " Chapter · " + activeCount + " active · " + (members.length - activeCount) + " alumni";
         list.replaceChildren();
-        P.brothers
-          .filter(
-            (b) =>
-              (P.me.isAdmin || slots["president-" + b.chapter] === P.uid) &&
-              (
-                P.name(b) +
-                " " +
-                b.firstName +
-                " " +
-                b.lastName +
-                " " +
-                b.chapter
-              )
-                .toLowerCase()
-                .includes(search.input.value.toLowerCase()),
-          )
-          .forEach((b) => {
-            const r = P.row(
-              P.author(b.uid),
-              P.el(
-                "small",
-                "",
-                b.chapter +
-                  " · " +
-                  (b.membershipStanding === "active" ? "Active" : "Alumni"),
-              ),
-              P.button(
-                b.membershipStanding === "active"
-                  ? "Mark alumni"
-                  : "Mark active",
-                () =>
-                  P.run(content, () =>
-                    P.call("manageLeadership", {
-                      action: "standing",
-                      uid: b.uid,
-                      active: b.membershipStanding !== "active",
-                    }),
-                  ),
-              ),
-            );
-            r.classList.add("p-card");
-            list.append(r);
-          });
+        members.filter(b => (P.name(b) + " " + b.firstName + " " + b.lastName + " " + b.pledgeClass).toLowerCase().includes(rosterSearch.toLowerCase())).forEach(b => {
+          const row = P.el("div", "p-admin-roster-row"), info = P.el("div");
+          info.append(P.author(b.uid), P.el("small", "p-muted", [b.firstName,b.lastName].filter(Boolean).join(" ") + (b.pledgeClass ? " · " + b.pledgeClass + " Class" : "")));
+          const label = P.el("label", "p-admin-standing"), check = P.el("input");
+          check.type = "checkbox"; check.checked = b.membershipStanding === "active";
+          check.setAttribute("aria-label", "Active status for " + P.name(b));
+          const status = P.el("span", "", check.checked ? "Active" : "Alumni");
+          check.onchange = () => {
+            const next = check.checked; check.disabled = true; status.textContent = "Saving…";
+            P.run(row, async () => {
+              try {
+                await P.call("manageLeadership", {action:"standing", uid:b.uid, active:next});
+                b.membershipStanding = next ? "active" : "alumni"; draw();
+              } catch (error) {
+                check.checked = !next; status.textContent = check.checked ? "Active" : "Alumni"; throw error;
+              } finally {check.disabled = false;}
+            });
+          };
+          label.append(check,status); row.append(info,label); list.append(row);
+        });
+        if (!list.childElementCount) list.append(P.empty(members.length ? "No brothers match your search." : "No accounts in this chapter yet."));
       }
-      search.input.oninput = draw;
-      draw();
+      search.input.oninput = () => {rosterSearch = search.input.value; draw();}; draw();
     }
     if (section === "Admins") {
       content.append(

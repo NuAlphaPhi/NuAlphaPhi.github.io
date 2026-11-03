@@ -1491,3 +1491,31 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-post-more { display:block; border:0; background:none; color:#c96989; padding:4px 0 8px; font:600 .88rem "DM Sans",sans-serif; cursor:pointer; }
 .p-post-more[hidden] { display:none; }
 .p-post-more:hover { text-decoration:underline; }
+/* Administration: compact navigation, clear role groups, and chapter rosters. */
+.p-admin-page { max-width:1100px; margin-inline:auto; }
+.p-admin-page > .p-header { padding-bottom:22px; margin-bottom:0; }
+.p-admin-page > .p-header h1 { font-size:1.8rem; }
+.p-admin-tabs { gap:6px; padding:8px; margin-bottom:28px; border:1px solid var(--grey-200); border-radius:14px; background:var(--portal-card); }
+.p-admin-tabs .p-btn { border:0; border-radius:8px; font-size:.82rem; padding:10px 13px; color:var(--grey-400); }
+.p-admin-tabs .p-btn.selected { background:#7e183a; color:white; }
+.p-admin-group { margin-bottom:30px; }
+.p-admin-section-heading { margin:0 0 14px; }
+.p-admin-section-heading p { margin:6px 0 0; font-size:.85rem; }
+.p-admin-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.p-admin-seat { display:flex; flex-direction:column; align-items:flex-start; gap:18px; padding:20px; background:var(--portal-card); border:1px solid var(--grey-200); border-radius:14px; }
+.p-admin-seat h3 { font-size:.85rem; color:var(--grey-400); }
+.p-admin-seat > .p-row:last-child { margin-top:auto; }
+.p-admin-seat .p-btn { padding:6px 11px; font-size:.78rem; border-radius:999px; }
+.p-admin-vacant { margin:0; color:var(--grey-400); font-size:.9rem; }
+.p-admin-remove { color:#d77a92; }
+.p-admin-chapters { display:flex; flex-wrap:wrap; gap:6px; margin:22px 0; }
+.p-admin-chapters .p-btn { border-radius:999px; font-size:.8rem; }
+.p-admin-chapters .selected { background:#7e183a; border-color:#7e183a; color:white; }
+.p-admin-roster { border:1px solid var(--grey-200); border-radius:14px; overflow:hidden; }
+.p-admin-roster-row { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:16px 20px; border-bottom:1px solid var(--grey-200); background:var(--portal-card); }
+.p-admin-roster-row:last-child { border-bottom:0; }
+.p-admin-roster-row > div > small { display:block; margin:6px 0 0 44px; }
+.p-admin-standing { display:flex; align-items:center; gap:9px; cursor:pointer; font-size:.82rem; min-width:85px; }
+.p-admin-standing input[type=checkbox] { width:19px; height:19px; accent-color:#9e264c; cursor:pointer; }
+.p-admin-roster-count { font-size:.85rem; color:var(--grey-400); }
+@media(max-width:650px) { .p-admin-grid{grid-template-columns:1fr}.p-admin-tabs{flex-wrap:nowrap;overflow-x:auto}.p-admin-tabs .p-btn{white-space:nowrap}.p-admin-roster-row{padding:14px 12px} }
