@@ -1427,3 +1427,41 @@ html[data-theme="dark"] .p-map .leaflet-tile-pane {
     font-size: 1.2rem;
   }
 }
+
+/* Brother profiles: shared app identity, a quiet cover, and a focused timeline. */
+.p-profile-page { max-width: 760px; padding: 0; margin-inline: auto; border: 1px solid var(--grey-200); overflow: hidden; }
+.p-profile-heading { display:flex; align-items:center; gap:24px; padding:14px 20px; background:var(--portal-card); }
+.p-profile-heading h1 { font-size:1.2rem; letter-spacing:-.025em; }
+.p-profile-back,.p-profile-shield { border:0; background:transparent; color:var(--black); cursor:pointer; padding:6px; }
+.p-profile-back { font-size:1.7rem; }
+.p-profile-cover { min-height:180px; padding:30px; display:flex; flex-direction:column; justify-content:center; gap:12px; color:#fff; background:radial-gradient(ellipse at 90% 0%,#ae3459 0%,transparent 65%),linear-gradient(115deg,#220910,#74132f); }
+.p-profile-cover-label { font-size:.65rem; font-weight:700; letter-spacing:.25em; opacity:.7; }
+.p-profile-cover strong { max-width:420px; font-size:clamp(1.5rem,3vw,2.4rem); letter-spacing:-.045em; line-height:1.1; }
+.p-profile-intro { padding:0 24px 20px; }
+.p-profile-actions { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; min-height:76px; }
+.p-profile-actions > .p-row { justify-content:flex-end; padding-top:16px; }
+.p-profile-actions .p-btn { border-radius:999px; font-weight:700; font-size:.85rem; }
+.p985 .p-profile-actions .p-profile-avatar { margin:-48px 0 0; padding:0; flex-shrink:0; border-radius:50%; border:5px solid var(--portal-card); background:var(--portal-card); }
+.p-profile-actions .p-profile-avatar .p-avatar { width:112px; height:112px; font-size:2rem; }
+.p-profile-realname { font-size:1.4rem!important; letter-spacing:-.035em; }
+.p-profile-handle { color:var(--grey-400); font-size:.95rem; }
+.p-profile-shield { display:inline-flex; color:#b84e70; padding:0; }
+.p-profile-shield svg { width:18px; height:18px; }
+.p-profile-titles { display:flex; flex-wrap:wrap; gap:6px; margin:16px 0; }
+.p-profile-title { border:1px solid var(--grey-200); border-radius:999px; padding:5px 10px; color:var(--grey-400); background:var(--grey-50); font:600 .73rem "DM Sans",sans-serif; cursor:pointer; }
+.p-title-distinguished { color:#ca9a56; border-color:#ca9a5645; background:#ca9a5610; }
+.p-title-leadership { color:#c96989; border-color:#c9698945; background:#c9698910; }
+.p-profile-summary { display:flex; gap:8px 16px; flex-wrap:wrap; color:var(--grey-400); font-size:.84rem; margin:14px 0; }
+.p-profile-chapter { padding:0; border:0; background:none; color:inherit; font:inherit; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.p-profile-socials { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.p-profile-social { display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border:1px solid var(--grey-200); border-radius:999px; color:var(--black); text-decoration:none; font-size:.76rem; }
+.p-profile-social:hover { background:var(--grey-50); border-color:var(--grey-400); }
+.p-social-mark { font-size:1rem; font-weight:800; }
+.p-profile-tabs { display:flex; border-block:1px solid var(--grey-200); }
+.p-profile-tab { position:relative; width:50%; padding:18px; background:none; color:var(--grey-400); border:0; cursor:pointer; font:600 .9rem "DM Sans",sans-serif; }
+.p-profile-tab.is-selected { color:var(--black); }
+.p-profile-tab.is-selected:after { content:""; position:absolute; height:3px; border-radius:4px; background:#9e264c; width:46px; bottom:0; left:calc(50% - 23px); }
+.p-profile-page > .p-info { padding:24px; margin:0; gap:24px; }
+@media(max-width:600px) { .p-profile-intro{padding-inline:16px}.p-profile-cover{min-height:155px;padding:24px}.p-profile-actions .p-profile-avatar .p-avatar{width:88px;height:88px}.p-profile-actions{min-height:65px}.p-profile-actions .p-btn{padding:7px 10px}.p-profile-actions > .p-row{gap:5px} }
+.p-profile-cover { justify-content:flex-start; padding-bottom:72px; }
+.p-profile-shield svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; stroke-linecap:round; }

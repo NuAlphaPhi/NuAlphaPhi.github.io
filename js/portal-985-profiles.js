@@ -2,6 +2,7 @@
   "use strict";
   const P = P985;
   let current;
+  let profileTab = "posts";
   const slogans = [
     "ALMIGHTY ALPHAS",
     "BROLIC BETAS",
@@ -124,13 +125,15 @@
     if (diff === 0) a.push("NEO");
     else if (diff === 1) a.push("GEO");
     a.push(b.membershipStanding === "active" ? "Active" : "Alumni");
-    return [...new Set(a)];
+    const priority = (t) => t === "App Developer" ? 0 : t === "Founding Father" ? 1 : t === "Founder" ? 2 : /National/.test(t) ? (/Intern/.test(t) ? 4 : 3) : t === "NEO" ? 7 : t === "GEO" ? 8 : /^(Active|Alumni)$/.test(t) ? 9 : 5;
+    return [...new Set(a)].sort((a, b) => priority(a) - priority(b));
   }
   P.profile = (uid) => {
     document
       .querySelectorAll("dialog.p-dialog[open]")
       .forEach((d) => d.close());
     current = uid;
+    profileTab = "posts";
     P.go(uid === P.uid ? "myprofile" : "profile");
     render();
   };
@@ -146,33 +149,37 @@
       root.append(P.empty("This profile is unavailable."));
       return;
     }
-    root.classList.add("p-feed");
-    root.append(
-      P.el(
-        "div",
-        "p-banner",
-        slogans[P.chapters.indexOf(b.chapter)] || "NU ALPHA PHI",
-      ),
-    );
-    const avatar = P.button(
-      "",
-      () => {
-        if (b.avatarPath || b.photoDataUrl)
-          P.expand(b.avatarPath || b.photoDataUrl);
-      },
-      "p-avatar-button p-profile-avatar",
-    );
+    root.classList.add("p-feed", "p-profile-page");
+    const top = P.el("header", "p-profile-heading");
+    const back = P.button("←", () => P.go("directory"), "p-profile-back");
+    back.setAttribute("aria-label", "Back to directory");
+    const heading = P.el("div");
+    heading.append(P.el("h1", "", P.name(b)), P.el("small", "", (b.chapter || "Nu Alpha Phi") + " Chapter"));
+    top.append(back, heading);
+    const cover = P.el("div", "p-profile-cover");
+    cover.append(P.el("span", "p-profile-cover-label", "NU ALPHA PHI · " + (b.chapter || "Brotherhood").toUpperCase()), P.el("strong", "", slogans[P.chapters.indexOf(b.chapter)] || "THE BROTHERHOOD"));
+    const intro = P.el("section", "p-profile-intro");
+    const actions = P.el("div", "p-profile-actions");
+    const avatar = P.button("", () => {
+      if (b.avatarPath || b.photoDataUrl) P.expand(b.avatarPath || b.photoDataUrl);
+    }, "p-avatar-button p-profile-avatar");
+    avatar.setAttribute("aria-label", "View profile photo");
     avatar.append(P.avatar(b));
-    root.append(
-      avatar,
-      P.author(b.uid, P.name(b)),
-      P.el(
-        "p",
-        "p-muted",
-        [b.firstName, b.middleName, b.lastName].filter(Boolean).join(" "),
-      ),
-    );
-    const chips = P.row();
+    actions.append(avatar);
+    const controls = P.el("div", "p-row");
+    actions.append(controls);
+    const realName = [b.firstName, b.middleName, b.lastName].filter(Boolean).join(" ") || b.fullName || P.name(b);
+    const identity = P.row(P.el("h2", "p-profile-realname", realName));
+    const handle = P.row(P.el("span", "p-profile-handle", "@" + (b.pledgeName || P.name(b))));
+    if (b.isAdmin) {
+      const shield = P.button("", () => P.dialog("Administrator", P.el("p", "", "This brother is an administrator of 985.")), "p-profile-shield");
+      shield.append(P.icon("shield"));
+      shield.setAttribute("aria-label", "Administrator information");
+      handle.append(shield);
+    }
+    intro.append(actions, identity, handle);
+    root.append(top, cover, intro);
+    const chips = P.el("div", "p-profile-titles");
     titles(b).forEach((t) =>
       chips.append(
         P.button(
@@ -200,11 +207,18 @@
                               : "Appointed through the organization’s leadership roster.",
               ),
             ),
-          "p-chip",
+          "p-profile-title " + (/Founder|Founding Father|Developer/.test(t) ? "p-title-distinguished" : /National/.test(t) ? "p-title-leadership" : ""),
         ),
       ),
     );
-    root.append(chips, P.text(b.bio || ""));
+    intro.append(chips);
+    if (b.bio) intro.append(P.text(b.bio));
+    const summary = P.el("div", "p-profile-summary");
+    if (b.chapter) summary.append(P.button(b.chapter + " Chapter", () => P.chapter(b.chapter), "p-profile-chapter"));
+    if (b.school) summary.append(P.el("span", "", b.school));
+    const crossed = [b.crossingTerm || b.semesterCrossed, b.crossingYear || b.yearCrossed].filter(Boolean).join(" ");
+    if (crossed) summary.append(P.el("span", "", "Crossed " + crossed));
+    intro.append(summary);
     const dl = P.el("dl", "p-info");
     const fields = [
       ["Chapter", b.chapter],
@@ -240,8 +254,7 @@
         dl.append(v);
       }
     });
-    root.append(dl);
-    const links = P.row();
+    const links = P.el("div", "p-profile-socials");
     for (const [key, host, prefix] of [
       ["instagram", "instagram.com", ""],
       ["facebook", "facebook.com", ""],
@@ -261,23 +274,28 @@
           u.protocol !== "https:" ||
           ![
             host,
-            "www." + host,
-            ...(key === "twitter" ? ["twitter.com", "www.twitter.com"] : []),
+            "www." + host, "m." + host, "mobile." + host,
+            ...(key === "twitter" ? ["twitter.com", "www.twitter.com", "m.twitter.com", "mobile.twitter.com"] : []),
           ].includes(u.hostname)
         )
           continue;
-        const a = P.el("a", "p-btn", key === "twitter" ? "X / Twitter" : key);
+        const labels = { instagram: "Instagram", facebook: "Facebook", linkedin: "LinkedIn", twitter: "X / Twitter" };
+        const a = P.el("a", "p-profile-social");
+        const mark = P.el("span", "p-social-mark", {instagram: "◎", facebook: "f", linkedin: "in", twitter: "𝕏"}[key]);
+        mark.setAttribute("aria-hidden", "true");
+        a.append(mark, P.el("span", "", labels[key]));
+        a.setAttribute("aria-label", "Open " + labels[key] + " profile (new tab)");
         a.href = u.href;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
         links.append(a);
       } catch {}
     }
-    root.append(links);
+    if (links.childElementCount) intro.append(links);
     if (b.uid === P.uid || P.me.isAdmin)
-      root.append(P.button("Edit profile", () => edit(b)));
+      controls.append(P.button("Edit profile", () => edit(b)));
     if (b.uid !== P.uid)
-      root.append(
+      controls.append(
         P.row(
           P.button("Message", () => P.newConversation([b.uid])),
           P.button(P.blocks.has(b.uid) ? "Unblock" : "Block", () =>
@@ -296,13 +314,23 @@
           ),
         ),
       );
-    root.append(P.el("h2", "", "Posts"));
-    const posts = P.posts.filter(
-      (p) => p.authorUid === b.uid && !P.blocks.has(b.uid),
-    );
-    root.append(...posts.map((p) => P.postCard(p)));
-    if (!posts.length) root.append(P.empty("No recent posts."));
+    const tabs = P.el("div", "p-profile-tabs");
+    tabs.setAttribute("role", "tablist");
+    ["posts", "about"].forEach((tab) => {
+      const button = P.button(tab === "posts" ? "Posts" : "About", () => { profileTab = tab; render(); }, "p-profile-tab" + (profileTab === tab ? " is-selected" : ""));
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-selected", String(profileTab === tab));
+      tabs.append(button);
+    });
+    root.append(tabs);
+    if (profileTab === "about") root.append(dl);
+    else {
+      const posts = P.posts.filter((p) => p.authorUid === b.uid && !P.blocks.has(b.uid));
+      root.append(...posts.map((p) => P.postCard(p)));
+      if (!posts.length) root.append(P.empty("No recent posts."));
+    }
   }
+
   function edit(b) {
     const form = P.el("form"),
       fields = {};
