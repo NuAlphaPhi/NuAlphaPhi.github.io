@@ -1,6 +1,7 @@
 (function () {
   "use strict";
   const P = P985;
+  let reports = [];
   let announcementRequests = [];
   let apps = [],
     audit = [],
@@ -60,6 +61,7 @@
       options = P.me.isAdmin
         ? [
             "Applications",
+            "Content reports",
             "Events",
             "Announcements",
             "Leadership",
@@ -158,6 +160,18 @@
       if (!rows.length)
         content.append(P.empty("No events waiting for approval."));
       content.append(P.button("Manage all events", () => P.go("events")));
+    }
+    if (section === "Content reports") {
+      content.append(P.el("h2","","Content reports"),P.el("p","p-muted","Review reported content promptly. Remove content that violates community standards or dismiss the report."));
+      const pending = reports.filter(r => r.status === "open");
+      if (!pending.length) content.append(P.empty("No reports awaiting review."));
+      pending.forEach(r => {
+        const card = P.el("article","p-card");
+        card.append(P.el("h3","",r.reason),P.el("p","",r.body),P.el("p","p-muted",r.details));
+        if (r.photoPath) card.append(P.image(r.photoPath));
+        for (const [action,label] of [["remove","Remove content"],["dismiss","Dismiss report"]]) card.append(P.button(label, () => P.run(card, () => P.call("reviewContentReport",{id:r.id,action})),action === "remove" ? "p-btn danger":"p-btn"));
+        content.append(card);
+      });
     }
     if (section === "Announcements") {
       content.append(P.el("h2", "", "Announcement requests"), P.el("p", "p-muted", "Approved announcements appear in Home and Announcements, with the original brother as the author."));
@@ -381,12 +395,14 @@
     draw();
     const d = P.dialog(title, box);
   }
+  P.reviewReports = () => {section = "Content reports"; render(); P.go("admin");};
   P.reviewAnnouncements = () => {section = "Announcements"; render(); P.go("admin");};
   function setup() {
     offs.forEach((f) => f());
     offs = [];
     if (P.me.isAdmin) {
       offs.push(
+        P.watch(db.collection("contentReports"), rows => {reports = rows; render();}, P.root("admin")),
         P.watch(db.collection("announcementRequests"), rows => {announcementRequests = rows; render();}, P.root("admin")),
         P.watch(
           db.collection("membershipApplications"),
@@ -409,6 +425,7 @@
         ),
       );
     } else {
+      reports = [];
       announcementRequests = [];
       apps = [];
       audit = [];

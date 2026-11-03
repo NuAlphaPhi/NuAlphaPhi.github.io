@@ -51,7 +51,7 @@
       if (tab === "channels") {
         el.classList.add("p-channel-groups");
         const general = new Set(["general", "shitposting", "gaming", "sports", "finance"]);
-        for (const [title, isGeneral] of [["Your Circle", false], ["Brotherhood", true]]) {
+        for (const [title, isGeneral] of [["Brotherhood", true], ["Your Circle", false]]) {
           const group = P.el("section", "p-channel-group");
           group.setAttribute("aria-label", title);
           group.append(P.el("h2", "p-channel-group-title", title));
@@ -311,6 +311,7 @@
           }),
         ),
       );
+      actions.append(P.button("Report message", () => { d.close(); P.reportContent(path + "/" + m.id); }));
       if (m.senderUid === P.uid || P.me.isAdmin)
         actions.append(
           P.button(
@@ -605,7 +606,8 @@
             await db
               .doc("activity/" + P.uid + "/items/" + i.id)
               .update({ read: true });
-            if (i.eventID) P.openEvent(i.eventID);
+            if (i.reportID) P.reviewReports();
+            else if (i.eventID) P.openEvent(i.eventID);
             else if (i.postID) P.openPost(i.postID);
             else if (i.announcementRequestID) {
               if (P.me.isAdmin) P.reviewAnnouncements(); else P.go("announcements");

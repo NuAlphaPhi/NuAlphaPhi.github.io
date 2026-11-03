@@ -166,6 +166,17 @@
     if (subtitle) h.append(P.el("p", "p-muted", subtitle));
     return h;
   };
+  P.reportContent = (path) => {
+    const form = P.el("div"), reason = P.select("Reason", ["Harassment or bullying","Hate or discrimination","Sexual or graphic content","Threats or dangerous content","Spam or scam","Privacy violation","Other"], "Harassment or bullying"), details = P.field("Additional details (optional)", "textarea");
+    details.input.maxLength = 2000;
+    form.append(reason.wrap,details.wrap,P.el("p","p-muted","A copy of this content will be shared with administrators for review."));
+    const button = P.button("Submit report", () => P.run(form, async () => {
+      button.disabled = true;
+      try { await P.call("reportContent", {path,reason:reason.input.value,details:details.input.value}); form.replaceChildren(P.el("h3","","Report submitted"),P.el("p","","Administrators will review it. For urgent concerns, email national@nualphaphi.com.")); }
+      finally {button.disabled = false;}
+    }), "p-btn primary");
+    form.append(button);P.dialog("Report content",form);
+  };
   P.root = (tab) => document.getElementById("p985-" + tab);
   P.go = (tab) => window.napSetTab(tab);
   P.watch = (query, fn, root) => {

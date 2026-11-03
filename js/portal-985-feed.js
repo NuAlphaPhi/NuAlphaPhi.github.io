@@ -176,13 +176,13 @@
       const d = P.dialog("Share post", box);
     });
     actions.append(like, reply, share);
-    if (!post.eventID && (post.authorUid === P.uid || P.me.isAdmin))
       c.append(
         P.button(
           "•••",
           () => {
             const menu = P.el("div");
-            menu.append(
+            menu.append(P.button("Report post", () => { d.close(); P.reportContent("forumPosts/" + post.id); }));
+            if (!post.eventID && (post.authorUid === P.uid || P.me.isAdmin)) menu.append(
               P.button(
                 "Delete post",
                 () =>
