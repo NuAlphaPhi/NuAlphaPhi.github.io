@@ -4,6 +4,7 @@
   let classes = [],
     people = [],
     tree = [],
+    links = {},
     chapter = "",
     search = "",
     issuesOnly = false;
@@ -42,15 +43,17 @@
       .toLowerCase()
       .split(" ")
       .reduce((a, w) => a * 24 + greek.indexOf(w) + 1, 0);
-  function matches(r, c) {
+  function candidates(r) {
     return tree.filter(
       (t) =>
-        norm(t.name) === norm(r.fullName) ||
-        norm(t.pledgeName) === norm(r.pledgeName),
+        (norm(r.fullName) && norm(t.name) === norm(r.fullName)) ||
+        (norm(r.pledgeName) && norm(t.pledgeName) === norm(r.pledgeName)),
     );
   }
   function issue(r, c) {
-    const m = matches(r, c);
+    const linked = links[r.id]?.treeID;
+    const m = linked ? tree.filter(t => t.id === linked) : candidates(r);
+    if (linked && !m.length) return "Linked family-tree record is missing";
     if (!m.length) return "Not in the family tree";
     if (m.length > 1) return "Multiple possible matches";
     const t = m[0];
@@ -173,6 +176,7 @@
               );
             if (r.disaffiliated)
               info.append(P.el("p", "", "Disaffiliated · Delettered"));
+            if (P.me.isAdmin && links[r.id]?.treeID) info.append(P.el("small", "p-muted", "Family-tree match selected"));
             if (P.me.isAdmin && issue(r, c))
               info.append(P.el("small", "", issue(r, c)));
             row.append(info);
@@ -325,15 +329,31 @@
         edit(r);
       }),
     );
-    const candidates = matches(r, c);
+    const linkedID = links[r.id]?.treeID;
+    const possible = candidates(r);
+    const linked = tree.find(t => t.id === linkedID);
+    if (linked && !possible.some(t => t.id === linked.id)) possible.unshift(linked);
+    box.append(P.el("p", "p-muted", "Choose the family-tree record that belongs to this brother. Your selection is saved; no names or family connections are changed."));
+    async function saveLink(treeID) {
+      await db.runTransaction(async tx => {
+        const ref = db.doc("rosterTreeLinks/" + r.id);
+        const latest = await tx.get(ref);
+        if ((latest.data()?.treeID || "") !== (linkedID || "")) throw Error("Another admin changed this match. Close and reopen Compare tree to review it.");
+        if (treeID) tx.set(ref,{treeID,updatedBy:P.uid,updatedAt:P.stamp()});
+        else tx.delete(ref);
+      });
+      if (treeID) links[r.id] = {treeID}; else delete links[r.id];
+      d.close(); render(); compare(r,c);
+    }
+    if (linkedID) box.append(P.button("Clear selected match", () => P.run(box, () => saveLink(""))));
     box.append(P.el("h3", "", "Family tree"));
-    if (!candidates.length)
+    if (!possible.length)
       box.append(
         P.empty(
           "No matching name or pledge name. Add a record in Family Tree.",
         ),
       );
-    candidates.forEach((t) => {
+    possible.forEach((t) => {
       const card = P.el("div", "p-card");
       card.append(
         P.el(
@@ -378,11 +398,19 @@
           const editor = P.dialog("Edit family tree entry", form);
         }),
       );
+      const select = P.button(t.id === linkedID ? "Linked to this record" : "Link this record", () => P.run(card, async () => {
+        select.disabled = true;
+        try {await saveLink(t.id);} finally {select.disabled = false;}
+      }), t.id === linkedID ? "p-btn" : "p-btn primary");
+      select.disabled = t.id === linkedID;
+      card.append(select);
+      if (t.id === linkedID) card.classList.add("p-roster-linked");
       box.append(card);
     });
     const d = P.dialog("Compare records", box);
   }
   P.ready(() => {
+    P.watch(db.collection("rosterTreeLinks"), rows => { links = Object.fromEntries(rows.map(r => [r.id,r])); render(); }, P.root("roster"));
     P.watch(
       db.collection("masterRosterClasses"),
       (r) => {

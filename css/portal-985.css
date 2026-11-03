@@ -1519,3 +1519,5 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-admin-standing input[type=checkbox] { width:19px; height:19px; accent-color:#9e264c; cursor:pointer; }
 .p-admin-roster-count { font-size:.85rem; color:var(--grey-400); }
 @media(max-width:650px) { .p-admin-grid{grid-template-columns:1fr}.p-admin-tabs{flex-wrap:nowrap;overflow-x:auto}.p-admin-tabs .p-btn{white-space:nowrap}.p-admin-roster-row{padding:14px 12px} }
+.p-roster-linked { border-color:#9e4262; background:#9e426210; }
+.p-roster-linked .p-btn:disabled { opacity:1; cursor:default; color:#d1849c; }
