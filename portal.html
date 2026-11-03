@@ -51,7 +51,7 @@
 
                 <div class="portal-auth__toggle" role="tablist" aria-label="Account access">
                     <button class="portal-auth__toggle-btn is-active" type="button" data-auth-view="signin" role="tab" aria-selected="true">Sign In</button>
-                    <button class="portal-auth__toggle-btn" type="button" data-auth-view="signup" role="tab" aria-selected="false">Create Account</button>
+                    <button class="portal-auth__toggle-btn" type="button" data-auth-view="signup" role="tab" aria-selected="false">Request Account</button>
                 </div>
 
                 <div class="portal-auth__panel" id="authPanelSignin">
@@ -91,11 +91,7 @@
                             <label class="form-label" for="portal-signup-confirm">Confirm Password</label>
                             <input class="form-input" id="portal-signup-confirm" name="confirmPassword" type="password" autocomplete="new-password" required>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="portal-signup-invite">Invite Code</label>
-                            <input class="form-input" id="portal-signup-invite" name="inviteCode" type="text" required placeholder="Ask your chapter">
-                        </div>
-                        <button class="form-submit" type="submit">Create Account</button>
+<div class="form-group"><label class="form-label" for="portal-signup-phone">Phone number (include country code)</label><input class="form-input" id="portal-signup-phone" type="tel" required></div><div class="form-group"><label class="form-label" for="portal-signup-pledgeName">Pledge name</label><input class="form-input" id="portal-signup-pledgeName" type="text" required></div><div class="form-group"><label class="form-label" for="portal-signup-pledgeClass">Class</label><input class="form-input" id="portal-signup-pledgeClass" type="text" required></div><div class="form-group"><label class="form-label" for="portal-signup-pledgeNumber">Pledge number</label><input class="form-input" id="portal-signup-pledgeNumber" type="text" required maxlength="2" pattern="[0-9]{1,2}"></div><div class="form-group"><label class="form-label" for="portal-signup-chapter">Chapter</label><select class="form-input" id="portal-signup-chapter"><option>Alpha</option><option>Beta</option><option>Gamma</option><option>Delta</option><option>Epsilon</option><option>Zeta</option><option>Eta</option><option>Theta</option><option>Iota</option><option>Kappa</option></select></div><p>New accounts are reviewed by administrators before they can access the brotherhood portal.</p>                        <button class="form-submit" type="submit">Request Account</button>
                         <p class="form-error" id="signup-error" role="alert" hidden></p>
                     </form>
                 </div>

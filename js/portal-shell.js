@@ -69,6 +69,7 @@
     panels.forEach(function (panel) {
       panel.hidden = panel.getAttribute("data-panel") !== tab;
     });
+    document.dispatchEvent(new CustomEvent("nap:tab-changed", {detail: {tab: tab}}));
     closeMobileNav();
     var activePanel = document.querySelector('.portal-tab-panel:not([hidden])');
     var heading = activePanel && activePanel.querySelector("h1");
@@ -101,7 +102,7 @@
   });
 
   window.addEventListener("popstate", function () {
-    var tabFromHash = (location.hash || "#overview").replace(/^#/, "");
+    var tabFromHash = (location.hash || "#home").replace(/^#/, "");
     if (validNavTabs.indexOf(tabFromHash) !== -1) {
       setTab(tabFromHash, undefined, { fromHistory: true });
     }
@@ -110,7 +111,7 @@
   /* Restore whichever tab the hash points to on a fresh load (a refresh, or
      landing on a link with a #hash) instead of always defaulting to
      Overview. Uses replaceState so this doesn't itself add a history entry. */
-  var initialTab = (location.hash || "#overview").replace(/^#/, "");
+  var initialTab = (location.hash || "#home").replace(/^#/, "");
   if (validNavTabs.indexOf(initialTab) !== -1) {
     setTab(initialTab, undefined, { replace: true });
   }

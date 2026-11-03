@@ -2,11 +2,13 @@
 (function () {
   "use strict";
 
-  /* Shared invite code required to create a portal account — a light deterrent
-     against randoms finding the page, not real security (visible via View Source,
-     same tradeoff as any client-side check). Change this string any time. */
-  var PORTAL_INVITE_CODE = "NAPHI-BROTHERS";
-
+  async function callable(name,data,authenticated) {
+    const headers={'Content-Type':'application/json'};
+    if(authenticated)headers.Authorization='Bearer '+await auth.currentUser.getIdToken();
+    const response=await fetch('https://us-central1-nualphaphi-6b330.cloudfunctions.net/'+name,{method:'POST',headers,body:JSON.stringify({data})});
+    const result=await response.json();if(result.error)throw Error(result.error.message);return result.result;
+  }
+  function destination(){const next=new URLSearchParams(location.search).get('next');return next&&/^\/portal-home(?:\.html)?(?:[?#]|$)/.test(next)?next:'portal-home';}
   var toggleBtns = document.querySelectorAll(".portal-auth__toggle-btn");
   var panels = {
     signin: document.getElementById("authPanelSignin"),
@@ -74,8 +76,14 @@
 
       auth
         .signInWithEmailAndPassword(email, password)
-        .then(function () {
-          window.location.href = "portal-home";
+        .then(async function (credential) {
+          const profile=await db.doc('users/'+credential.user.uid).get();
+          const value=profile.data();
+          if(!value||value.disabled||(value.membershipStatus&&value.membershipStatus!=='approved')){
+            const application=await db.doc('membershipApplications/'+credential.user.uid).get();
+            throw Error(application.exists?'Your application is '+application.data().status+'. You will be notified when a decision is made.':'Your account does not yet have an approved brother profile. Contact an administrator.');
+          }
+          window.location.href = destination();
         })
         .catch(function (err) {
           showError(signinError, authErrorMessage(err));
@@ -101,13 +109,6 @@
       var email = document.getElementById("portal-signup-email").value.trim();
       var password = document.getElementById("portal-signup-password").value;
       var confirmPassword = document.getElementById("portal-signup-confirm").value;
-      var inviteCode = document.getElementById("portal-signup-invite").value.trim();
-
-      if (inviteCode !== PORTAL_INVITE_CODE) {
-        showError(signupError, "That invite code isn't right. Check with your chapter for the code.");
-        return;
-      }
-
       if (password !== confirmPassword) {
         showError(signupError, "Passwords don't match.");
         return;
@@ -118,43 +119,15 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Creating account…";
 
-      auth
-        .createUserWithEmailAndPassword(email, password)
-        .then(function (cred) {
-          return db
-            .collection("users")
-            .doc(cred.user.uid)
-            .set({
-              uid: cred.user.uid,
-              email: email,
-              firstName: firstName,
-              lastName: lastName,
-              pledgeName: "",
-              pledgeNumber: "",
-              chapter: "",
-              pledgeClass: "",
-              semesterCrossed: "",
-              yearCrossed: null,
-              birthday: "",
-              instagram: "",
-              facebook: "",
-              linkedin: "",
-              bigName: "",
-              bigPledgeName: "",
-              occupation: "",
-              major: "",
-              graduationYear: null,
-              hometown: "",
-              currentLocation: "",
-              phone: "",
-              bio: "",
-              photoDataUrl: "",
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-        })
-        .then(function () {
-          window.location.href = "portal-home";
+      Promise.resolve().then(async function () {
+          await callable('membershipReadiness',{},false);
+          let credential;
+          try { credential=await auth.createUserWithEmailAndPassword(email,password); }
+          catch(error){if(error.code!=='auth/email-already-in-use')throw error;credential=await auth.signInWithEmailAndPassword(email,password);}
+          const fields={firstName,lastName,middleName:'',notifications:true};
+          for(const key of ['phone','pledgeName','pledgeClass','pledgeNumber','chapter'])fields[key]=document.getElementById('portal-signup-'+key).value.trim();
+          await callable('submitMembership',fields,true);
+          signupForm.reset();showError(signupError,'Your application is in review. You will receive an email when administrators make a decision.');
         })
         .catch(function (err) {
           showError(signupError, authErrorMessage(err));

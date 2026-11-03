@@ -24,15 +24,24 @@
     return [profile.semesterCrossed, profile.yearCrossed].filter(Boolean).join(" ");
   };
 
-  window.napAvatarHtml = function (profile, size) {
-    profile = profile || {};
-    var sizeClass = "nap-avatar--" + (size || "md");
-    if (profile.photoDataUrl) {
-      return '<img class="nap-avatar ' + sizeClass + '" src="' + profile.photoDataUrl + '" alt="">';
+  var avatarURLs = new Map();
+  var hydratedAvatars = new WeakSet();
+  function hydrateAvatar(img) {
+    if (hydratedAvatars.has(img)) return;
+    hydratedAvatars.add(img);
+    var path = img.getAttribute('data-nap-avatar');
+    if (!avatarURLs.has(path)) avatarURLs.set(path, storage.ref(path).getDownloadURL().catch(function(error){avatarURLs.delete(path);throw error;}));
+    avatarURLs.get(path).then(function(url){img.src=url;}).catch(function(){img.alt='Profile photo unavailable';});
+  }
+  new MutationObserver(function(changes){changes.forEach(function(change){change.addedNodes.forEach(function(node){if(node.nodeType!==1)return;if(node.matches('img[data-nap-avatar]'))hydrateAvatar(node);node.querySelectorAll('img[data-nap-avatar]').forEach(hydrateAvatar);});});}).observe(document.body,{childList:true,subtree:true});
+  window.napAvatarHtml = function(profile,size) {
+    profile=profile||{};var className='nap-avatar nap-avatar--'+(['sm','md','lg','xl'].includes(size)?size:'md');
+    if(profile.avatarPath||profile.photoDataUrl){var img=document.createElement('img');img.className=className;img.alt='';img.loading='lazy';
+      if(profile.avatarPath)img.setAttribute('data-nap-avatar',profile.avatarPath);
+      else if(/^data:image\/(png|jpeg|webp);base64,/.test(profile.photoDataUrl)||/^https:\/\//.test(profile.photoDataUrl))img.src=profile.photoDataUrl;
+      return img.outerHTML;
     }
-    var initials = ((profile.firstName || "").charAt(0) + (profile.lastName || "").charAt(0)).toUpperCase();
-    if (!initials && profile.pledgeName) initials = profile.pledgeName.charAt(0).toUpperCase();
-    return '<div class="nap-avatar nap-avatar--fallback ' + sizeClass + '">' + (initials || "?") + "</div>";
+    var fallback=document.createElement('span');fallback.className=className+' nap-avatar--fallback';fallback.textContent=((profile.firstName||'').charAt(0)+(profile.lastName||'').charAt(0)).toUpperCase()||(profile.pledgeName||'?').slice(0,2).toUpperCase();return fallback.outerHTML;
   };
 
   window.napResizeImageToDataUrl = function (file, maxSize, callback) {
@@ -151,7 +160,7 @@
   /* Disabled brothers (admin-removed accounts) are filtered out here, which
      hides them from the directory, birthdays, author pickers, and email
      blasts everywhere at once. */
-  db.collection("users").onSnapshot(function (snap) {
+  function startBrothers() { db.collection("users").onSnapshot(function (snap) {
     window.NAP_ALL_BROTHERS = snap.docs
       .map(function (doc) {
         return Object.assign({ uid: doc.id }, doc.data());
@@ -162,6 +171,8 @@
     window.NAP_BROTHERS_READY = true;
     document.dispatchEvent(new CustomEvent("nap:brothers-updated"));
   });
+
+  }
 
   window.napIsAdmin = function () {
     return !!(window.NAP_CURRENT_PROFILE && window.NAP_CURRENT_PROFILE.isAdmin === true);
@@ -319,7 +330,7 @@
 
   auth.onAuthStateChanged(function (user) {
     if (!user) {
-      window.location.href = "portal";
+      window.location.href = "portal?next=" + encodeURIComponent(location.pathname + location.search + location.hash);
       return;
     }
 
@@ -331,7 +342,7 @@
       /* Admin-removed account: sign them straight back out. Their Firebase
          Auth login still exists (deleting that needs a server), but the
          portal itself is a locked door. */
-      if (profile.disabled === true) {
+      if (!snap.exists || profile.disabled === true || (profile.membershipStatus && profile.membershipStatus !== "approved")) {
         auth.signOut().then(function () {
           window.location.href = "portal";
         });
@@ -339,6 +350,7 @@
       }
 
       window.NAP_CURRENT_PROFILE = profile;
+      startBrothers();
 
       if (portalPledgeName) {
         portalPledgeName.textContent = window.napDisplayName(profile, user.email);

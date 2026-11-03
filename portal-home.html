@@ -26,6 +26,8 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <link href="css/nap.css" rel="stylesheet">
     <link href="css/portal-design.css" rel="stylesheet">
+<link href="css/portal-985.css" rel="stylesheet">
+<link href="vendor/leaflet/leaflet.css" rel="stylesheet">
 </head>
 <body class="portal-design">
 
@@ -40,7 +42,7 @@
 
 
             <button class="portal-shell__nav-toggle" id="portalNavToggle" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="portalNav">
-                <span id="portalNavToggleLabel">Overview</span>
+                <span id="portalNavToggleLabel">Home</span>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M6 9l6 6 6-6"></path>
                 </svg>
@@ -48,20 +50,23 @@
 
 <nav class="portal-shell__nav" id="portalNav" aria-label="Portal sections">
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Workspace</p>
-                    <button class="portal-shell__nav-btn is-active" type="button" data-tab="overview"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Overview</span></button>
-                    <button class="portal-shell__nav-btn" type="button" data-tab="announcements"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 15-5v14L3 14zm3 5 2 6h4l-2-5M21 9v6"/></svg><span>Announcements</span></button>
+                    <button class="portal-shell__nav-btn is-active" type="button" data-tab="home"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Home</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="channels"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8h16M4 16h16M9 3L7 21M17 3l-2 18"/></svg><span>Channels</span></button>
+<button class="portal-shell__nav-btn" type="button" data-tab="messages"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 3h18v14H8l-5 4z"/></svg><span>Messages</span></button>
+<button class="portal-shell__nav-btn" type="button" data-tab="globe"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20M2 12h20M12 2c-6 6-6 14 0 20M12 2c6 6 6 14 0 20"/></svg><span>Globe</span></button>
+<button class="portal-shell__nav-btn" type="button" data-tab="announcements"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 15-5v14L3 14zm3 5 2 6h4l-2-5M21 9v6"/></svg><span>Announcements</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="events"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18m-12 5h2m3 0h2"/></svg><span>Events</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="forms"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H5v20h14V7zM14 2v6h5M8 12h8m-8 4h6"/></svg><span>Forms</span></button>
                 </div>
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Brotherhood</p>
                     <button class="portal-shell__nav-btn" type="button" data-tab="directory"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span>Directory</span></button>
-                    <button class="portal-shell__nav-btn" type="button" data-tab="pledges"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5zm4 3v6c3 3 9 3 12 0v-6m4-3v8"/></svg><span>Pledges</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="roster"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5zm4 3v6c3 3 9 3 12 0v-6m4-3v8"/></svg><span>Master Roster</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="family-tree"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-5h14v5"/></svg><span>Family Tree</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="gallery"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg><span>Gallery</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="birthdays"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-9h16v9H4zm0-5c3 3 5-3 8 0s5-3 8 0M8 12V8m8 4V8M8 5V3m8 2V3M12 12V5"/></svg><span>Birthdays</span></button>
                 </div>
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Account</p>
-                    <button class="portal-shell__nav-btn" type="button" data-tab="myinfo"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>My Information</span></button>
+                    <button class="portal-shell__nav-btn" type="button" data-tab="myprofile"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>My Profile</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="settings"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 3-1 3-3 1-3 3 2 2-1 3 3 3 3-1 2 4 3-2 1-3 3-1 2-3-2-2V6l-4-1-2-3z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span></button>
                 </div>
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Management</p>
@@ -101,23 +106,11 @@
 
         <main id="main" class="portal-shell__main">
             <header class="portal-workbar">
-                <p class="portal-breadcrumb">National Portal <span>/</span> <strong id="portalCurrentSection">Overview</strong></p>
+                <p class="portal-breadcrumb">National Portal <span>/</span> <strong id="portalCurrentSection">Home</strong></p>
                 <div class="portal-workbar__actions"><time id="portalToday"></time><button class="portal-icon-button" id="portalQuickTheme" type="button" aria-label="Switch to light mode"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a href="index" class="portal-site-link">Main site <svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
             </header>
 
-            <section class="portal-tab-panel" id="panel-overview" data-panel="overview">
-                <div class="portal-view-header">
-                    <div>
-                        <span class="section-label">The brotherhood, connected</span>
-                        <h1 class="portal-view-title" id="portalGreeting">Welcome back.</h1>
-                        <p class="portal-view-intro">Your people. Your chapter. Everything happening across Nu Alpha Phi.</p>
-                    </div>
-                </div>
-                <div class="portal-shortcuts" aria-label="Quick links"><button type="button" data-portal-go="directory"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg>Find a brother</button><button type="button" data-portal-go="events"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18m-12 5h2m3 0h2"/></svg>View events</button><button type="button" data-portal-go="gallery"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></svg>Explore the gallery</button></div>
-                <div id="overviewNudge"></div>
-                <div class="stat-tiles" id="overviewStats"></div>
-                <div class="overview-grid" id="overviewGrid"></div>
-            </section>
+
 
             <section class="portal-tab-panel" id="panel-directory" data-panel="directory" hidden>
                 <div class="portal-view-header">
@@ -141,40 +134,22 @@
                 <div class="directory-grid" id="directoryGrid"></div>
             </section>
 
-            <section class="portal-tab-panel" id="panel-announcements" data-panel="announcements" hidden>
-                <div class="portal-view-header">
-                    <div>
-                        <span class="section-label">Updates</span>
-                        <h1 class="portal-view-title">Brotherhood News</h1>
-                        <p class="portal-view-intro">Announcements and updates for active brothers and alumni.</p>
-                    </div>
-                    <button class="form-submit form-submit--small" id="newAnnouncementBtn" type="button">New Announcement</button>
-                </div>
-                <div class="news-list" id="announcementsList"></div>
-            </section>
 
-            <section class="portal-tab-panel" id="panel-events" data-panel="events" hidden>
-                <div class="portal-view-header">
-                    <div>
-                        <span class="section-label">Events</span>
-                        <h1 class="portal-view-title">Events</h1>
-                        <p class="portal-view-intro">See what's coming up, or look back at what happened.</p>
-                    </div>
-                    <button class="form-submit form-submit--small" id="newEventBtn" type="button">New Event</button>
-                </div>
 
-                <div class="sub-tabs" id="eventsSubTabs" role="tablist" aria-label="Events">
-                    <button class="sub-tabs__btn is-active" type="button" data-event-tab="soon" role="tab" aria-selected="true">Events Soon</button>
-                    <button class="sub-tabs__btn" type="button" data-event-tab="completed" role="tab" aria-selected="false">Completed Events</button>
-                </div>
 
-                <div id="eventsListsContainer">
-                    <div class="rsvp-event-list" id="eventsUpcomingList" data-event-panel="soon"></div>
-                    <div class="rsvp-event-list" id="eventsCompletedList" data-event-panel="completed" hidden></div>
-                </div>
-            </section>
 
-            <section class="portal-tab-panel" id="panel-forms" data-panel="forms" hidden>
+            <section class="portal-tab-panel p985" id="panel-post" data-panel="post" hidden><div id="p985-post"></div></section>
+<section class="portal-tab-panel p985" id="panel-home" data-panel="home" ><div id="p985-home"><h1>Home</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-announcements" data-panel="announcements" hidden><div id="p985-announcements"><h1>Announcements</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-events" data-panel="events" hidden><div id="p985-events"><h1>Events</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-channels" data-panel="channels" hidden><div id="p985-channels"><h1>Channels</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-messages" data-panel="messages" hidden><div id="p985-messages"><h1>Messages</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-globe" data-panel="globe" hidden><div id="p985-globe"><h1>Where brothers are</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-roster" data-panel="roster" hidden><div id="p985-roster"><h1>Master Roster</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-myprofile" data-panel="myprofile" hidden><div id="p985-myprofile"><h1>My Profile</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-profile" data-panel="profile" hidden><div id="p985-profile"><h1>Brother profile</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel p985" id="panel-admin" data-panel="admin" hidden><div id="p985-admin"><h1>Administration</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
+<section class="portal-tab-panel" id="panel-forms" data-panel="forms" hidden>
                 <div class="portal-view-header">
                     <div>
                         <span class="section-label">Surveys</span>
@@ -269,72 +244,9 @@
                 </div>
             </section>
 
-            <section class="portal-tab-panel" id="panel-pledges" data-panel="pledges" hidden>
-                <div class="portal-view-header">
-                    <div>
-                        <span class="section-label">Brotherhood</span>
-                        <h1 class="portal-view-title">Pledges</h1>
-                        <p class="portal-view-intro">Pledge classes and the brothers they became.</p>
-                    </div>
-                </div>
 
-                <div class="sub-tabs" id="pledgesSubTabs" role="tablist" aria-label="Pledges">
-                    <button class="sub-tabs__btn is-active" type="button" data-pledges-tab="classes" role="tab" aria-selected="true">Pledge Classes</button>
-                    <button class="sub-tabs__btn" type="button" data-pledges-tab="education" role="tab" aria-selected="false">Member Education</button>
-                </div>
 
-                <div id="pledgesClassesPanel" data-pledges-panel="classes">
-                    <div class="news-card__toolbar">
-                        <button class="form-submit form-submit--small" id="newPledgeClassBtn" type="button" hidden>New Pledge Class</button>
-                    </div>
-                    <div class="forms-grid" id="pledgeClassGrid"></div>
 
-                    <h2 class="pledges-section-heading" id="pastPledgeClassesHeading" hidden>Past Pledge Classes</h2>
-                    <div class="pledges-chapter-tabs" id="pastPledgeClassTabs"></div>
-                    <div class="forms-grid" id="pastPledgeClassGrid"></div>
-                </div>
-
-                <div id="pledgesEducationPanel" data-pledges-panel="education" hidden>
-                    <p class="portal-view-intro">What each pledge needs to have in their notebook to cross. This varies from chapter to chapter — the sections below are just a barebones starting layout for admins to build out.</p>
-                    <div class="news-card__toolbar">
-                        <button class="form-submit form-submit--small" id="newEducationSectionBtn" type="button" hidden>Add Section</button>
-                    </div>
-                    <div class="education-accordion" id="educationSectionsList"></div>
-                </div>
-            </section>
-
-            <section class="portal-tab-panel" id="panel-pledge-class" data-panel="pledge-class" hidden>
-                <button class="portal-back-btn" type="button" id="pledgeClassBackBtn">&larr; Back to Pledges</button>
-                <div class="portal-view-header">
-                    <div>
-                        <span class="section-label">Pledge Class</span>
-                        <h1 class="portal-view-title" id="pledgeClassPageTitle"></h1>
-                        <p class="portal-view-intro" id="pledgeClassPageMeta"></p>
-                    </div>
-                    <div class="news-card__actions" id="pledgeClassPageActions"></div>
-                </div>
-
-                <div class="profile-modal__grid" id="pledgeClassInfoGrid"></div>
-
-                <div class="portal-view-header portal-view-header--spaced">
-                    <h2 class="portal-view-title portal-view-title--small">Pledges</h2>
-                    <div class="news-card__actions">
-                        <button class="news-card__action-btn" id="massAddPledgesBtn" type="button" hidden>Mass Add</button>
-                        <button class="form-submit form-submit--small" id="newPledgeBtn" type="button" hidden>Add Pledge</button>
-                    </div>
-                </div>
-                <div class="directory-grid" id="pledgeGrid"></div>
-
-                <div class="portal-view-header portal-view-header--spaced">
-                    <h2 class="portal-view-title portal-view-title--small">Photos &amp; Videos</h2>
-                    <div class="news-card__actions">
-                        <label class="form-submit form-submit--small form-submit--inline" for="pledgeMediaUploadInput">Upload</label>
-                        <input type="file" id="pledgeMediaUploadInput" accept="image/*,video/*" multiple hidden>
-                    </div>
-                </div>
-                <p class="form-feedback" id="pledgeMediaFeedback" role="status" aria-live="polite" hidden></p>
-                <div class="media-gallery" id="pledgeMediaGallery"></div>
-            </section>
 
             <section class="portal-tab-panel" id="panel-family-tree" data-panel="family-tree" hidden>
                 <div class="portal-view-header">
@@ -567,7 +479,7 @@
                     <button class="sub-tabs__btn is-active" type="button" data-settings-tab="security" role="tab" aria-selected="true">Account Security</button>
                     <button class="sub-tabs__btn" type="button" data-settings-tab="appearance" role="tab" aria-selected="false">Appearance</button>
                     <button class="sub-tabs__btn" type="button" data-settings-tab="notifications" role="tab" aria-selected="false">Notifications</button>
-                    <button class="sub-tabs__btn" type="button" data-settings-tab="admin" role="tab" aria-selected="false">Admin</button>
+
                 </div>
 
                 <div class="portal-panel-content" id="settingsSecurityPanel" data-settings-panel="security">
@@ -622,25 +534,7 @@
                     <p class="form-feedback" id="email-notif-feedback" role="status" aria-live="polite" hidden></p>
                 </div>
 
-                <div class="portal-panel-content" id="settingsAdminPanel" data-settings-panel="admin" hidden>
-                    <h2 class="portal-view-title portal-view-title--small">Admin Access</h2>
-                    <div id="settingsAdminNotAdmin">
-                        <p class="portal-view-intro">Enter the admin code to unlock administrator privileges on your account.</p>
-                        <form id="adminCodeForm" novalidate>
-                            <div class="form-group">
-                                <label class="form-label" for="settings-admin-code">Admin Code</label>
-                                <input class="form-input" id="settings-admin-code" name="adminCode" type="password" autocomplete="off" required>
-                            </div>
-                            <button class="form-submit form-submit--inline" type="submit">Activate Admin Access</button>
-                            <p class="form-error" id="admin-code-error" role="alert" hidden></p>
-                        </form>
-                    </div>
-                    <div id="settingsAdminIsAdmin" hidden>
-                        <p class="portal-view-intro">You have administrator access. You can approve announcements and events from the Admin tab, and edit or remove brother accounts from the Directory.</p>
-                        <button class="form-submit form-submit--danger form-submit--inline" type="button" id="removeAdminBtn">Remove Admin Access</button>
-                    </div>
-                </div>
-            </section>
+                            </section>
 
             <section class="portal-tab-panel" id="panel-blog" data-panel="blog" hidden>
                 <div class="portal-view-header">
@@ -729,21 +623,7 @@
                 </div>
             </section>
 
-            <section class="portal-tab-panel" id="panel-admin" data-panel="admin" hidden>
-                <div class="portal-view-header">
-                    <div>
-                        <span class="section-label">Administration</span>
-                        <h1 class="portal-view-title">Admin</h1>
-                        <p class="portal-view-intro">Review announcement and event requests from brothers before they go live.</p>
-                    </div>
-                </div>
 
-                <h2 class="portal-view-title portal-view-title--small">Pending Announcements</h2>
-                <div class="news-list" id="adminPendingAnnouncements"></div>
-
-                <h2 class="portal-view-title portal-view-title--small portal-view-title--spaced">Pending Events</h2>
-                <div class="news-list" id="adminPendingEvents"></div>
-            </section>
         </main>
     </div>
 
@@ -1266,21 +1146,31 @@
     <script src="js/portal-confirm.js"></script>
     <script src="js/portal-settings.js"></script>
     <script src="js/portal-account-settings.js"></script>
-    <script src="js/portal-announcements.js"></script>
-    <script src="js/portal-events.js"></script>
+
+
     <script src="js/portal-forms.js"></script>
     <script src="js/portal-directory.js"></script>
-    <script src="js/portal-pledges.js"></script>
+
     <script src="js/portal-member-education.js"></script>
     <script src="js/portal-familytree.js"></script>
     <script src="js/portal-gallery.js"></script>
-    <script src="js/portal-admin.js"></script>
+
     <script src="js/portal-blog.js"></script>
     <script src="js/portal-linktree.js"></script>
     <script src="js/portal-birthdays.js"></script>
-    <script src="js/portal-overview.js"></script>
-    <script src="js/portal-notifications.js"></script>
+
+
     <script src="js/portal-design.js"></script>
+<script src="js/portal-985-policy.js"></script>
+<script src="js/portal-985-core.js"></script>
+<script src="js/portal-985-feed.js"></script>
+<script src="js/portal-985-profiles.js"></script>
+<script src="js/portal-985-chat.js"></script>
+<script src="js/portal-985-events.js"></script>
+<script src="js/portal-985-roster.js"></script>
+<script src="js/portal-985-admin.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="js/portal-985-map.js"></script>
     <script src="js/site.js"></script>
 </body>
 </html>

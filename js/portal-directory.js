@@ -373,7 +373,7 @@
     var brother = allBrothers.find(function (b) {
       return b.uid === uid;
     });
-    if (brother) openProfile(brother);
+    if (brother) window.napOpenProfileModal(uid);
   });
 
   searchInput.addEventListener("input", render);
