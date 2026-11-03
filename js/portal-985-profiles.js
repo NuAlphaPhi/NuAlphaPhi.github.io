@@ -39,41 +39,76 @@
       "2011",
       "June 6, 2026",
     ];
+  let chapterGeneration = 0;
   P.chapter = (c) => {
-    const i = P.chapters.indexOf(c),
-      box = P.el("div");
-    box.append(
-      P.el("div", "p-banner", slogans[i] || c),
-      P.el("p", "", schools[i] || ""),
-      P.el("p", "", "Founded " + (founded[i] || "")),
-      P.el(
-        "p",
-        "",
-        P.brothers.filter(
-          (b) => b.chapter === c && b.membershipStanding === "active",
-        ).length + " active brothers on the portal",
-      ),
-    );
-    P.dialog(c + " Chapter", box);
-    P.run(box, async () => {
-      const classes = await db
-        .collection("masterRosterClasses")
-        .where("chapter", "==", c)
-        .get();
-      const cls = classes.docs.find(
-        (d) => (d.data().pledgeClass || "").toLowerCase() === "alpha",
-      );
-      if (cls) {
-        const rows = await db
-          .collection("masterRoster")
-          .where("classID", "==", cls.id)
-          .get();
-        box.append(P.el("h3", "", "Founding class"));
-        rows.docs.forEach((d) => {
-          const r = d.data();
-          box.append(P.el("p", "", r.fullName + " · " + r.pledgeName));
-        });
-      }
+    const i = P.chapters.indexOf(c);
+    if (i < 0) return;
+    const generation = ++chapterGeneration;
+    const root = P.root("chapter");
+    root.className = "p-feed p-profile-page p-chapter-page";
+    root.replaceChildren();
+    document.querySelectorAll("dialog.p-dialog[open]").forEach(d => d.close());
+    const heading = P.el("header", "p-profile-heading");
+    const back = P.button("←", () => P.go("directory"), "p-profile-back");
+    back.setAttribute("aria-label", "Back to directory");
+    const name = P.el("div");
+    name.append(P.el("h1", "", c + " Chapter"), P.el("small", "", "Nu Alpha Phi"));
+    heading.append(back, name);
+    const cover = P.el("div", "p-profile-cover");
+    cover.append(P.el("span", "p-profile-cover-label", "NU ALPHA PHI · EST. " + founded[i].slice(-4)), P.el("strong", "", slogans[i]));
+    const intro = P.el("section", "p-profile-intro");
+    const seal = P.el("div", "p-chapter-seal", ["Α", "Β", "Γ", "Δ", "Ε", "Ζ", "Η", "Θ", "Ι", "Κ"][i]);
+    seal.setAttribute("aria-hidden", "true");
+    intro.append(seal, P.el("h2", "p-profile-realname", c + " Chapter"), P.el("p", "p-profile-handle", "@" + c.toLowerCase()));
+    const facts = P.el("div", "p-profile-summary");
+    facts.append(P.el("span", "", schools[i]), P.el("span", "", "Founded " + founded[i]));
+    const members = P.brothers.filter(b => b.chapter === c);
+    const active = members.filter(b => b.membershipStanding === "active").length;
+    const stats = P.el("div", "p-chapter-stats");
+    [[active, "Active on portal"], [members.length, "Brothers on portal"]].forEach(([count, label]) => {
+      const stat = P.el("div"); stat.append(P.el("strong", "", String(count)), P.el("span", "", label)); stats.append(stat);
+    });
+    intro.append(facts, stats);
+    const tabs = P.el("div", "p-profile-tabs");
+    tabs.setAttribute("role", "tablist");
+    const content = P.el("section", "p-chapter-content");
+    const memberList = P.el("div", "p-chapter-grid");
+    const founderList = P.el("div", "p-chapter-grid");
+    const card = (pledgeName, realName, brother, subtitle) => {
+      const row = brother ? P.button("", () => P.profile(brother.uid), "p-chapter-person") : P.el("div", "p-chapter-person");
+      row.append(P.avatar(brother || {pledgeName, firstName:realName}));
+      const identity = P.el("div");
+      identity.append(P.el("strong", "", pledgeName || realName), P.el("span", "", realName || ""));
+      if (subtitle) identity.append(P.el("small", "", subtitle));
+      row.append(identity);
+      return row;
+    };
+    members.sort((a,b) => P.name(a).localeCompare(P.name(b))).forEach(b => memberList.append(card(b.pledgeName, [b.firstName,b.lastName].filter(Boolean).join(" "), b, (b.pledgeClass ? b.pledgeClass + " Class · " : "") + (b.membershipStanding === "active" ? "Active" : "Alumni"))));
+    if (!members.length) memberList.append(P.empty("No brothers from this chapter have joined the portal yet."));
+    founderList.append(P.empty("Loading the founding class…"));
+    ["Brothers", "Founding class"].forEach((label,index) => {
+      const button = P.button(label, () => {
+        [...tabs.children].forEach((b,j) => {b.classList.toggle("is-selected", j === index); b.setAttribute("aria-selected", String(j === index));});
+        content.replaceChildren(index ? founderList : memberList);
+      }, "p-profile-tab" + (index === 0 ? " is-selected" : ""));
+      button.setAttribute("role", "tab"); button.setAttribute("aria-selected", String(index === 0));
+      tabs.append(button);
+    });
+    content.append(memberList);
+    root.append(heading, cover, intro, tabs, content);
+    window.napSetTab("chapter", "directory");
+    P.run(founderList, async () => {
+      const classes = await db.collection("masterRosterClasses").where("chapter", "==", c).get();
+      const cls = classes.docs.find(d => (d.data().pledgeClass || "").trim().toLowerCase() === "alpha");
+      const rows = cls ? await db.collection("masterRoster").where("classID", "==", cls.id).get() : null;
+      if (generation !== chapterGeneration) return;
+      founderList.replaceChildren();
+      (rows?.docs || []).forEach(d => {
+        const r = d.data();
+        const matches = members.filter(b => (b.pledgeName || "").trim().toLowerCase() === (r.pledgeName || "").trim().toLowerCase());
+        founderList.append(card(r.pledgeName, r.fullName, matches.length === 1 ? matches[0] : null, "Alpha Class · " + (c === "Alpha" ? "Founding Father" : "Founder")));
+      });
+      if (!founderList.childElementCount) founderList.append(P.empty("The founding class has not been added to the master roster yet."));
     });
   };
   function age(value) {

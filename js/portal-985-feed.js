@@ -559,8 +559,8 @@
           sort = sortField.input.value;
           render();
         };
-        top.append(sortField.wrap);
-        r.append(top, composer("post"));
+        r.querySelector(".p-header").append(sortField.wrap);
+        r.append(composer("post"));
       } else {
         const holder = P.el("div");
         r.append(holder);
