@@ -75,6 +75,20 @@
     form.append(submit);
     const d = P.dialog("New poll", form);
   };
+  let previewFrame;
+  function measurePreviews() {
+    cancelAnimationFrame(previewFrame);
+    previewFrame = requestAnimationFrame(() => {
+      document.querySelectorAll(".p-post-preview").forEach(body => {
+        const more = body.nextElementSibling;
+        if (more?.classList.contains("p-post-more"))
+          more.hidden = !body.clientHeight || body.scrollHeight <= body.clientHeight + 1;
+      });
+    });
+  }
+  window.addEventListener("resize", measurePreviews);
+  document.addEventListener("nap:tab-changed", measurePreviews);
+  document.fonts?.ready.then(measurePreviews);
   P.postCard = (post, detail = false) => {
     const c = P.el("article", "p-card p-feed-post");
     c.append(
@@ -87,8 +101,17 @@
           P.when(post.createdAt) +
           (post.kind !== "post" ? " · " + (post.kind || "Post") : ""),
       ),
-      P.text(post.body, post),
     );
+    const body = P.text(post.body, post);
+    c.append(body);
+    if (!detail) {
+      body.classList.add("p-post-preview");
+      const more = P.button("Show more", () => P.openPost(post.id), "p-post-more");
+      more.hidden = true;
+      more.setAttribute("aria-label", "Show full post");
+      c.append(more);
+      measurePreviews();
+    }
     if (post.photoPath) {
       const img = P.image(post.photoPath);
       img.onclick = () => P.expand(post.photoPath);
