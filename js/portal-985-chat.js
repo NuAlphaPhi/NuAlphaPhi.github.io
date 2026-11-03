@@ -43,13 +43,23 @@
       const el = panes[tab]?.list;
       if (!el) continue;
       el.replaceChildren();
-      rooms.forEach((r) => {
-        const b = P.button((unread(r) ? "● " : "") + roomTitle(r), () =>
-          open(r),
-        );
+      const roomButton = (r) => {
+        const b = P.button((unread(r) ? "● " : "") + roomTitle(r), () => open(r));
         if (active?.id === r.id) b.classList.add("selected");
-        el.append(b);
-      });
+        return b;
+      };
+      if (tab === "channels") {
+        el.classList.add("p-channel-groups");
+        const general = new Set(["general", "shitposting", "gaming", "sports", "finance"]);
+        for (const [title, isGeneral] of [["Your Circle", false], ["Brotherhood", true]]) {
+          const group = P.el("section", "p-channel-group");
+          group.setAttribute("aria-label", title);
+          group.append(P.el("h2", "p-channel-group-title", title));
+          const roomList = P.el("div", "p-channel-group-rooms");
+          rooms.filter(r => general.has(r.id) === isGeneral).forEach(r => roomList.append(roomButton(r)));
+          if (roomList.childElementCount) {group.append(roomList); el.append(group);}
+        }
+      } else rooms.forEach(r => el.append(roomButton(r)));
       if (!rooms.length) el.append(P.empty("Start a conversation."));
     }
     if (active?.channel && !channels().some((r) => r.id === active.id)) {

@@ -1521,3 +1521,14 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 @media(max-width:650px) { .p-admin-grid{grid-template-columns:1fr}.p-admin-tabs{flex-wrap:nowrap;overflow-x:auto}.p-admin-tabs .p-btn{white-space:nowrap}.p-admin-roster-row{padding:14px 12px} }
 .p-roster-linked { border-color:#9e4262; background:#9e426210; }
 .p-roster-linked .p-btn:disabled { opacity:1; cursor:default; color:#d1849c; }
+.p-channel-group + .p-channel-group { border-top:1px solid var(--grey-200); margin-top:12px; padding-top:20px; }
+.p985 .p-channel-group-title { padding:0 13px 10px; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--grey-400); }
+.p-channel-group-rooms { display:flex; flex-direction:column; gap:3px; }
+.p-channel-group-rooms .p-btn { width:100%; }
+@media(max-width:860px) {
+  .p-room-list.p-channel-groups { flex-direction:column; max-height:none; overflow:visible; gap:12px; }
+  .p-channel-group { min-width:0; }
+  .p-channel-group + .p-channel-group { margin-top:0; padding-top:12px; }
+  .p-channel-group-rooms { flex-direction:row; overflow-x:auto; padding-bottom:5px; }
+  .p-channel-group-rooms .p-btn { width:auto; white-space:nowrap; max-width:none; }
+}
