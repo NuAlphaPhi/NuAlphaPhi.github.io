@@ -103,6 +103,9 @@
   if (!form) return;
 
   var PASSWORD_ERROR_MESSAGES = {
+    "auth/network-request-failed": "Could not connect. Check your connection and try again.",
+    "auth/requires-recent-login": "Please sign in again, then retry changing your password.",
+    "auth/password-does-not-meet-requirements": "Choose a stronger password that meets the account password requirements.",
     "auth/wrong-password": "Your current password is incorrect.",
     "auth/invalid-credential": "Your current password is incorrect.",
     "auth/weak-password": "New password must be at least 6 characters.",
@@ -113,6 +116,11 @@
     e.preventDefault();
     if (errorEl) errorEl.hidden = true;
     if (feedbackEl) feedbackEl.hidden = true;
+
+    if (!form.reportValidity()) return;
+    if (!auth.currentUser || !auth.currentUser.email) {
+      errorEl.textContent = "Please sign in again to change your password."; errorEl.hidden = false; return;
+    }
 
     var currentPassword = document.getElementById("settings-current-password").value;
     var newPassword = document.getElementById("settings-new-password").value;
@@ -127,6 +135,7 @@
     }
 
     var submitBtn = form.querySelector(".form-submit");
+    if (submitBtn.disabled) return;
     window.napSaveButtonStart(submitBtn, "Updating…");
 
     var user = auth.currentUser;
@@ -140,7 +149,7 @@
       .then(function () {
         form.reset();
         if (feedbackEl) {
-          feedbackEl.textContent = "Password updated.";
+          feedbackEl.textContent = "Password updated. Use your new password next time you sign in to the portal or 985 app.";
           feedbackEl.className = "form-feedback form-feedback--success";
           feedbackEl.hidden = false;
         }

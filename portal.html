@@ -65,7 +65,22 @@
                             <input class="form-input" id="portal-signin-password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
                         </div>
                         <button class="form-submit" type="submit">Sign In</button>
+                        <button class="form-submit form-submit--secondary" type="button" id="forgotPasswordButton">Forgot password?</button>
                         <p class="form-error" id="signin-error" role="alert" hidden></p>
+                    </form>
+                </div>
+
+                <div class="portal-auth__panel" id="authPanelReset" hidden>
+                    <h2>Reset your password</h2>
+                    <p class="portal-panel__text">Enter your account email and we’ll send you a password reset link.</p>
+                    <form class="portal-panel__form" id="passwordResetForm">
+                        <div class="form-group">
+                            <label class="form-label" for="reset-email">Email</label>
+                            <input class="form-input" id="reset-email" type="email" autocomplete="email" required placeholder="Your account email">
+                        </div>
+                        <button class="form-submit" type="submit">Send reset link</button>
+                        <p id="reset-feedback" role="status" aria-live="polite" hidden></p>
+                        <button class="form-submit form-submit--secondary" type="button" id="backToSignin">Back to sign in</button>
                     </form>
                 </div>
 

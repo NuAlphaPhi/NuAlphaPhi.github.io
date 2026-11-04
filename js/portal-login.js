@@ -12,6 +12,7 @@
   var toggleBtns = document.querySelectorAll(".portal-auth__toggle-btn");
   var panels = {
     signin: document.getElementById("authPanelSignin"),
+    reset: document.getElementById("authPanelReset"),
     signup: document.getElementById("authPanelSignup"),
   };
 
@@ -56,6 +57,35 @@
   function authErrorMessage(err) {
     return AUTH_ERROR_MESSAGES[err.code] || err.message || "Something went wrong. Please try again.";
   }
+
+  document.getElementById('forgotPasswordButton').addEventListener('click', function () {
+    document.getElementById('reset-email').value = document.getElementById('portal-signin-email').value.trim();
+    setAuthView('reset');
+    document.getElementById('reset-email').focus();
+  });
+  document.getElementById('backToSignin').addEventListener('click', function () {
+    setAuthView('signin');
+    document.getElementById('portal-signin-email').focus();
+  });
+  document.getElementById('passwordResetForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    if (!this.reportValidity()) return;
+    var button = this.querySelector('[type="submit"]');
+    if (button.disabled) return;
+    var feedback = document.getElementById('reset-feedback');
+    button.disabled = true; button.textContent = 'Sending…'; feedback.hidden = true;
+    try {
+      try { await auth.sendPasswordResetEmail(document.getElementById('reset-email').value.trim()); }
+      catch (error) { if (error.code !== 'auth/user-not-found') throw error; }
+      feedback.textContent = 'If an account uses this email, a reset link is on its way. Check your inbox and spam folder.';
+      feedback.className = 'form-feedback form-feedback--success';
+    } catch (error) {
+      feedback.textContent = error.code === 'auth/network-request-failed' ? 'Could not connect. Check your connection and try again.' : (AUTH_ERROR_MESSAGES[error.code] || 'Could not send a reset link. Please try again.');
+      feedback.className = 'form-error';
+    } finally {
+      feedback.hidden = false; button.disabled = false; button.textContent = 'Send reset link';
+    }
+  });
 
   /* Sign in */
   var signinForm = document.getElementById("portalSigninForm");
