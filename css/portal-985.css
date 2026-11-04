@@ -1608,3 +1608,24 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-feed-badge { margin-left:auto; padding:2px 7px; border-radius:20px; background:#a72b53; color:#fff; font-size:.65rem; font-weight:700; }
 .p-feed-badge::after { content:attr(data-count); }
 .p-feed-badge[hidden] { display:none; }
+.p-group-dialog { width:620px; }
+.p-group-summary { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:18px 0; }
+.p-group-summary h3 { margin:0; font-size:1.15rem; flex:1; }
+.p-group-summary .p-avatar,.p-group-summary .p-chat-avatars { flex-shrink:0; }
+.p-group-summary p { margin:0; font-size:.8rem; }
+.p-group-edit { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.p-group-edit > small,.p-group-edit > p { grid-column:1/-1; margin:0; }
+.p-group-edit .p-field { min-width:0; margin:0; }
+.p-group-edit input { width:100%; min-width:0; box-sizing:border-box; }
+.p-group-tabs { display:flex; gap:8px; margin-top:22px; border-bottom:1px solid var(--grey-200); padding-bottom:10px; }
+.p-group-tabs .selected { background:#8c345526; border-color:#a64b6b; }
+.p-group-content { padding-top:12px; display:grid; gap:8px; }
+.p-group-member { display:flex; align-items:center; gap:12px; color:var(--black); background:none; border:0; padding:10px; text-align:left; border-radius:10px; cursor:pointer; }
+.p-group-member:hover { background:var(--grey-100); }
+.p-group-member small { margin-left:auto; }
+.p-group-media { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.p-group-photo { border:0; padding:0; background:var(--grey-100); border-radius:10px; overflow:hidden; cursor:pointer; aspect-ratio:1; }
+.p-group-photo img { width:100%; height:100%; object-fit:cover; }
+.p-group-link { display:grid; text-align:left; gap:5px; border:1px solid var(--grey-200); border-radius:10px; padding:12px; text-decoration:none; overflow-wrap:anywhere; }
+.p-group-link span { color:var(--grey-400); font-size:.8rem; }
+@media(max-width:600px){.p-group-edit{grid-template-columns:1fr}.p-group-summary p{width:100%}}

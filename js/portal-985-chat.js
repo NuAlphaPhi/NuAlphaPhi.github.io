@@ -18,6 +18,7 @@
   function roomAvatar(r) {
     const ids = (r.memberIds || []).filter(id => id !== P.uid);
     if (r.kind !== "group") return P.avatar(P.person(ids[0]));
+    if(r.avatarPath)return P.avatar({avatarPath:r.avatarPath,pledgeName:r.title});
     const stack = P.el("span", "p-chat-avatars");
     ids.slice(0, 2).forEach(id => stack.append(P.avatar(P.person(id))));
     if (!ids.length) stack.append(P.avatar({pledgeName:r.title}));
@@ -79,6 +80,7 @@
       } else {
         rooms.map(r => ({...r,...previews[r.id]})).sort((a,b) => P.date(b.lastMessageAt || b.updatedAt || b.createdAt) - P.date(a.lastMessageAt || a.updatedAt || a.createdAt)).filter(r => (roomTitle(r) + " " + (r.memberIds || []).map(id => {const b=P.person(id);return [b?.firstName,b?.lastName,b?.pledgeName].join(" ");}).join(" ")).toLowerCase().includes(conversationSearch.toLowerCase())).forEach(r => {
           const b=P.button("",()=>open(r),"p-btn p-conversation");
+          if(r.kind==="group")b.oncontextmenu=e=>{e.preventDefault();groupDetails(r);};
           b.classList.toggle("selected",active?.id===r.id && !active?.channel);
           b.setAttribute("aria-pressed",String(active?.id===r.id && !active?.channel));
           b.classList.toggle("is-unread",unread(r));
@@ -101,6 +103,55 @@
         P.empty("Your channel access changed."),
       );
     }
+  }
+  function groupDetails(room) {
+    let r=conversations.find(c=>c.id===room.id)||room;
+    const box=P.el("div","p-group-details"), identity=P.el("div","p-group-summary"), form=P.el("form","p-group-edit");
+    const name=P.field("Group name","text",r.title), photo=P.field("Group icon","file"), status=P.el("p","p-muted");
+    name.input.maxLength=80;photo.input.accept="image/*";
+    identity.append(roomAvatar(r),P.el("h3","",r.title),P.el("p","p-muted",`${r.memberIds.length} members`));
+    form.append(name.wrap,photo.wrap,P.el("small","p-muted","Group members can update the name and icon."));
+    const save=P.button("Save changes",()=>form.requestSubmit(),"p-btn primary");form.append(save,status);
+    form.onsubmit=e=>{e.preventDefault();P.run(form,async()=>{
+      const title=name.input.value.trim();if(!title||title.length>80)throw Error("Enter a group name, up to 80 characters.");
+      save.disabled=true;let uploaded="";
+      try {
+        const patch={title,updatedAt:P.stamp()};
+        if(photo.input.files[0]){uploaded=await P.upload(photo.input.files[0],`groupPhotos/${r.id}/${P.uid}/${crypto.randomUUID()}.jpg`,status,true);patch.avatarPath=uploaded;}
+        await db.doc("conversations/"+r.id).update(patch);
+        r={...r,...patch};conversations=conversations.map(c=>c.id===r.id?{...c,...patch}:c);lists();
+        identity.replaceChildren(roomAvatar(r),P.el("h3","",r.title),P.el("p","p-muted",`${r.memberIds.length} members`));
+        if(active?.id===r.id&&!active.channel){active={...active,...patch};const titleEl=head?.querySelector(".p-chat-identity strong");if(titleEl)titleEl.textContent=r.title;const avatar=head?.querySelector(".p-chat-identity > span:first-child");if(avatar)avatar.replaceWith(roomAvatar(r));}
+        photo.input.value="";status.textContent="Group updated.";
+      } catch(error){if(uploaded)storage.ref(uploaded).delete().catch(()=>{});throw error;}finally{save.disabled=false;}
+    });};
+    const tabs=P.el("div","p-group-tabs"), content=P.el("div","p-group-content");
+    let selected="Members", messages=[], cursor=null, exhausted=false, loading=false;
+    function draw(){
+      content.replaceChildren();
+      for(const button of tabs.children){button.classList.toggle("selected",button.textContent===selected);button.setAttribute("aria-pressed",String(button.textContent===selected));}
+      if(selected==="Members"){
+        r.memberIds.forEach(uid=>{const person=P.person(uid),b=P.button("",()=>{d.close();P.profile(uid);},"p-group-member");b.append(P.avatar(person),P.el("span","",P.name(person)),P.el("small","p-muted",uid===P.uid?"You":person?.chapter||""));content.append(b);});return;
+      }
+      let hidden=[];try{hidden=JSON.parse(localStorage.getItem(`985.hidden.${P.uid}.conversations/${r.id}/messages`)||"[]");}catch{}
+      const rows=messages.filter(m=>!hidden.includes(m.id));
+      if(selected==="Media"){
+        const grid=P.el("div","p-group-media");rows.filter(m=>m.photoPath).forEach(m=>{const b=P.button("",()=>P.expand(m.photoPath),"p-group-photo");b.append(P.image(m.photoPath,"","Photo from "+(m.senderName||"a brother")));grid.append(b);});content.append(grid);
+        if(!grid.childElementCount)content.append(P.empty(loading?"Loading media…":"No photos in the messages loaded so far."));
+      }else{
+        const seen=new Set();rows.forEach(m=>{
+          const urls=String(m.body||"").match(/https?:\/\/[^\s<>]+/gi)||[];
+          urls.forEach(raw=>{let url;try{url=new URL(raw.replace(/[).,!?;]+$/, ""));}catch{return;}if(!["https:","http:"].includes(url.protocol)||seen.has(url.href))return;seen.add(url.href);const a=P.el("a","p-group-link");a.href=url.href;a.target="_blank";a.rel="noopener noreferrer";a.append(P.el("strong","",url.hostname),P.el("span","",url.href));content.append(a);});
+          if(m.sharedPostID){const b=P.button("Shared brotherhood post",()=>{d.close();P.openPost(m.sharedPostID);},"p-group-link");content.append(b);}
+        });
+        if(!content.childElementCount)content.append(P.empty(loading?"Loading links…":"No links in the messages loaded so far."));
+      }
+      if(!exhausted){const more=P.button(loading?"Loading…":"Load older messages",load,"p-btn");more.disabled=loading;content.append(more);}
+      content.append(P.el("small","p-muted",exhausted?"All shared history loaded.":"Shared items from the most recent messages. Load older messages for more."));
+    }
+    async function load(){if(loading||exhausted)return;loading=true;draw();try{let query=db.collection(`conversations/${r.id}/messages`).orderBy("createdAt","desc").limit(100);if(cursor)query=query.startAfter(cursor);const page=await query.get();messages.push(...page.docs.map(doc=>({id:doc.id,...doc.data()})));cursor=page.docs.at(-1)||cursor;exhausted=page.size<100;}catch(error){loading=false;draw();P.error(content,error);return;}loading=false;draw();}
+    ["Members","Media","Links"].forEach(label=>tabs.append(P.button(label,()=>{selected=label;draw();if(label!=="Members"&&!messages.length&&!exhausted)load();},"p-btn")));
+    box.append(identity,form,tabs,content);const d=P.dialog("Group details",box);d.classList.add("p-group-dialog");draw();
   }
   async function read() {
     if (!active || document.hidden || location.hash !== (active.channel ? "#channels" : "#messages")) return;
@@ -130,9 +181,9 @@
     chat.replaceChildren();
     head = P.el("div", "p-chat-head");
     if (!r.channel) {
-      const identity=P.button("",()=> {if(r.kind!=="group")P.profile(r.memberIds.find(id=>id!==P.uid));},"p-chat-identity");
+      const identity=P.button("",()=> {if(r.kind==="group")groupDetails(r);else P.profile(r.memberIds.find(id=>id!==P.uid));},"p-chat-identity");
       const labels=P.el("span");labels.append(P.el("strong","",roomTitle(r)),P.el("small","p-muted",r.kind==="group"?`${r.memberIds.length} brothers`:"View profile"));
-      identity.append(roomAvatar(r),labels);head.append(identity);
+      identity.append(roomAvatar(r),labels);if(r.kind==="group")identity.oncontextmenu=e=>{e.preventDefault();groupDetails(r);};head.append(identity);
     } else head.append(P.el("h2", "", "# " + roomTitle(r)));
     chat.classList.toggle("p-channel-chat", !!r.channel);
     if (r.channel)
@@ -610,6 +661,8 @@
         .where("memberIds", "array-contains", P.uid),
       (rows) => {
         conversations = rows;
+        if(active&&!active.channel){const current=rows.find(r=>r.id===active.id);if(current){active={...active,...current};const label=head?.querySelector(".p-chat-identity strong");if(label)label.textContent=roomTitle(current);const avatar=head?.querySelector(".p-chat-identity > span:first-child");if(avatar)avatar.replaceWith(roomAvatar(current));}}
+
         for(const [id,unsubscribe] of previewListeners)if(!rows.some(r=>r.id===id)){unsubscribe();previewListeners.delete(id);delete previews[id];}
         rows.forEach(r=>{
           if(previewListeners.has(r.id))return;
