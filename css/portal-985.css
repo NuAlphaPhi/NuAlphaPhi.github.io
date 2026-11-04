@@ -1605,3 +1605,6 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-message-menu .p-suggestions { position:static; border:0; box-shadow:none; background:none; max-height:none; display:grid; gap:2px; }
 .p-message-menu .p-suggestions .p-btn { padding:9px 10px; font-size:13px; text-align:left; border:0; border-radius:7px; background:transparent; line-height:1.4; }
 .p-message-menu .p-suggestions .p-btn:hover { background:var(--grey-100); }
+.p-feed-badge { margin-left:auto; padding:2px 7px; border-radius:20px; background:#a72b53; color:#fff; font-size:.65rem; font-weight:700; }
+.p-feed-badge::after { content:attr(data-count); }
+.p-feed-badge[hidden] { display:none; }

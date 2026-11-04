@@ -5,6 +5,25 @@
     limit = 50,
     off,
     sort = "latest";
+  const feedSeen = {}, feedReadPending = {};
+  function feedBadges() {
+    if(!P.uid)return;
+    for(const tab of ["home","announcements"]){
+      const posts=P.posts.filter(p=>!P.blocks.has(p.authorUid) && p.authorUid!==P.uid && (tab==="home" || p.kind==="announcement"));
+      const newest=Math.max(0,...posts.map(p=>P.date(p.createdAt).getTime()));
+      let hasNew=newest>(feedSeen[tab]||0);
+      if(hasNew && !document.hidden && P.root(tab)?.closest("[data-panel]")?.hidden === false && !feedReadPending[tab]){
+        const previous=feedSeen[tab]||0;
+        feedSeen[tab]=Math.max(Date.now(),newest);hasNew=false;feedReadPending[tab]=true;
+        db.doc("roomReads/"+P.uid+"/rooms/feed-"+tab).set({readAt:P.stamp()}).catch(()=>{feedSeen[tab]=previous;}).finally(()=>{feedReadPending[tab]=false;});
+      }
+      const nav=document.querySelector('[data-tab="'+tab+'"]');
+      if(nav){let badge=nav.querySelector('.p-feed-badge');if(!badge){badge=P.el('span','p-feed-badge');badge.dataset.count='New';nav.append(badge);}badge.hidden=!hasNew;nav.setAttribute('aria-label',(tab==='home'?'Home':'Announcements')+(hasNew?', new posts':''));}
+    }
+  }
+  document.addEventListener("nap:tab-changed",feedBadges);
+  document.addEventListener("visibilitychange",feedBadges);
+  document.addEventListener("p985:posts",feedBadges);
   const icons = {
     like: "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z",
     reply: "M21 15a3 3 0 0 1-3 3H8l-5 4V5a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3z",
@@ -548,6 +567,8 @@
     document.dispatchEvent(new Event("p985:posts"));
   }
   P.ready(() => {
+    for(const tab of ["home","announcements"])P.watch(db.doc("roomReads/"+P.uid+"/rooms/feed-"+tab),value=>{feedSeen[tab]=Math.max(feedSeen[tab]||0,P.date(value?.readAt).getTime());feedBadges();});
+
     for (const kind of ["home", "announcements"]) {
       let r = P.root(kind);
       if (kind === "home") {
