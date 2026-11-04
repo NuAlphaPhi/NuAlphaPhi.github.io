@@ -8,6 +8,7 @@
     chapter = "",
     search = "",
     issuesOnly = false;
+  const expandedClasses = new Set();
   const norm = (s) =>
     String(s || "")
       .toLowerCase()
@@ -82,7 +83,7 @@
       chapter = ch.input.value;
       draw();
     };
-    root.append(P.row(q.wrap, ch.wrap));
+    const filters=P.row(q.wrap,ch.wrap);filters.classList.add("p-roster-filters");root.append(filters);
     if (P.me.isAdmin)
       root.append(
         P.row(
@@ -97,7 +98,7 @@
           ),
         ),
       );
-    const list = P.el("div");
+    const list = P.el("div", "p-roster-classes");
     root.append(list);
     function draw() {
       list.replaceChildren();
@@ -120,13 +121,14 @@
           );
           if (!members.length && !P.me.isAdmin) return;
           if (!members.length && (search || issuesOnly)) return;
-          const group = P.el("div", "p-card p-roster-group"),
-            h = P.row(
-              P.el("h2", "", c.chapter + " · " + c.pledgeClass + " Class"),
-            );
+          const group = P.el("details", "p-roster-group"), h=P.el("summary","p-roster-summary");
+          group.open=!!search || expandedClasses.has(c.id);
+          group.addEventListener("toggle",()=>{if(search)return;if(group.open)expandedClasses.add(c.id);else expandedClasses.delete(c.id);});
+          const label=P.el("span","p-roster-class-label");label.append(P.el("small","",c.chapter+" Chapter"),P.el("strong","",c.pledgeClass+" Class"));
+          h.append(label,P.el("span","p-roster-count",members.length+(members.length===1?" brother":" brothers")),P.el("span","p-roster-chevron","⌄"));
           if (P.me.isAdmin)
-            h.append(P.button("Edit class", () => editClass(c)));
-          group.append(h);
+            group.append(P.button("Edit class", () => editClass(c), "p-btn p-roster-edit-class"));
+          group.prepend(h);
           members.forEach((r) => {
             const row = P.el("div", "p-roster-person"),
               info = P.el("div");

@@ -1532,3 +1532,68 @@ button.p-chapter-person:hover { background:var(--grey-50); }
   .p-channel-group-rooms { flex-direction:row; overflow-x:auto; padding-bottom:5px; }
   .p-channel-group-rooms .p-btn { width:auto; white-space:nowrap; max-width:none; }
 }
+
+/* A compact inbox with member identities shared with the app. */
+.p-messages-page > .p-header { margin-bottom:20px; }
+.p-messages-page .p-chat-layout { grid-template-columns:310px minmax(0,1fr); gap:0; border:1px solid var(--grey-200); border-radius:18px; overflow:hidden; height:calc(100dvh - 215px); }
+.p-inbox { display:flex; flex-direction:column; min-height:0; border-right:1px solid var(--grey-200); background:var(--portal-card); }
+.p-inbox-tools { padding:16px; display:grid; gap:14px; border-bottom:1px solid var(--grey-200); }
+.p-inbox-tools .p-field { margin:0; }
+.p-inbox-tools input { width:100%; box-sizing:border-box; }
+.p-inbox-tools label > span { font-size:.75rem; }
+.p-messages-page .p-room-list { padding:8px; gap:4px; }
+.p-room-list .p-conversation { display:flex; align-items:center; gap:12px; padding:14px 10px; width:100%; border-radius:12px; color:var(--black); }
+.p-conversation > .p-avatar { width:46px; height:46px; flex-shrink:0; }
+.p-conversation-text { flex:1; min-width:0; display:grid; gap:5px; }
+.p-conversation-top { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+.p-conversation-top strong,.p-conversation-preview { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.p-conversation-top strong { font-size:.92rem; }
+.p-conversation-top time { font-size:.65rem; color:var(--grey-400); flex-shrink:0; }
+.p-conversation-preview { color:var(--grey-400); font-size:.78rem; }
+.p-chat-avatars { width:46px; height:46px; flex-shrink:0; position:relative; display:inline-block; }
+.p-chat-avatars .p-avatar { width:32px; height:32px; font-size:.65rem; border:2px solid var(--portal-card); position:absolute; top:0; left:0; }
+.p-chat-avatars .p-avatar:nth-child(2) { top:16px; left:16px; }
+.p-unread-dot { width:7px; height:7px; border-radius:50%; background:#cf6689; flex-shrink:0; }
+.p-messages-page .p-chat { border:0; border-radius:0; }
+.p-chat-welcome { margin:auto; text-align:center; padding:30px; max-width:400px; }
+.p-chat-welcome > svg { width:48px; height:48px; color:#c56c8a; margin-bottom:20px; }
+.p-chat-welcome h2 { font-size:1.4rem; margin:0 0 10px; }
+.p-chat-welcome p { font-size:.9rem; line-height:1.6; margin-bottom:22px; }
+.p-chat-identity { display:flex; align-items:center; gap:12px; border:0; background:none; color:inherit; text-align:left; cursor:pointer; }
+.p-chat-identity > span:last-child { display:grid; gap:4px; }
+.p-chat-identity small { font-size:.75rem; }
+.p-roster-filters { gap:16px; margin-bottom:16px; }
+.p-roster-filters > :first-child { flex:1; max-width:440px; }
+.p-roster-classes { display:grid; gap:10px; margin-top:22px; }
+.p-roster-group { margin:0; border:1px solid var(--grey-200); border-radius:14px; background:var(--portal-card); padding:0; overflow:hidden; }
+.p-roster-summary { display:flex; align-items:center; gap:18px; padding:18px 22px; cursor:pointer; list-style:none; }
+.p-roster-summary::-webkit-details-marker { display:none; }
+.p-roster-summary:hover { background:#8c345514; }
+.p-roster-class-label { display:grid; gap:5px; flex:1; }
+.p-roster-class-label small { color:var(--grey-400); font-size:.72rem; }
+.p-roster-class-label strong { font-size:1rem; }
+.p-roster-count { font-size:.75rem; color:var(--grey-400); border:1px solid var(--grey-200); border-radius:20px; padding:5px 10px; }
+.p-roster-chevron { transition:transform .15s; color:var(--grey-400); }
+.p-roster-group[open] .p-roster-chevron { transform:rotate(180deg); }
+.p-roster-group[open] > summary { border-bottom:1px solid var(--grey-200); }
+.p-roster-group .p-roster-person { margin:0 20px; padding:14px 0; }
+.p-roster-person p { margin:4px 0; font-size:.82rem; }
+.p-roster-person small { font-size:.7rem; }
+.p-roster-person .p-btn,.p-roster-edit-class { font-size:.75rem; padding:7px 10px; }
+.p-roster-edit-class { margin:12px 20px 0; }
+@media(max-width:860px) {
+ .p-messages-page .p-chat-layout { grid-template-columns:1fr; height:auto; }
+ .p-inbox { border-right:0; border-bottom:1px solid var(--grey-200); }
+ .p-messages-page .p-room-list { flex-direction:column; max-height:240px; }
+ .p-messages-page .p-room-list button { max-width:none; flex-shrink:0; }
+ .p-roster-summary { padding:16px; gap:10px; }
+ .p-roster-person { flex-wrap:wrap; gap:8px; }
+}
+#p985-roster > .p-header { margin-bottom:22px; }
+#p985-roster > .p-row .p-btn { font-size:.82rem; padding:9px 13px; }
+.p-conversation:focus-visible,.p-roster-summary:focus-visible { outline:2px solid #c56c8a; outline-offset:-2px; }
+.p-conversation.is-unread .p-conversation-preview { color:var(--black); font-weight:600; }
+.p-conversation.is-unread { background:#8c345510; }
+.p-messages-badge { margin-left:auto; min-width:20px; padding:2px 6px; border-radius:20px; background:#a72b53; color:#fff; font-size:.68rem; text-align:center; font-weight:700; }
+.p-messages-badge[hidden] { display:none; }
+.p-messages-badge::after { content:attr(data-count); }

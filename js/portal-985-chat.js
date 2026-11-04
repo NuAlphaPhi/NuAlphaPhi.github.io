@@ -13,6 +13,16 @@
     reads = {},
     items = [];
   const panes = {};
+  const previews = {}, previewListeners = new Map();
+  let conversationSearch = "";
+  function roomAvatar(r) {
+    const ids = (r.memberIds || []).filter(id => id !== P.uid);
+    if (r.kind !== "group") return P.avatar(P.person(ids[0]));
+    const stack = P.el("span", "p-chat-avatars");
+    ids.slice(0, 2).forEach(id => stack.append(P.avatar(P.person(id))));
+    if (!ids.length) stack.append(P.avatar({pledgeName:r.title}));
+    return stack;
+  }
   function channels() {
     return P985Policy.channels(P.grant);
   }
@@ -22,14 +32,21 @@
   }
   function unread(r) {
     const key = (r.channel ? "channel-" : "chat-") + r.id;
+    const latest = previews[r.id];
+    if(!r.channel && latest?.lastSenderUid !== P.uid && !P.blocks.has(latest?.lastSenderUid) && latest?.lastMessageAt && P.date(latest.lastMessageAt)>P.date(reads[key]?.readAt))return true;
     return items.some(
       (i) =>
         i.roomID === r.id &&
+        !P.blocks.has(i.actor) &&
         i.read !== true &&
         P.date(i.createdAt) > P.date(reads[key]?.readAt),
     );
   }
   function lists() {
+    const count=conversations.filter(r=>(r.kind!=="direct" || !r.memberIds.some(id=>P.blocks.has(id))) && unread(r)).length;
+    const nav=document.querySelector('[data-tab="messages"]');
+    if(nav){let badge=nav.querySelector('.p-messages-badge');if(!badge){badge=P.el('span','p-messages-badge');nav.append(badge);}badge.hidden=!count;badge.dataset.count=count>99?'99+':String(count);badge.textContent='';nav.setAttribute('aria-label',count?`Messages, ${count} unread conversations`:'Messages');}
+
     for (const [tab, rooms] of [
       ["channels", channels()],
       [
@@ -59,7 +76,22 @@
           rooms.filter(r => general.has(r.id) === isGeneral).forEach(r => roomList.append(roomButton(r)));
           if (roomList.childElementCount) {group.append(roomList); el.append(group);}
         }
-      } else rooms.forEach(r => el.append(roomButton(r)));
+      } else {
+        rooms.map(r => ({...r,...previews[r.id]})).sort((a,b) => P.date(b.lastMessageAt || b.updatedAt || b.createdAt) - P.date(a.lastMessageAt || a.updatedAt || a.createdAt)).filter(r => (roomTitle(r) + " " + (r.memberIds || []).map(id => {const b=P.person(id);return [b?.firstName,b?.lastName,b?.pledgeName].join(" ");}).join(" ")).toLowerCase().includes(conversationSearch.toLowerCase())).forEach(r => {
+          const b=P.button("",()=>open(r),"p-btn p-conversation");
+          b.classList.toggle("selected",active?.id===r.id && !active?.channel);
+          b.setAttribute("aria-pressed",String(active?.id===r.id && !active?.channel));
+          b.classList.toggle("is-unread",unread(r));
+          const text=P.el("span","p-conversation-text"), top=P.el("span","p-conversation-top");
+          top.append(P.el("strong","",roomTitle(r)));
+          if(r.lastMessageAt) top.append(P.el("time","",P.date(r.lastMessageAt).toLocaleDateString(undefined,{month:"short",day:"numeric"})));
+          text.append(top,P.el("span","p-conversation-preview",r.lastMessage || (r.kind==="group" ? `${r.memberIds.length} brothers · Group conversation` : "Direct message")));
+          b.append(roomAvatar(r),text);
+          if(unread(r)){const dot=P.el("span","p-unread-dot");dot.setAttribute("aria-label","Unread messages");b.append(dot);}
+          el.append(b);
+        });
+        if(rooms.length && !el.childElementCount)el.append(P.empty("No conversations found."));
+      }
       if (!rooms.length) el.append(P.empty("Start a conversation."));
     }
     if (active?.channel && !channels().some((r) => r.id === active.id)) {
@@ -71,7 +103,7 @@
     }
   }
   async function read() {
-    if (!active || document.hidden) return;
+    if (!active || document.hidden || location.hash !== (active.channel ? "#channels" : "#messages")) return;
     const room = active;
     const key = (room.channel ? "channel-" : "chat-") + room.id;
     await db
@@ -97,7 +129,11 @@
     const chat = panes[tab].chat;
     chat.replaceChildren();
     head = P.el("div", "p-chat-head");
-    head.append(P.el("h2", "", (r.channel ? "# " : "") + roomTitle(r)));
+    if (!r.channel) {
+      const identity=P.button("",()=> {if(r.kind!=="group")P.profile(r.memberIds.find(id=>id!==P.uid));},"p-chat-identity");
+      const labels=P.el("span");labels.append(P.el("strong","",roomTitle(r)),P.el("small","p-muted",r.kind==="group"?`${r.memberIds.length} brothers`:"View profile"));
+      identity.append(roomAvatar(r),labels);head.append(identity);
+    } else head.append(P.el("h2", "", "# " + roomTitle(r)));
     chat.classList.toggle("p-channel-chat", !!r.channel);
     if (r.channel)
       head.append(
@@ -335,6 +371,7 @@
               v = JSON.parse(localStorage.getItem(k) || "[]");
             } catch {}
             localStorage.setItem(k, JSON.stringify([...v, m.id]));
+            if(previews[r.id]?.messageID===m.id)previews[r.id]={};
             d.close();
             open(r);
           }),
@@ -541,19 +578,19 @@
             : "Keep the conversation going.",
         ),
       );
-      if (tab === "messages")
-        root.append(
-          P.button(
-            "New message / group",
-            () => P.newConversation(),
-            "p-btn primary",
-          ),
-        );
       const layout = P.el("div", "p-chat-layout"),
         list = P.el("div", "p-room-list"),
         chat = P.el("div", "p-chat");
       chat.append(P.empty("Choose a conversation."));
-      layout.append(list, chat);
+      if(tab === "messages") {
+        root.classList.add("p-messages-page");
+        root.querySelector(".p-header p")?.remove();
+        const sidebar=P.el("aside","p-inbox"), tools=P.el("div","p-inbox-tools");
+        const search=P.field("Search conversations","search");search.input.placeholder="Search messages";search.input.oninput=()=>{conversationSearch=search.input.value;lists();};
+        tools.append(P.button("New message",()=>P.newConversation(),"p-btn primary"),search.wrap);
+        sidebar.append(tools,list);layout.append(sidebar,chat);
+        const empty=P.el("div","p-chat-welcome");empty.append(P.icon("send"),P.el("h2","","Your conversations, together."),P.el("p","p-muted","Catch up with a brother or bring the group together."),P.button("Start a conversation",()=>P.newConversation(),"p-btn primary"));chat.replaceChildren(empty);
+      } else layout.append(list, chat);
       root.append(layout);
       panes[tab] = { list, chat };
     }
@@ -563,6 +600,17 @@
         .where("memberIds", "array-contains", P.uid),
       (rows) => {
         conversations = rows;
+        for(const [id,unsubscribe] of previewListeners)if(!rows.some(r=>r.id===id)){unsubscribe();previewListeners.delete(id);delete previews[id];}
+        rows.forEach(r=>{
+          if(previewListeners.has(r.id))return;
+          const unsubscribe=db.collection("conversations/"+r.id+"/messages").orderBy("createdAt","desc").limit(1).onSnapshot(snapshot=>{
+            const doc=snapshot.docs[0], m=doc?.data();
+            let hidden=[];try{hidden=JSON.parse(localStorage.getItem("985.hidden."+P.uid+".conversations/"+r.id+"/messages")||"[]");}catch{}
+            previews[r.id]=m && !hidden.includes(doc.id) ? {messageID:doc.id,lastSenderUid:m.senderUid,lastMessage:(m.senderUid===P.uid?"You: ":"")+(m.body || (m.photoPath?"Sent a photo":m.sharedPostID?"Shared a post":"New message")),lastMessageAt:m.createdAt} : {};
+            lists();
+          },()=>{});
+          previewListeners.set(r.id,unsubscribe);P.listeners.push(unsubscribe);
+        });
         lists();
       },
     );
