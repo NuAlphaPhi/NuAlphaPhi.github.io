@@ -1629,3 +1629,10 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-group-link { display:grid; text-align:left; gap:5px; border:1px solid var(--grey-200); border-radius:10px; padding:12px; text-decoration:none; overflow-wrap:anywhere; }
 .p-group-link span { color:var(--grey-400); font-size:.8rem; }
 @media(max-width:600px){.p-group-edit{grid-template-columns:1fr}.p-group-summary p{width:100%}}
+
+/* Pending photos: preview before sending, with an independent remove control. */
+.p-attachment {position:relative; width:fit-content; max-width:100%;}
+.p-pasted-photo {display:block;padding:0!important;border:1px solid var(--border,#34343c);border-radius:12px;overflow:hidden;background:transparent;cursor:zoom-in;margin:10px 0;}
+.p-pasted-photo img {display:block;width:160px;height:120px;object-fit:cover;}
+.p-pasted-photo-remove {position:absolute;right:6px;top:16px;width:30px;height:30px;padding:0!important;border-radius:50%;background:#111!important;color:#fff!important;border:1px solid #777;font-size:23px;line-height:1;}
+.p-pasted-photo-full {display:block;max-width:100%;max-height:75vh;object-fit:contain;margin:auto;}

@@ -239,17 +239,7 @@
     emoji.title = "Add emoji";
     emoji.append(P.icon("smile"));
     const attachment = P.el("div", "p-attachment");
-    file.input.onchange = () => {
-      attachment.replaceChildren();
-      if (file.input.files[0])
-        attachment.append(
-          P.el("span", "", file.input.files[0].name),
-          P.button("Remove", () => {
-            file.input.value = "";
-            attachment.replaceChildren();
-          }),
-        );
-    };
+    const photoAttachment = P.photoAttachment(composer, file.input, attachment, () => send.disabled);
     const bar = P.el("div", "p-compose-bar");
     bar.append(attach, input.wrap, emoji, send);
     composer.append(hint, attachment, bar, file.wrap, status);
@@ -446,7 +436,7 @@
       e.preventDefault();
       P.run(composer, async () => {
         const body = input.input.value.trim();
-        if (!body && !file.input.files[0])
+        if (!body && !photoAttachment.file)
           throw Error("Type a message or choose a photo.");
         send.disabled = true;
         requestID = requestID || crypto.randomUUID();
@@ -454,9 +444,9 @@
           const ref = db.doc(path + "/" + requestID);
           if (!(await ref.get()).exists) {
             let photoPath = "";
-            if (file.input.files[0])
+            if (photoAttachment.file)
               photoPath = await P.upload(
-                file.input.files[0],
+                photoAttachment.file,
                 (r.channel ? "channelPhotos/" : "chatPhotos/") +
                   r.id +
                   "/" +
@@ -479,8 +469,7 @@
           }
           requestID = null;
           input.input.value = "";
-          file.input.value = "";
-          attachment.replaceChildren();
+          photoAttachment.clear();
           input.input.style.height = "auto";
           reply = "";
           hint.replaceChildren();

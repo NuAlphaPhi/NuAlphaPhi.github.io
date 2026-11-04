@@ -471,17 +471,7 @@
     });
     toolbar.append(tools, P.row(count, send));
     const attachment = P.el("div", "p-attachment");
-    file.input.onchange = () => {
-      attachment.replaceChildren();
-      if (file.input.files[0])
-        attachment.append(
-          P.el("span", "", file.input.files[0].name),
-          P.button("Remove photo", () => {
-            file.input.value = "";
-            attachment.replaceChildren();
-          }),
-        );
-    };
+    const photoAttachment = P.photoAttachment(form, file.input, attachment, () => send.disabled);
     body.append(text.wrap, attachment, toolbar, status);
     form.append(avatar, body, file.wrap);
     let pendingID = null;
@@ -489,7 +479,7 @@
       e.preventDefault();
       P.run(form, async () => {
         const body = text.input.value.trim();
-        if (!body && !file.input.files.length)
+        if (!body && !photoAttachment.file)
           throw Error("Write something or add a photo.");
         send.disabled = true;
         pendingID = pendingID || crypto.randomUUID();
@@ -498,9 +488,9 @@
           const ref = db.doc("forumPosts/" + pendingID);
           if (!(await ref.get()).exists) {
             let photoPath = "";
-            if (file.input.files[0])
+            if (photoAttachment.file)
               photoPath = await P.upload(
-                file.input.files[0],
+                photoAttachment.file,
                 "postPhotos/" + pendingID + "/" + P.uid + ".jpg",
                 status,
               );
@@ -519,8 +509,7 @@
           }
           pendingID = null;
           text.input.value = "";
-          file.input.value = "";
-          attachment.replaceChildren();
+          photoAttachment.clear();
           count.textContent = "";
           localStorage.removeItem(key);
           status.textContent = result?.status === "pending" ? "Submitted. An admin will review your announcement before it appears in the feed." : "Posted.";
