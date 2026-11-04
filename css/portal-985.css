@@ -1597,3 +1597,11 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-messages-badge { margin-left:auto; min-width:20px; padding:2px 6px; border-radius:20px; background:#a72b53; color:#fff; font-size:.68rem; text-align:center; font-weight:700; }
 .p-messages-badge[hidden] { display:none; }
 .p-messages-badge::after { content:attr(data-count); }
+.p-dialog.p-message-menu { position:fixed; inset:auto; margin:0; padding:8px; width:306px; max-width:calc(100vw - 16px); max-height:calc(100dvh - 16px); box-sizing:border-box; border-radius:14px; box-shadow:0 12px 45px #0005; }
+.p-dialog.p-message-menu::backdrop { background:transparent; backdrop-filter:none; }
+.p-message-menu .p-message-reaction-strip { display:flex; flex-wrap:nowrap; justify-content:space-between; gap:0; margin:0 0 6px; padding:0 0 8px; border-bottom:1px solid var(--grey-200); }
+.p-message-menu .p-message-reaction-strip .p-btn { padding:5px; border:0; background:transparent; font-size:20px; min-width:0; }
+.p-message-menu .p-message-reaction-strip .p-btn:hover { background:var(--grey-100); transform:scale(1.12); }
+.p-message-menu .p-suggestions { position:static; border:0; box-shadow:none; background:none; max-height:none; display:grid; gap:2px; }
+.p-message-menu .p-suggestions .p-btn { padding:9px 10px; font-size:13px; text-align:left; border:0; border-radius:7px; background:transparent; line-height:1.4; }
+.p-message-menu .p-suggestions .p-btn:hover { background:var(--grey-100); }

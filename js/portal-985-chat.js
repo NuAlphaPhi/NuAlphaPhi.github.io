@@ -282,14 +282,14 @@
             Object.entries(counts).forEach(([emoji, n]) =>
               actions.append(P.button(emoji + " " + n, () => react(m, emoji))),
             );
-            actions.append(P.button("•••", () => menu(m)));
+            actions.append(P.button("•••", (e) => menu(m, e)));
             c.append(actions);
             c.ondblclick = (e) => {
               if (!e.target.closest("button,img")) react(m, "❤️");
             };
             c.oncontextmenu = (e) => {
               e.preventDefault();
-              menu(m);
+              menu(m, e);
             };
             log.append(c);
           });
@@ -312,7 +312,7 @@
           ),
       );
     }
-    function menu(m) {
+    function menu(m, event) {
       const box = P.el("div"),
         emojis = P.row();
       ["❤️", "😂", "🔥", "👍", "🤝", "😮", "😢", "😡"].forEach((e) =>
@@ -323,7 +323,8 @@
           }),
         ),
       );
-      box.append(emojis, P.text(m.body, m));
+      emojis.classList.add("p-message-reaction-strip");
+      box.append(emojis);
       const actions = P.el("div", "p-suggestions");
       actions.append(
         P.button("Reply", () => {
@@ -377,7 +378,16 @@
           }),
         );
       box.append(actions);
-      const d = P.dialog("Message", box);
+      const anchor=event?.currentTarget?.getBoundingClientRect();
+      const d = P.dialog("Message actions", box);
+      d.classList.add("p-message-menu");
+      d.setAttribute("aria-label","Message actions");
+      d.firstElementChild.remove();
+      const x=event?.clientX || anchor?.left || 20, y=event?.clientY || anchor?.bottom || 20;
+      const place=()=>{d.style.left=Math.max(8,Math.min(x,innerWidth-d.offsetWidth-8))+"px";d.style.top=Math.max(8,Math.min(y,innerHeight-d.offsetHeight-8))+"px";};
+      place();d.querySelector("button")?.focus();
+      window.addEventListener("resize",place);
+      d.cleanup=()=>window.removeEventListener("resize",place);
       navigator.vibrate?.(10);
     }
     let requestID;
