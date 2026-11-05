@@ -1,6 +1,7 @@
 (function () {
   "use strict";
   const P = P985;
+  let accounts = [];
   let reports = [];
   let announcementRequests = [];
   let apps = [],
@@ -61,6 +62,7 @@
       options = P.me.isAdmin
         ? [
             "Applications",
+            "Accounts",
             "Content reports",
             "Events",
             "Announcements",
@@ -88,6 +90,28 @@
     root.append(tabs);
     const content = P.el("div");
     root.append(content);
+    if (section === "Accounts") {
+      const search = P.field("Search accounts", "search"), list = P.el("div", "p-admin-account-list");
+      content.append(P.el("p", "p-muted", "Deactivation immediately blocks portal access. Reactivation restores sign-in. Deletion permanently removes the account and its associated personal data."), search.wrap, list);
+      function draw() {
+        list.replaceChildren();
+        const query=search.input.value.trim().toLowerCase();
+        const rows=accounts.filter(b=>[b.firstName,b.lastName,b.pledgeName,b.email,b.chapter].join(" ").toLowerCase().includes(query));
+        rows.sort((a,b)=>(a.pledgeName||a.firstName||"").localeCompare(b.pledgeName||b.firstName||""));
+        rows.forEach(b=>{
+          const uid=b.id, card=P.el("div", "p-card"), name=[b.firstName,b.lastName].filter(Boolean).join(" ")||b.pledgeName||"Brother";
+          card.append(P.el("h3", "", name+(b.pledgeName?" · "+b.pledgeName:"")),P.el("p", "p-muted", [b.email,b.chapter].filter(Boolean).join(" · ")),P.el("strong", "", b.deletionRequestedAt?"Deleting…":b.disabled?"Deactivated":"Active"));
+          if(uid===owner||uid===P.uid||b.isAdmin&&P.uid!==owner)card.append(P.el("p", "p-muted", uid===owner?"Protected owner account":uid===P.uid?"Your account":"Only the owner can manage this administrator."));
+          else if(!b.deletionRequestedAt){
+            const actions=P.row();
+            actions.append(P.button(b.disabled?"Reactivate":"Deactivate",()=>accountAction(b,b.disabled?"reactivate":"deactivate"),"p-btn"),P.button("Delete account",()=>accountAction(b,"delete"),"p-btn p-admin-remove"));card.append(actions);
+          }
+          list.append(card);
+        });
+        if(!rows.length)list.append(P.empty("No matching accounts."));
+      }
+      search.input.oninput=draw;draw();
+    }
     if (section === "Applications") {
       const pending = apps.filter((a) =>
         ["pending", "hold"].includes(a.status),
@@ -361,6 +385,20 @@
       if (!audit.length) content.append(P.empty("No recent admin activity."));
     }
   }
+  function accountAction(b, action) {
+    const name=[b.firstName,b.lastName].filter(Boolean).join(" ")||b.pledgeName||"this brother";
+    const box=P.el("div"), destructive=action==="delete";
+    box.append(P.el("p", "", destructive?"Permanently delete "+name+"? Their account and associated personal data will be removed. This cannot be undone.":action==="deactivate"?"Deactivate "+name+"? Their access will be blocked and their connected portal session will sign out.":"Restore sign-in for "+name+"? They will need to log in again."));
+    let confirmation;
+    if(destructive){confirmation=P.field("Type DELETE to confirm", "text");box.append(confirmation.wrap);}
+    const button=P.button(destructive?"Permanently delete":action==="deactivate"?"Deactivate account":"Reactivate account",()=>P.run(box,async()=>{
+      if(destructive&&confirmation.input.value!=="DELETE")throw new Error("Type DELETE to confirm.");
+      button.disabled=true;
+      try{await P.call("adminAccountAction",{uid:b.id,action,confirmation:confirmation?.input.value||""});dialog.close();}finally{button.disabled=false;}
+    }),"p-btn"+(destructive?" p-admin-remove":""));
+    box.append(button);
+    const dialog=P.dialog(destructive?"Delete account":action==="deactivate"?"Deactivate account":"Reactivate account",box);
+  }
   function choose(title, save, filter = () => true) {
     const box = P.el("div"),
       search = P.field("Search brothers", "search"),
@@ -402,6 +440,7 @@
     offs = [];
     if (P.me.isAdmin) {
       offs.push(
+        P.watch(db.collection("users"), rows => {accounts = rows; render();}, P.root("admin")),
         P.watch(db.collection("contentReports"), rows => {reports = rows; render();}, P.root("admin")),
         P.watch(db.collection("announcementRequests"), rows => {announcementRequests = rows; render();}, P.root("admin")),
         P.watch(
@@ -425,6 +464,7 @@
         ),
       );
     } else {
+      accounts = [];
       reports = [];
       announcementRequests = [];
       apps = [];
