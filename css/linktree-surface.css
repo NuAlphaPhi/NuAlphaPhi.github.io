@@ -1,0 +1,9 @@
+/* Shared by the public chapter page and its editor preview. */
+.linktree-surface{background:var(--chapter-color,#7e183a);color:var(--linktree-ink,#fff)}
+.linktree-surface .linktree-title,.linktree-surface .linktree-subtitle,.linktree-surface .linktree-page-footer,.linktree-surface .linktree-page-footer a,.linktree-surface .linktree-empty{color:inherit}
+.linktree-surface .linktree-subtitle,.linktree-surface .linktree-page-footer{opacity:.8}
+.linktree-surface .linktree-avatar{background:#ffffff20;border:1px solid #ffffff40;color:inherit}
+.linktree-surface .linktree-brand{background:#fff;border-radius:10px;padding:8px 12px;margin-bottom:22px}
+.linktree-surface .linktree-brand img{display:block;height:28px;margin:0}
+.linktree-surface .linktree-link{background:#fff;color:#17171d;border:1px solid #0001;border-radius:12px;box-shadow:0 3px 12px #0001}
+.linktree-surface .linktree-link:hover{color:#17171d;border-color:#0004}

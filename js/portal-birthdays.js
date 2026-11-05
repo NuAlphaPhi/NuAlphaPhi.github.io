@@ -100,6 +100,7 @@
         return (
           heading +
           '<button class="birthday-item' + (isToday ? " is-today" : "") + '" type="button" data-open-profile="' + escapeHtml(entry.brother.uid) + '">' +
+          '<span class="birthday-date-tile">'+escapeHtml(entry.nextDate.toLocaleDateString(undefined,{month:"short"}))+'<strong>'+entry.nextDate.getDate()+'</strong></span>' +
           window.napAvatarHtml(entry.brother, "md") +
           '<div class="birthday-item__info">' +
           '<p class="birthday-item__name">' + escapeHtml(window.napDisplayName(entry.brother, "Brother")) + "</p>" +

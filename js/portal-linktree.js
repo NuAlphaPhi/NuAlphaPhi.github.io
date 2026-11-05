@@ -188,6 +188,21 @@
   var currentLinks = [];
   var avatarState = { url: null, storagePath: null, pendingFile: null, pendingPreviewUrl: null };
 
+  var livePreview = document.getElementById('linktreeLivePreview');
+  var hexInput = document.getElementById('linktree-color-hex');
+  function renderLivePreview() {
+    if (!livePreview || !currentChapter) return;
+    var color = /^#[0-9a-f]{6}$/i.test(bgColorInput.value) ? bgColorInput.value : defaultColorFor(currentChapter);
+    if (hexInput && document.activeElement !== hexInput) hexInput.value = color.toUpperCase();
+    livePreview.style.setProperty('--chapter-color', color);
+    var rgb = [1,3,5].map(function(i){var n=parseInt(color.slice(i,i+2),16)/255;return n<=0.04045?n/12.92:Math.pow((n+0.055)/1.055,2.4);});
+    livePreview.style.setProperty('--linktree-ink', rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722 > .179 ? '#17171d' : '#ffffff');
+    var src = avatarState.pendingPreviewUrl || avatarState.url;
+    livePreview.innerHTML = '<div class="linktree-card"><div class="linktree-brand"><img src="img/letters.png" alt="Nu Alpha Phi"></div><div class="linktree-avatar">'+(src?'<img src="'+escapeHtml(src)+'" alt="">':escapeHtml(currentChapter.charAt(0)))+'</div><h1 class="linktree-title">'+escapeHtml(displayNameInput.value || 'Nu Alpha Phi — '+currentChapter+' Chapter')+'</h1><p class="linktree-subtitle">'+escapeHtml(subtitleInput.value)+'</p><div class="linktree-links">'+(currentLinks.length?currentLinks.map(function(l){return '<span class="linktree-link">'+escapeHtml(l.title || 'Untitled link')+'</span>';}).join(''):'<p class="linktree-empty">Links coming soon.</p>')+'</div></div><p class="linktree-page-footer">Nu Alpha Phi Fraternity, Inc.</p>';
+  }
+  if (form) form.addEventListener('input',renderLivePreview);
+  if (hexInput) hexInput.addEventListener('input',function(){if(/^#[0-9a-f]{6}$/i.test(hexInput.value)){bgColorInput.value=hexInput.value;renderLivePreview();}});
+
   function genLinkId() {
     return "link" + Date.now() + Math.random().toString(36).slice(2);
   }
@@ -204,6 +219,7 @@
   }
 
   function renderLinkRows() {
+    renderLivePreview();
     if (!currentLinks.length) {
       linkRowsEl.innerHTML = '<p class="news-card__empty">No links yet — add the first one.</p>';
       return;
@@ -216,8 +232,8 @@
           '<button type="button" data-move-up="' + i + '" aria-label="Move up"' + (i === 0 ? " disabled" : "") + ">&uarr;</button>" +
           '<button type="button" data-move-down="' + i + '" aria-label="Move down"' + (i === currentLinks.length - 1 ? " disabled" : "") + ">&darr;</button>" +
           "</div>" +
-          '<input class="form-input" data-link-title placeholder="Link Title (e.g. Instagram)" value="' + escapeHtml(link.title) + '">' +
-          '<input class="form-input" data-link-url placeholder="https://…" value="' + escapeHtml(link.url) + '">' +
+          '<input class="form-input" data-link-title aria-label="Link title" placeholder="Link Title (e.g. Instagram)" value="' + escapeHtml(link.title) + '">' +
+          '<input class="form-input" data-link-url aria-label="Link URL" placeholder="https://…" value="' + escapeHtml(link.url) + '">' +
           '<button class="form-builder__option-remove" type="button" data-remove-link="' + i + '" aria-label="Remove link">&times;</button>' +
           "</div>"
         );
@@ -232,6 +248,7 @@
     if (!currentLinks[idx]) return;
     if (e.target.hasAttribute("data-link-title")) currentLinks[idx].title = e.target.value;
     if (e.target.hasAttribute("data-link-url")) currentLinks[idx].url = e.target.value;
+    renderLivePreview();
   });
 
   linkRowsEl.addEventListener("click", function (e) {
@@ -276,6 +293,7 @@
   if (bgColorResetBtn) {
     bgColorResetBtn.addEventListener("click", function () {
       if (bgColorInput && currentChapter) bgColorInput.value = defaultColorFor(currentChapter);
+      renderLivePreview();
     });
   }
 
@@ -287,6 +305,7 @@
       avatarState.pendingFile = file;
       avatarState.pendingPreviewUrl = URL.createObjectURL(file);
       renderAvatarPreview();
+      renderLivePreview();
     });
   }
 
@@ -570,6 +589,7 @@
           avatarState.pendingFile = null;
           avatarState.pendingPreviewUrl = null;
 
+          renderAvatarPreview();renderLivePreview();
           window.napSaveButtonDone(submitBtn, { savedLabel: "Saved" });
           feedbackEl.className = "form-feedback form-feedback--success";
           feedbackEl.textContent = "Live at nualphaphi.com/" + chapter.toLowerCase() + ".";

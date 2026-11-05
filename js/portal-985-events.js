@@ -163,6 +163,7 @@
       ],
     ]) {
       f[k] = P.field(label, type, value);
+      if (["start","end","capacity","plusOneLimit"].includes(k)) f[k].wrap.classList.add("p-event-half");
       form.append(f[k].wrap);
     }
     f.title.input.maxLength = 120;
@@ -238,7 +239,9 @@
       "p-btn primary",
     );
     form.append(status, send);
+    form.classList.add("p-event-editor");
     const d = P.dialog(event ? "Edit event" : "New event", form);
+    d.classList.add("p-event-editor-dialog");
     form.onsubmit = (e) => {
       e.preventDefault();
       P.run(form, async () => {

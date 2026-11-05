@@ -27,10 +27,13 @@
     titleEl.textContent = (doc && doc.displayName) || "Nu Alpha Phi — " + chapter + " Chapter";
     subtitleEl.textContent = (doc && doc.subtitle) || "";
 
-    if (doc && doc.backgroundColor) {
+    if (doc && /^#[0-9a-f]{6}$/i.test(doc.backgroundColor)) {
       document.body.style.setProperty("--chapter-color", doc.backgroundColor);
     }
 
+    var color = document.body.style.getPropertyValue('--chapter-color') || '#7e183a';
+    var rgb=[1,3,5].map(function(i){var n=parseInt(color.slice(i,i+2),16)/255;return n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4);});
+    document.body.style.setProperty('--linktree-ink',rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722>.179?'#17171d':'#ffffff');
     if (doc && doc.avatarUrl) {
       avatarEl.innerHTML = '<img src="' + escapeHtml(doc.avatarUrl) + '" alt="">';
     } else {

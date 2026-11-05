@@ -28,7 +28,8 @@
     <link href="css/portal-design.css" rel="stylesheet">
 <link href="css/portal-985.css?v=20261104-paste" rel="stylesheet">
 <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/portal-upgrades.css?v=sections-polish-3">
+    <link rel="stylesheet" href="css/portal-upgrades.css?v=content-polish-4">
+<link rel="stylesheet" href="css/linktree-surface.css?v=editor-1">
 </head>
 <body class="portal-design">
 
@@ -575,14 +576,14 @@
                     </div>
                 </div>
 
-                <form id="linktreeChapterForm" novalidate>
+                <div class="linktree-workspace"><div class="linktree-workspace-fields"><form id="linktreeChapterForm" novalidate>
                     <div class="linktree-editor-profile">
                         <div class="profile-photo-field">
                             <span id="linktreeAvatarPreview"></span>
                             <div>
                                 <label class="form-submit form-submit--inline form-submit--secondary" for="linktree-avatar-input">Change Avatar</label>
                                 <input type="file" id="linktree-avatar-input" accept="image/*" hidden>
-                                <p class="profile-photo-field__hint">Square photos look best. Optional — falls back to the chapter's initial.</p>
+                                <p class="profile-photo-field__hint">Your chapter’s profile photo. Square images work best.</p>
                             </div>
                         </div>
                         <div class="form-group">
@@ -597,7 +598,7 @@
                             <label class="form-label" for="linktree-bg-color">Background Color</label>
                             <div class="linktree-color-field">
                                 <input class="linktree-color-input" id="linktree-bg-color" name="backgroundColor" type="color">
-                                <button class="linktree-color-reset" type="button" id="linktreeColorResetBtn">Reset to default</button>
+                                <input id="linktree-color-hex" class="form-input" aria-label="Background color hex code" maxlength="7" placeholder="#7e183a"><button class="linktree-color-reset" type="button" id="linktreeColorResetBtn">Reset to default</button>
                             </div>
                         </div>
                     </div>
@@ -624,7 +625,8 @@
                         <input class="form-input" id="linktree-editor-search" type="text" autocomplete="off" placeholder="Search by name or pledge name…">
                         <div class="familytree-big-picker__results" id="linktreeEditorResults" hidden></div>
                     </div>
-                </div>
+                </div></div>
+                <aside class="linktree-preview-panel"><div class="linktree-preview-heading"><strong>Live preview</strong><span>Mobile layout</span></div><div id="linktreeLivePreview" class="linktree-surface"></div><p>Preview updates as you edit. Save changes to publish.</p></aside></div>
             </section>
 
 
@@ -1160,8 +1162,8 @@
     <script src="js/portal-gallery.js?v=control-polish-2"></script>
 
     <script src="js/portal-blog.js?v=portal-upgrade-20261104"></script>
-    <script src="js/portal-linktree.js?v=sections-polish-3"></script>
-    <script src="js/portal-birthdays.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-linktree.js?v=content-polish-4"></script>
+    <script src="js/portal-birthdays.js?v=content-polish-4"></script>
 
 
     <script src="js/portal-design.js?v=portal-upgrade-20261104"></script>
@@ -1175,7 +1177,7 @@
 <script src="js/portal-985-settings.js?v=portal-upgrade-20261104"></script>
 <script src="js/portal-985-profiles.js?v=portal-upgrade-20261104"></script>
 <script src="js/portal-985-chat.js?v=sections-polish-3"></script>
-<script src="js/portal-985-events.js?v=sections-polish-3"></script>
+<script src="js/portal-985-events.js?v=content-polish-4"></script>
 <script src="js/portal-985-roster.js?v=portal-upgrade-20261104"></script>
 <script src="js/portal-985-admin.js?v=sections-polish-3"></script>
 <script src="vendor/leaflet/leaflet.js"></script>

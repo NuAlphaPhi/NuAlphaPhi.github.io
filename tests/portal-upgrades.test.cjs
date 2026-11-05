@@ -79,3 +79,20 @@ test('entering Channels opens General, then restores the last channel after leav
  assert.equal(c.localStorage.getItem('985.lastChannel.member'),'gaming');
  P.go('home');paths.length=0;P.go('channels');assert.ok(paths.includes('socialChannels/gaming/messages'));
 });
+test('chapter preview follows draft content, color and link changes and saves chosen background',async()=>{
+ const c=setup();let ready, saved;
+ c.window.NAP_CHAPTERS=['Kappa'];c.window.napIsAdmin=()=>true;c.window.napOnAuthReady=fn=>ready=fn;c.window.napSetTab=()=>{};
+ c.window.napSaveButtonStart=()=>{};c.window.napSaveButtonDone=()=>{};
+ c.db.collection=name=>({onSnapshot(fn){if(name==='chapterLinktrees')fn({forEach(cb){cb({id:'Kappa',data:()=>({displayName:'Kappa',backgroundColor:'#112233',links:[{id:'one',title:'Website',url:'https://example.com'}]})});}});else fn({docs:[]});},doc:()=>({set:async value=>{saved=value;}})});
+ vm.runInContext(fs.readFileSync('js/portal-linktree.js','utf8'),c);ready({uid:'admin'});
+ c.document.querySelector('[data-chapter-open]').click();
+ const preview=c.document.getElementById('linktreeLivePreview');
+ assert.ok(preview.querySelector('.linktree-link'));assert.equal(preview.style.getPropertyValue('--chapter-color'),'#112233');
+ const name=c.document.getElementById('linktree-display-name');name.value='<img src=x onerror=alert(1)>';name.dispatchEvent(new c.Event('input',{bubbles:true}));
+ assert.equal(preview.querySelector('.linktree-title').textContent,name.value);assert.equal(preview.querySelector('.linktree-title img'),null);
+ const color=c.document.getElementById('linktree-color-hex');color.value='#ffffff';color.dispatchEvent(new c.Event('input',{bubbles:true}));
+ assert.equal(preview.style.getPropertyValue('--chapter-color'),'#ffffff');assert.equal(preview.style.getPropertyValue('--linktree-ink'),'#17171d');
+ c.document.querySelector('[data-remove-link]').click();assert.equal(preview.querySelector('.linktree-link'),null);
+ c.document.getElementById('linktreeChapterForm').dispatchEvent(new c.Event('submit',{cancelable:true}));
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(saved.backgroundColor,'#ffffff');assert.equal(saved.links.length,0);
+});
