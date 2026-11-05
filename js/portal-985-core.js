@@ -184,9 +184,9 @@
       (s) =>
         fn(
           s.docs
-            ? s.docs.map((d) => ({ id: d.id, ...d.data() }))
+            ? s.docs.map((d) => ({ ...d.data(), id: d.id }))
             : s.exists
-              ? { id: s.id, ...s.data() }
+              ? { ...s.data(), id: s.id }
               : null,
         ),
       (e) => P.error(root || P.root("home"), e),

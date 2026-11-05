@@ -27,7 +27,7 @@ service cloud.firestore {
       allow read: if (request.auth != null && request.auth.uid == uid) || isSignedIn();
       allow create: if false; // Only the server approval workflow creates profiles.
       allow update: if isSignedIn()
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled','deletionRequestedAt','accountStatusUpdatedAt','accountStatusUpdatedBy','uid','email','membershipStatus','isAdmin','leadershipBaseAdmin','adminAccessOverride','leadershipTitles','nationalTitle','chapterPresident','alumniAdvisor','membershipStanding'])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['id','disabled','deletionRequestedAt','accountStatusUpdatedAt','accountStatusUpdatedBy','uid','email','membershipStatus','isAdmin','leadershipBaseAdmin','adminAccessOverride','leadershipTitles','nationalTitle','chapterPresident','alumniAdvisor','membershipStanding'])
         && (!(resource.data.get('isAdmin', false) && request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])) || (request.auth.uid == authorityOwner() && uid != authorityOwner()))
         && (isAdmin() || (request.auth.uid == uid && resource.data.get('disabled', false) != true && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])));
       allow delete: if false; // Account deletion must run through the audited server cleanup.
@@ -44,7 +44,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isAdmin()
         || (resource.data.authorUid == request.auth.uid
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved']))
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved','authorUid','createdByUid']))
       );
       allow delete: if isSignedIn() && (resource.data.authorUid == request.auth.uid || isAdmin());
 
@@ -55,7 +55,8 @@ service cloud.firestore {
       match /comments/{cid} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-        allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+        allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorUid']);
         allow delete: if isSignedIn() && (
           resource.data.authorUid == request.auth.uid ||
           get(/databases/$(database)/documents/announcements/$(id)).data.authorUid == request.auth.uid ||
@@ -72,7 +73,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         isAdmin()
         || (resource.data.createdByUid == request.auth.uid
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved']))
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approved','authorUid','createdByUid']))
       );
       allow delete: if isSignedIn() && (resource.data.createdByUid == request.auth.uid || isAdmin());
 
@@ -94,7 +95,8 @@ service cloud.firestore {
       match /comments/{cid} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.authorUid == request.auth.uid;
-        allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+        allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['authorUid']);
         allow delete: if isSignedIn() && (
           resource.data.authorUid == request.auth.uid ||
           get(/databases/$(database)/documents/events/$(id)).data.createdByUid == request.auth.uid ||
@@ -197,7 +199,7 @@ service cloud.firestore {
     // (which reads with admin privileges, bypassing these rules). Portal
     // clients only ever enqueue; nobody can read the queue back.
     match /mail/{id} {
-      allow create: if isSignedIn();
+      allow create: if isAdmin();
       allow read, update, delete: if false;
     }
 

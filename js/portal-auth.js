@@ -163,7 +163,7 @@
   function startBrothers() { db.collection("users").onSnapshot(function (snap) {
     window.NAP_ALL_BROTHERS = snap.docs
       .map(function (doc) {
-        return Object.assign({ uid: doc.id }, doc.data());
+        return Object.assign({}, doc.data(), { uid: doc.id });
       })
       .filter(function (b) {
         return b.disabled !== true;
@@ -184,6 +184,7 @@
      notifications in Settings (emailNotifications == false) are skipped.
      If the extension isn't installed yet, the docs just sit there harmlessly. */
   window.napQueueBrotherhoodEmail = function (subject, text) {
+    if (!window.napIsAdmin()) return Promise.resolve();
     var recipients = (window.NAP_ALL_BROTHERS || []).filter(function (b) {
       return b.email && b.emailNotifications !== false;
     });
