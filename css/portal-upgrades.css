@@ -352,3 +352,4 @@
 .p-brotherhood-layout .p-muted{font-size:12px;line-height:1.6}.p-leadership-titles{display:flex;flex-wrap:wrap;gap:6px}
 .p-brotherhood-admin{grid-column:1/-1;font-size:12px;color:var(--grey-500);padding:12px 0;border-top:1px solid var(--grey-200)}.p-brotherhood-admin summary{cursor:pointer;margin-bottom:12px}.p-brotherhood-admin .p-btn{font-size:12px;padding:8px 12px}
 @media(max-width:650px){.p-brotherhood-layout{grid-template-columns:1fr;padding:12px}}
+#familytreeExportBtn[hidden],#familytreeExportStatus[hidden]{display:none!important}

@@ -95,11 +95,24 @@
       script.onerror=()=>{script.remove();reject(Error('Could not load the spreadsheet exporter. Please try again.'));};document.head.append(script);
     }).catch(error=>{loading=null;throw error;});return loading;
   }
+  async function requireAdmin(expectedUid) {
+    const uid = typeof auth !== 'undefined' && auth.currentUser?.uid;
+    if (!uid || (expectedUid && uid !== expectedUid)) throw Error('Only administrators can export the family tree.');
+    // Read the current server record, not a cached profile or hidden-button state.
+    const snapshot = await db.doc('users/' + uid).get({source:'server'});
+    const profile = snapshot.exists && snapshot.data();
+    if (!profile || profile.isAdmin !== true || profile.disabled === true || (profile.membershipStatus && profile.membershipStatus !== 'approved') || auth.currentUser?.uid !== uid) {
+      throw Error('Only administrators can export the family tree.');
+    }
+    return uid;
+  }
   async function download(members) {
+    const uid = await requireAdmin();
     const snapshot=members.map(member=>({...member}));
     layout(snapshot); // Validate before loading the optional library.
     const ExcelJS=await loadLibrary(),generated=new Date();
     const buffer=await build(ExcelJS,snapshot,generated).xlsx.writeBuffer();
+    await requireAdmin(uid);
     const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),url=URL.createObjectURL(blob);
     const link=document.createElement('a');link.href=url;link.download='Nu-Alpha-Phi-Family-Tree-'+generated.toISOString().slice(0,10)+'.xlsx';
     document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);

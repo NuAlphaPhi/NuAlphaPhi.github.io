@@ -20,7 +20,7 @@
   var exportStatus = document.getElementById("familytreeExportStatus");
   var exporting = false;
   if (exportBtn) exportBtn.addEventListener("click", async function () {
-    if (!currentUid || exporting || !allMembers.length) return;
+    if (!currentUid || !isAdmin() || exporting || !allMembers.length) return;
     exporting = true; exportBtn.disabled = true; exportBtn.textContent = "Exporting…";
     exportStatus.hidden = false; exportStatus.textContent = "Preparing the full family tree…";
     try {
@@ -29,7 +29,7 @@
     } catch (error) {
       exportStatus.textContent = error.message || "Could not export the tree. Please try again.";
     } finally {
-      exporting = false; exportBtn.disabled = !allMembers.length; exportBtn.textContent = "Export Excel ↓";
+      exporting = false; syncExportAccess(); exportBtn.textContent = "Export Excel ↓";
     }
   });
 
@@ -48,6 +48,15 @@
   function isAdmin() {
     return !!(window.napIsAdmin && window.napIsAdmin());
   }
+
+  function syncExportAccess() {
+    if (!exportBtn) return;
+    exportBtn.hidden = !isAdmin();
+    exportBtn.disabled = !isAdmin() || exporting || !allMembers.length;
+    if (!isAdmin() && exportStatus) exportStatus.hidden = true;
+  }
+  document.addEventListener("p985:access", syncExportAccess);
+  document.addEventListener("nap:auth-ready", syncExportAccess);
 
   var CHAPTER_COLORS = {
     Alpha: "#4C78A8",
@@ -142,7 +151,7 @@
         allMembers = snap.docs.map(function (doc) {
           return Object.assign({}, doc.data(), { id: doc.id });
         });
-        if (exportBtn) exportBtn.disabled = exporting || !allMembers.length;
+        syncExportAccess();
         render();
       },
       function () {
@@ -1042,6 +1051,7 @@
   if (familyTreeNavBtn) {
     familyTreeNavBtn.addEventListener("click", function () {
       if (newLineageBtn) newLineageBtn.hidden = !isAdmin();
+      syncExportAccess();
     });
   }
 })();

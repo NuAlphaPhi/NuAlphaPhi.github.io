@@ -33,3 +33,16 @@ test('large forests include all brothers without colliding cells',()=>{
  const members=Array.from({length:1500},(_,i)=>({id:String(i),bigId:i?String(Math.floor((i-1)/3)):null,pledgeName:'Brother '+i,chapter:'Alpha'}));
  const p=exporter.layout(members).positions;assert.equal(new Set([...p.values()].map(v=>v.row+':'+v.column)).size,1500);
 });
+test('download rejects signed-out and non-admin accounts before loading the exporter',async()=>{
+ await assert.rejects(()=>exporter.download(brothers),/Only administrators/);
+ global.auth={currentUser:{uid:'member'}};
+ const requests=[];global.db={doc:path=>({get:async options=>{requests.push({path,options});return {exists:true,data:()=>({isAdmin:false,membershipStatus:'approved'})};}})};
+ try {await assert.rejects(()=>exporter.download(brothers),/Only administrators/);assert.deepEqual(requests,[{path:'users/member',options:{source:'server'}}]);}
+ finally {delete global.auth;delete global.db;}
+});
+test('download rechecks admin access after building the workbook',async()=>{
+ let reads=0;global.auth={currentUser:{uid:'admin'}};global.window={ExcelJS};
+ global.db={doc:()=>({get:async()=>({exists:true,data:()=>({isAdmin:++reads===1,membershipStatus:'approved'})})})};
+ try {await assert.rejects(()=>exporter.download(brothers),/Only administrators/);assert.equal(reads,2);}
+ finally {delete global.auth;delete global.window;delete global.db;}
+});
