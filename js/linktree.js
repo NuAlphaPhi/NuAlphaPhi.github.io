@@ -58,6 +58,15 @@
       .join("");
   }
 
+  // The editor embeds this exact public document; only its data source changes.
+  if (new URLSearchParams(location.search).get('preview') === '1' && window.parent !== window) {
+    window.addEventListener('message',function(event){
+      if(event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'nap:chapter-preview' || event.data.chapter !== chapter) return;
+      render(event.data.doc);
+    });
+    return;
+  }
+
   db.collection("chapterLinktrees")
     .doc(chapter)
     .onSnapshot(

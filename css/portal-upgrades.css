@@ -183,12 +183,7 @@
 #linktreeEditorsSection :is(p,.linktree-editor-row){font-size:12px}
 .linktree-preview-panel{position:sticky;top:24px;min-width:0}
 .linktree-preview-heading{display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px}.linktree-preview-heading span{color:var(--grey-400);font-size:10px}
-#linktreeLivePreview{border:6px solid var(--grey-200);border-radius:28px;min-height:500px;padding:30px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden}
-#linktreeLivePreview .linktree-avatar{width:66px;height:66px;font-size:26px;margin-bottom:16px}
-#linktreeLivePreview .linktree-title{font-size:18px;overflow-wrap:anywhere}
-#linktreeLivePreview .linktree-subtitle{font-size:12px;margin-bottom:20px;overflow-wrap:anywhere}
-#linktreeLivePreview .linktree-link{font-size:12px;padding:12px;overflow-wrap:anywhere}
-#linktreeLivePreview .linktree-page-footer{font-size:9px;margin-top:auto;padding-top:30px}
+#linktreeLivePreview{display:block;width:100%;height:640px;border:6px solid var(--grey-200);border-radius:28px;background:var(--portal-card);box-sizing:border-box}
 .linktree-preview-panel>p{font-size:11px;line-height:1.6;text-align:center;color:var(--grey-400);margin-top:12px}
 #blogPostGrid{display:grid;grid-template-columns:1fr;gap:12px}
 #blogPostGrid .blog-admin-card{display:grid;grid-template-columns:200px minmax(0,1fr);border-radius:12px;overflow:hidden}

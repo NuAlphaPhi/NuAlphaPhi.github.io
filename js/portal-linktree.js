@@ -194,12 +194,13 @@
     if (!livePreview || !currentChapter) return;
     var color = /^#[0-9a-f]{6}$/i.test(bgColorInput.value) ? bgColorInput.value : defaultColorFor(currentChapter);
     if (hexInput && document.activeElement !== hexInput) hexInput.value = color.toUpperCase();
-    livePreview.style.setProperty('--chapter-color', color);
-    var rgb = [1,3,5].map(function(i){var n=parseInt(color.slice(i,i+2),16)/255;return n<=0.04045?n/12.92:Math.pow((n+0.055)/1.055,2.4);});
-    livePreview.style.setProperty('--linktree-ink', rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722 > .179 ? '#17171d' : '#ffffff');
-    var src = avatarState.pendingPreviewUrl || avatarState.url;
-    livePreview.innerHTML = '<div class="linktree-card"><div class="linktree-brand"><img src="img/letters.png" alt="Nu Alpha Phi"></div><div class="linktree-avatar">'+(src?'<img src="'+escapeHtml(src)+'" alt="">':escapeHtml(currentChapter.charAt(0)))+'</div><h1 class="linktree-title">'+escapeHtml(displayNameInput.value || 'Nu Alpha Phi — '+currentChapter+' Chapter')+'</h1><p class="linktree-subtitle">'+escapeHtml(subtitleInput.value)+'</p><div class="linktree-links">'+(currentLinks.length?currentLinks.map(function(l){return '<span class="linktree-link">'+escapeHtml(l.title || 'Untitled link')+'</span>';}).join(''):'<p class="linktree-empty">Links coming soon.</p>')+'</div></div><p class="linktree-page-footer">Nu Alpha Phi Fraternity, Inc.</p>';
+    if (livePreview.contentWindow) livePreview.contentWindow.postMessage({type:'nap:chapter-preview',chapter:currentChapter,doc:{
+      displayName:displayNameInput.value.trim(),subtitle:subtitleInput.value.trim(),backgroundColor:color,
+      avatarUrl:avatarState.pendingPreviewUrl || avatarState.url,
+      links:currentLinks.map(function(l){return {title:l.title.trim(),url:normalizeUrl(l.url.trim())};}).filter(function(l){return l.title && l.url;})
+    }},location.origin);
   }
+  if (livePreview) livePreview.addEventListener('load',renderLivePreview);
   if (form) form.addEventListener('input',renderLivePreview);
   if (hexInput) hexInput.addEventListener('input',function(){if(/^#[0-9a-f]{6}$/i.test(hexInput.value)){bgColorInput.value=hexInput.value;renderLivePreview();}});
 
@@ -448,7 +449,8 @@
 
     pageLabelEl.textContent = "Chapter Link Page";
     pageTitleEl.textContent = chapter;
-    var url = "https://nualphaphi.com/" + chapter.toLowerCase();
+    livePreview.src = chapter.toLowerCase()+".html?preview=1&v=real-preview-2";
+    var url = "https://nualphaphi.com/" + chapter.toLowerCase()+"?v=real-preview-2";
     pageUrlEl.textContent = url;
     pageUrlEl.href = url;
 

@@ -80,19 +80,39 @@ test('entering Channels opens General, then restores the last channel after leav
  P.go('home');paths.length=0;P.go('channels');assert.ok(paths.includes('socialChannels/gaming/messages'));
 });
 test('chapter preview follows draft content, color and link changes and saves chosen background',async()=>{
- const c=setup();let ready, saved;
+ const c=setup();let ready, saved, draft;
+ c.location.origin="https://nualphaphi.com";
+ c.document.getElementById("linktreeLivePreview").contentWindow={postMessage(message){draft=message.doc;}};
  c.window.NAP_CHAPTERS=['Kappa'];c.window.napIsAdmin=()=>true;c.window.napOnAuthReady=fn=>ready=fn;c.window.napSetTab=()=>{};
  c.window.napSaveButtonStart=()=>{};c.window.napSaveButtonDone=()=>{};
  c.db.collection=name=>({onSnapshot(fn){if(name==='chapterLinktrees')fn({forEach(cb){cb({id:'Kappa',data:()=>({displayName:'Kappa',backgroundColor:'#112233',links:[{id:'one',title:'Website',url:'https://example.com'}]})});}});else fn({docs:[]});},doc:()=>({set:async value=>{saved=value;}})});
  vm.runInContext(fs.readFileSync('js/portal-linktree.js','utf8'),c);ready({uid:'admin'});
  c.document.querySelector('[data-chapter-open]').click();
  const preview=c.document.getElementById('linktreeLivePreview');
- assert.ok(preview.querySelector('.linktree-link'));assert.equal(preview.style.getPropertyValue('--chapter-color'),'#112233');
+ assert.match(preview.src,/kappa\.html\?preview=1/);assert.equal(draft.backgroundColor,'#112233');
  const name=c.document.getElementById('linktree-display-name');name.value='<img src=x onerror=alert(1)>';name.dispatchEvent(new c.Event('input',{bubbles:true}));
- assert.equal(preview.querySelector('.linktree-title').textContent,name.value);assert.equal(preview.querySelector('.linktree-title img'),null);
+ assert.equal(draft.displayName,name.value);
  const color=c.document.getElementById('linktree-color-hex');color.value='#ffffff';color.dispatchEvent(new c.Event('input',{bubbles:true}));
- assert.equal(preview.style.getPropertyValue('--chapter-color'),'#ffffff');assert.equal(preview.style.getPropertyValue('--linktree-ink'),'#17171d');
- c.document.querySelector('[data-remove-link]').click();assert.equal(preview.querySelector('.linktree-link'),null);
+ assert.equal(draft.backgroundColor,'#ffffff');
+ c.document.querySelector('[data-remove-link]').click();assert.equal(draft.links.length,0);
  c.document.getElementById('linktreeChapterForm').dispatchEvent(new c.Event('submit',{cancelable:true}));
  await new Promise(resolve=>setImmediate(resolve));assert.equal(saved.backgroundColor,'#ffffff');assert.equal(saved.links.length,0);
+});
+test('embedded and public chapter pages use the same rendering and reject outside draft messages',()=>{
+ const html=fs.readFileSync('kappa.html','utf8'),script=fs.readFileSync('js/linktree.js','utf8');
+ const doc={displayName:'Kappa <chapter>',subtitle:'Our chapter',backgroundColor:'#000000',links:[{title:'Website',url:'https://example.com'},{title:'Unsafe',url:'javascript:alert(1)'}]};
+ function load(preview){
+  const {document}=parseHTML(html);const window={};let handler,reads=0;const parent={};
+  window.NAP_LINKTREE_CHAPTER='Kappa';window.parent=preview?parent:window;window.addEventListener=(type,fn)=>{if(type==='message')handler=fn;};
+  const c={document,window,URL,URLSearchParams,location:{origin:'https://nualphaphi.com',search:preview?'?preview=1':''},db:{collection(){reads++;return {doc:()=>({onSnapshot(fn){fn({exists:true,data:()=>doc});}})};}}};
+  vm.createContext(c);vm.runInContext(script,c);return {document,reads,send(origin,source=parent){handler({origin,source,data:{type:'nap:chapter-preview',chapter:'Kappa',doc}});}};
+ }
+ const live=load(false),preview=load(true);assert.equal(preview.reads,0);
+ preview.send('https://evil.example');assert.notEqual(preview.document.getElementById('linktreeTitle').textContent,doc.displayName);
+ preview.send('https://nualphaphi.com',{});assert.notEqual(preview.document.getElementById('linktreeTitle').textContent,doc.displayName);
+ preview.send('https://nualphaphi.com');
+ for(const id of ['linktreeTitle','linktreeSubtitle','linktreeAvatar','linktreeLinks'])assert.equal(preview.document.getElementById(id).innerHTML,live.document.getElementById(id).innerHTML);
+ assert.equal(preview.document.body.getAttribute('style'),live.document.body.getAttribute('style'));
+ assert.equal(preview.document.querySelectorAll('.linktree-link').length,1);
+ assert.equal(preview.document.getElementById('linktreeTitle').querySelector('chapter'),null);
 });
