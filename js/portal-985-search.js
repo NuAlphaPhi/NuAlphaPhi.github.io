@@ -13,7 +13,7 @@
       ...(fullPosts.length ? fullPosts : P.posts).filter(p=>!P.blocks.has(p.authorUid)).map(p=>({group:'Posts',title:p.body || 'Photo or poll',detail:P.name(P.person(p.authorUid)),open:()=>P.openPost(p.id)})),
       ...(P.events || []).map(e=>({group:'Events',title:e.title,detail:e.location || '',open:()=>P.openEvent(e.id)})),
       ...albums.map(a=>({group:'Albums',title:a.title,detail:a.description || '',open:()=>window.napOpenAlbum(a.id)})),
-      ...roster.map(r=>({group:'Roster',title:r.pledgeName || r.fullName || r.realName || r.name || 'Roster entry',detail:[r.fullName,r.realName,r.chapter,r.pledgeClass,r.className].filter(Boolean).join(' · '),open:()=>{P.go('roster'); const field=P.root('roster')?.querySelector('input[type="search"],input'); if(field){field.value=r.pledgeName || r.realName || '';field.dispatchEvent(new Event('input'));}}}))
+      ...roster.map(r=>({group:'Roster',title:r.pledgeName || r.fullName || r.realName || r.name || 'Roster entry',detail:[r.fullName,r.realName,(P.rosterData?.classes||[]).find(c=>c.id===r.classID)?.chapter,(P.rosterData?.classes||[]).find(c=>c.id===r.classID)?.pledgeClass,r.chapter,r.pledgeClass,r.className].filter(Boolean).join(' · '),open:()=>{P.go('roster'); const field=P.root('roster')?.querySelector('input[type="search"],input'); if(field){field.value=r.pledgeName || r.realName || '';field.dispatchEvent(new Event('input'));}}}))
     ];
   }
   function draw() {

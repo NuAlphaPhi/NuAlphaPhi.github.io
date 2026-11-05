@@ -120,7 +120,7 @@
       '<div class="gallery-album-card__actions">' +
       '<button class="news-card__action-btn" type="button" data-album-open="' + escapeHtml(album.id) + '">View Album</button>' +
       (manage
-        ? '<details class="p-album-menu"><summary aria-label="Manage album">⋯</summary><button class="news-card__action-btn" type="button" data-album-rename="' + escapeHtml(album.id) + '">Rename</button>' +
+        ? '<details class="p-album-menu"><summary aria-label="Manage album">⋯</summary><button class="news-card__action-btn" type="button" data-album-rename="' + escapeHtml(album.id) + '">Edit details</button>' +
           '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-album-delete="' + escapeHtml(album.id) + '">Delete</button></details>'
         : "") +
       "</div></div></article>"
@@ -364,7 +364,7 @@
     if(album.description)albumPageMetaEl.textContent += ' · '+album.description;
     if(album.eventDate)albumPageMetaEl.textContent += ' · '+album.eventDate;
     albumPageActionsEl.innerHTML = canManageAlbum(album)
-      ? '<button class="news-card__action-btn" type="button" data-rename-album>Rename Album</button>' +
+      ? '<button class="news-card__action-btn" type="button" data-rename-album>Edit Album</button>' +
         '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-album>Delete Album</button>'
       : "";
     if(album.eventId && window.P985)albumPageActionsEl.append(P985.button('View linked event',function(){P985.openEvent(album.eventId);}));
