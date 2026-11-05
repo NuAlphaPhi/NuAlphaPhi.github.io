@@ -161,5 +161,14 @@ function socialChannel(room) {
       allow delete: if isActiveMember()
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
     }
+    // Operations attachments are private. Downloads use short-lived, authorized URLs.
+    match /operations/{chapter}/{uid}/{kind}/{recordID}/{fileName} {
+      allow create: if isActiveMember() && request.auth.uid == uid
+        && firestore.get(/databases/(default)/documents/socialAccess/$(uid)).data.chapter == chapter
+        && kind in ['documents','reimbursements']
+        && request.resource.size > 0 && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/jpeg|image/png|image/webp|application/pdf');
+      allow read, update, delete: if false;
+    }
   }
 }

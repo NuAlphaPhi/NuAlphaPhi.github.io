@@ -641,5 +641,9 @@ match /appEvents/{event} {
         && request.resource.data.endMinute is int && request.resource.data.endMinute >= 0 && request.resource.data.endMinute < 1440
         && request.resource.data.timeZone is string && request.resource.data.timeZone.size() <= 100;
     }
+    // All chapter operations access is mediated by operationsAction.
+    match /chapterOperations/{chapter}/{document=**} {
+      allow read, write: if false;
+    }
   }
 }
