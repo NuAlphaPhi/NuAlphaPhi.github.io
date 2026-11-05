@@ -304,3 +304,14 @@
 #panel-form-builder .form-builder__question-foot button{font-size:11px;padding:5px 8px;border:0;background:none;color:var(--grey-400)}
 @media(max-width:760px){.p-event-hero{grid-template-columns:1fr;gap:18px}.p-event-detail .p-event-cover{height:220px}.p-event-intro h1{font-size:26px}.p-event-body{grid-template-columns:1fr;gap:24px}.p-event-rsvp{grid-column:1;grid-row:1;position:static}.p-event-community{grid-column:1;grid-row:2}}
 @media(max-width:480px){#panel-form-builder .form-builder__question-head{grid-template-columns:minmax(0,1fr) 28px}#panel-form-builder .form-builder__question-head>[data-q-label]{grid-column:1/-1}}
+#p985-events .p-event-status{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;width:fit-content;font-size:10px;font-weight:600;line-height:16px;letter-spacing:.02em;padding:3px 9px;margin:12px 0 8px;border:1px solid #a75d7840;border-radius:5px;background:#a75d7812;color:#c889a0}
+#p985-events .p-event-card h2{margin-top:4px}
+.p-roster-role{display:inline-flex;vertical-align:middle;align-items:center;margin-left:10px;font-size:9px;font-weight:600;line-height:16px;padding:2px 7px;border-radius:5px;background:#b2813b18;border:1px solid #b2813b40;color:#bd965d}
+.p-brotherhood-panel{padding:22px!important;border-radius:12px!important;margin-top:20px!important}
+.p-brotherhood-panel h2{font-size:18px;margin:20px 0 12px}.p-brotherhood-panel h3{font-size:13px;margin:22px 0 10px;padding-top:18px;border-top:1px solid var(--grey-200)}
+.p-brotherhood-panel p{font-size:12px;line-height:1.7;margin:8px 0}.p-brotherhood-panel .p-field{font-size:11px;margin:0 0 10px}
+.p-brotherhood-panel .p-field select{font-size:12px;padding:9px 11px;border-radius:7px}
+.p-brotherhood-panel .p-btn{font-size:11px;padding:7px 10px;line-height:18px;border-radius:7px}
+.p-brotherhood-panel .p-empty{min-height:0;padding:14px 16px;margin:16px 0;text-align:left;border:1px dashed var(--grey-200);border-radius:8px;background:#88804;font-size:12px;line-height:1.6}
+.p-class-members{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}.p-class-members span{font-size:11px;border:1px solid var(--grey-200);border-radius:6px;padding:5px 9px;background:#88806}
+.p-toast{font-size:12px;padding:10px 14px;border-radius:9px}.p-toast .p-btn{font-size:11px;padding:5px 8px;border-radius:6px;margin-left:10px}

@@ -64,7 +64,7 @@
       const card = P.el("article", "p-card p-event-card");
       card.append(
         P.image(e.coverPath, "p-event-cover", e.title),
-        P.el("span", "p-chip", e.status),
+        P.el("span", "p-event-status", e.status.charAt(0).toUpperCase()+e.status.slice(1)),
         P.el("h2", "", e.title),
         P.el("p", "p-muted", P.when(e.start)),
         P.el("p", "", e.locationTBD ? "Location to be announced" : e.location),

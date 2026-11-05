@@ -352,17 +352,17 @@
       const data=P.rosterData||{classes:[],people:[],tree:[],links:{}},norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
       const suggested=data.people.filter(r=>{const c=data.classes.find(c=>c.id===r.classID);return c?.chapter===b.chapter && ((b.pledgeName&&norm(r.pledgeName)===norm(b.pledgeName))||norm(r.fullName)===norm([b.firstName,b.lastName].filter(Boolean).join(' ')));});
       const verified=data.accountLinks?.[b.uid],matches=verified?data.people.filter(r=>r.id===verified.rosterID):[];
-      const box=P.el('section','p-card');root.append(box);
+      const box=P.el('section','p-card p-brotherhood-panel');root.append(box);
       if(verified&&P.me.isAdmin)box.append(P.button('Remove verified link',()=>P.run(box,async()=>{if(!await P.confirm('Remove this account’s verified roster link? The account and roster entry will remain.'))return;await P.call('portalAction',{action:'unlinkProfile',uid:b.uid,expectedRosterID:verified.rosterID});P.toast('Profile link removed',()=>P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:verified.rosterID}));})));
       if(!verified&&P.me.isAdmin){
-        const candidates=suggested.length?suggested:data.people,choice=P.select('Verify roster identity',candidates.map(r=>[r.id,(r.fullName||'')+' · '+r.pledgeName+' · '+(data.classes.find(c=>c.id===r.classID)?.chapter||'')]));
-        box.append(choice.wrap,P.button('Confirm account link',()=>P.run(box,()=>P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:choice.input.value}))));
+        const candidates=suggested.length?suggested:data.people,choice=P.select('Verify roster identity',[['','Choose a roster entry'],...candidates.map(r=>[r.id,(r.fullName||'')+' · '+r.pledgeName+' · '+(data.classes.find(c=>c.id===r.classID)?.chapter||'')])]);
+        box.append(choice.wrap,P.button('Confirm account link',()=>P.run(box,()=>{if(!choice.input.value)throw Error('Choose a roster entry first.');return P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:choice.input.value});})));
       }
       box.append(P.el('h2','','Brotherhood'),P.button(b.chapter+' Chapter',()=>P.chapter(b.chapter)));
       if(matches.length!==1){box.append(P.empty(matches.length?'Multiple roster matches need administrator review.':'No unique roster match yet. Ask an administrator to review the roster.'));if(P.me.isAdmin)box.append(P.button('Review roster',()=>P.go('roster')));}
       else {
         const r=matches[0],c=data.classes.find(c=>c.id===r.classID),linked=data.links[r.id],node=data.tree.find(t=>t.id===linked?.treeID);
-        box.append(P.el('h3','',c?.pledgeClass+' Class'),P.el('p','',data.people.filter(p=>p.classID===r.classID).map(p=>p.pledgeName||p.fullName).join(' · ')));
+        box.append(P.el('h3','',c?.pledgeClass+' Class'),(()=>{const names=P.el('div','p-class-members');data.people.filter(p=>p.classID===r.classID).forEach(p=>names.append(P.el('span','',p.pledgeName||p.fullName)));return names;})());
         if(node){const big=data.tree.find(t=>t.id===node.bigId),littles=data.tree.filter(t=>t.bigId===node.id);box.append(P.el('p','','Big: '+(big?.pledgeName||big?.name||'Founding branch')),P.el('p','','Littles: '+(littles.map(t=>t.pledgeName||t.name).join(', ')||'None recorded')),P.button('View family tree',()=>window.napFocusFamilyMember(node.id)));}
         else box.append(P.empty('Family-tree link awaits verification. No records have been automatically merged.'));
       }

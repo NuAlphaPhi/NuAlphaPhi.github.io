@@ -9,6 +9,12 @@
     search = "",
     issuesOnly = false;
   const expandedClasses = new Set();
+  P.rosterClassRoles = members => {
+    const roles = new Map();
+    if (members.length) roles.set(members[0].id, 'Captain');
+    if (members.length > 1) roles.set(members[members.length - 1].id, 'Co-Captain');
+    return roles;
+  };
   const norm = (s) =>
     String(s || "")
       .toLowerCase()
@@ -120,6 +126,7 @@
       sorted
         .filter((c) => !chapter || c.chapter === chapter)
         .forEach((c) => {
+          const roles = P.rosterClassRoles(people.filter(r => r.classID === c.id));
           const members = people.filter(
             (r) =>
               r.classID === c.id &&
@@ -182,6 +189,11 @@
               ),
               P.el("p", "p-muted", r.fullName),
             );
+            if (roles.has(r.id)) {
+              const badge=P.el('span','p-roster-role',roles.get(r.id));
+              badge.title=roles.get(r.id)+' of the pledge class';
+              info.insertBefore(badge,info.querySelector('p'));
+            }
             if (r.fallen)
               info.append(
                 P.el("p", "", "Fallen Brother · May he rest in peace."),

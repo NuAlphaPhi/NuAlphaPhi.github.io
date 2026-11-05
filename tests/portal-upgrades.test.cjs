@@ -131,3 +131,9 @@ test('event detail separates organizer actions from RSVP and conversation',async
  assert.ok(c.document.querySelector('.p-event-body>.p-event-rsvp'));assert.ok(c.document.querySelector('.p-event-body>.p-event-community'));
  assert.match(c.document.querySelector('.p-event-rsvp').textContent,/Save RSVP/);
 });
+test('roster class leadership uses full class order with one captain for a solo class',()=>{
+ const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-roster.js','utf8'),c);
+ const roles=c.P985.rosterClassRoles([{id:'first'},{id:'middle'},{id:'last'}]);
+ assert.equal(roles.get('first'),'Captain');assert.equal(roles.get('last'),'Co-Captain');assert.equal(roles.has('middle'),false);
+ assert.deepEqual([...c.P985.rosterClassRoles([{id:'solo'}])],[['solo','Captain']]);assert.equal(c.P985.rosterClassRoles([]).size,0);
+});
