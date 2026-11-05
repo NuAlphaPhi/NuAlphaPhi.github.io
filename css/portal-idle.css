@@ -1,0 +1,11 @@
+.nap-idle-dialog{box-sizing:border-box;width:min(400px,calc(100vw - 32px));padding:28px;border:1px solid var(--grey-200,#33333d);border-radius:18px;background:var(--portal-card,#1a1a22);color:var(--black,#f4f2f6);box-shadow:0 24px 80px #0006;font-family:inherit;text-align:center}
+.nap-idle-dialog::backdrop{background:#08090db3;backdrop-filter:blur(4px)}
+.nap-idle-icon{display:grid;place-items:center;width:42px;height:42px;margin:0 auto 16px;border-radius:12px;color:#dfa0b5;background:#a4426226;font-size:26px}
+.nap-idle-dialog h2{margin:0 0 10px;font-size:23px;line-height:1.2;letter-spacing:-.4px}
+.nap-idle-dialog p{margin:0;font-size:13px;line-height:1.6;color:var(--grey-500,#aaa7b5)}
+.nap-idle-dialog .nap-idle-countdown{margin:16px 0 22px;font-size:12px;font-variant-numeric:tabular-nums}
+.nap-idle-actions{display:flex;justify-content:center;gap:8px}
+.nap-idle-actions button{padding:10px 15px;border:1px solid var(--grey-200,#33333d);border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.nap-idle-actions [data-idle="stay"]{background:#8b2348;border-color:#8b2348;color:#fff;font-weight:600}
+.nap-idle-actions button:focus-visible{outline:2px solid #dfa0b5;outline-offset:3px}.nap-idle-actions button:disabled{opacity:.5;cursor:wait}
+.nap-idle-dialog .nap-idle-error{margin-top:12px;color:#ef9ba9;font-size:12px}
