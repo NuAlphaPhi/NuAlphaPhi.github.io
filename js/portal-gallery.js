@@ -206,9 +206,11 @@
   var currentEditAlbumId = null;
 
   ['description', 'eventDate', 'eventId'].forEach(function(name) {
-    var label = document.createElement('label'); label.className = 'form-field';
+    var label = document.createElement('label'); label.className = 'form-field gallery-album-field gallery-album-field--'+name;
     label.textContent = {description:'Description',eventDate:'Event date',eventId:'Linked event (optional)'}[name];
     var input = document.createElement(name === 'description' ? 'textarea' : name === 'eventId' ? 'select' : 'input');
+    input.className = name === 'description' ? 'form-textarea' : 'form-input';
+    if(name === 'description'){input.rows=4;input.placeholder='Add a little context about these photos…';}
     input.name = name; if(input.tagName==='INPUT')input.type = name === 'eventDate' ? 'date' : 'text'; input.maxLength = name === 'description' ? 2000 : 128;
     label.append(input); albumSubmitBtn.before(label);
   });

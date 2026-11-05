@@ -50,8 +50,6 @@
     { name: "instagram", label: "Instagram", type: "text", placeholder: "@handle" },
     { name: "facebook", label: "Facebook", type: "text" },
     { name: "linkedin", label: "LinkedIn", type: "text" },
-    { name: "bigName", label: "Big's Name", type: "text" },
-    { name: "bigPledgeName", label: "Big's Pledge Name", type: "text", full: true },
     { name: "bio", label: "Bio", type: "textarea", full: true, placeholder: "Tell other brothers a bit about yourself" },
   ];
   var EDIT_NUMBER_FIELDS = ["yearCrossed", "graduationYear"];
@@ -144,13 +142,15 @@
       modalBio.hidden = true;
     }
 
+    var family = window.P985 && window.P985.profileLineage ? window.P985.profileLineage(b) : null;
     var fields = [
       ["Pledge Number", b.pledgeNumber],
       ["Chapter", b.chapter],
+      ["Big", family && family.big ? (family.big.pledgeName || family.big.name) : "Not recorded in family tree"],
+      ["Littles", family && family.littles.length ? family.littles.map(function(n){return n.pledgeName || n.name;}).join(", ") : "None recorded in family tree"],
       ["Class", b.pledgeClass],
       ["Crossed", window.napSemesterCrossed(b)],
       ["Birthday", formatBirthday(b.birthday)],
-      ["Big", [b.bigName, b.bigPledgeName ? '"' + b.bigPledgeName + '"' : ""].filter(Boolean).join(" ")],
       ["Occupation", b.occupation],
       ["School", b.school],
       ["Major", b.major],

@@ -1,6 +1,36 @@
 (function () {
   "use strict";
   const P = P985;
+  // Relationships come only from familyTree; profile text never supplies lineage.
+  P.profileLineage = function (brother, data = P.rosterData) {
+    if (!data) return {status:'loading', big:null, littles:[]};
+    const tree = data.tree || [], account = data.accountLinks?.[brother.uid];
+    const selected = account && data.links?.[account.rosterID]?.treeID;
+    const norm = value => String(value || '').normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
+    let node;
+    if (selected) node = tree.find(t => t.id === selected);
+    else {
+      // A complete, unique identity match can be displayed without merging records.
+      const fullName = norm([brother.firstName, brother.middleName, brother.lastName].filter(Boolean).join(' '));
+      const matches = tree.filter(t => fullName && norm(brother.pledgeName) && norm(brother.chapter) && norm(t.name) === fullName && norm(t.pledgeName) === norm(brother.pledgeName) && norm(t.chapter) === norm(brother.chapter));
+      if (matches.length === 1) node = matches[0];
+    }
+    if (!node) return {status:'unmatched', big:null, littles:[]};
+    return {status:'linked', node, big:tree.find(t => t.id === node.bigId) || null, littles:tree.filter(t => t.bigId === node.id)};
+  };
+  function lineageCard(b) {
+    const family=P.profileLineage(b),box=P.el('section','p-card p-profile-lineage');
+    box.append(P.el('h3','','Family tree'),P.el('p','p-muted','Big and little relationships are synced from the family tree.'));
+    if(family.status!=='linked') {
+      box.append(P.el('p','p-muted',family.status==='loading'?'Loading family tree…':'No unique family-tree match yet. Ask an administrator to link the correct tree record.'));
+      return box;
+    }
+    const row=(label,nodes,empty)=>{const group=P.el('div','p-lineage-group');group.append(P.el('strong','',label));if(!nodes.length)group.append(P.el('span','p-muted',empty));nodes.forEach(n=>{const name=[n.pledgeName,n.name].filter(Boolean).join(' · ');group.append(P.button(name||'View brother',()=>window.napFocusFamilyMember(n.id),'p-btn p-lineage-person'));});box.append(group);};
+    row('Big',family.big?[family.big]:[],family.node.bigId?'Big’s tree record is unavailable':'No big recorded');
+    row(family.littles.length===1?'Little':'Littles',family.littles,'No littles recorded');
+    box.append(P.button('View family tree',()=>window.napFocusFamilyMember(family.node.id),'p-btn'));
+    return box;
+  }
   let current;
   let profileTab = "about";
   const slogans = [
@@ -257,13 +287,6 @@
       ["Birthday", b.birthday],
       ["Age", age(b.birthday)],
       ["Phone", b.phone],
-      ["Big", b.big || b.bigPledgeName || b.bigName],
-      [
-        "Littles",
-        Array.isArray(b.littles)
-          ? b.littles.join(", ")
-          : b.littles || b.littlePledgeNames,
-      ],
       ["School", b.school],
       ["Major", b.major],
       ["Education", b.educationStatus],
@@ -347,27 +370,32 @@
       tabs.append(button);
     });
     root.append(tabs);
-    if (profileTab === "about") root.append(dl);
+    if (profileTab === "about") root.append(dl, lineageCard(b));
     else if(profileTab==='brotherhood'){
       const data=P.rosterData||{classes:[],people:[],tree:[],links:{}},norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
       const suggested=data.people.filter(r=>{const c=data.classes.find(c=>c.id===r.classID);return c?.chapter===b.chapter && ((b.pledgeName&&norm(r.pledgeName)===norm(b.pledgeName))||norm(r.fullName)===norm([b.firstName,b.lastName].filter(Boolean).join(' ')));});
       const verified=data.accountLinks?.[b.uid],matches=verified?data.people.filter(r=>r.id===verified.rosterID):[];
-      const box=P.el('section','p-card p-brotherhood-panel');root.append(box);
-      if(verified&&P.me.isAdmin)box.append(P.button('Remove verified link',()=>P.run(box,async()=>{if(!await P.confirm('Remove this account’s verified roster link? The account and roster entry will remain.'))return;await P.call('portalAction',{action:'unlinkProfile',uid:b.uid,expectedRosterID:verified.rosterID});P.toast('Profile link removed',()=>P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:verified.rosterID}));})));
+      const box=P.el('section','p-brotherhood-layout');root.append(box);
+      const admin=P.el('details','p-brotherhood-admin');admin.append(P.el('summary','','Manage roster link'));
+      const membership=P.el('section','p-card p-membership-card');box.append(membership);
+      if(verified&&P.me.isAdmin)admin.append(P.button('Remove verified link',()=>P.run(box,async()=>{if(!await P.confirm('Remove this account’s verified roster link? The account and roster entry will remain.'))return;await P.call('portalAction',{action:'unlinkProfile',uid:b.uid,expectedRosterID:verified.rosterID});P.toast('Profile link removed',()=>P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:verified.rosterID}));})));
       if(!verified&&P.me.isAdmin){
         const candidates=suggested.length?suggested:data.people,choice=P.select('Verify roster identity',[['','Choose a roster entry'],...candidates.map(r=>[r.id,(r.fullName||'')+' · '+r.pledgeName+' · '+(data.classes.find(c=>c.id===r.classID)?.chapter||'')])]);
-        box.append(choice.wrap,P.button('Confirm account link',()=>P.run(box,()=>{if(!choice.input.value)throw Error('Choose a roster entry first.');return P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:choice.input.value});})));
+        admin.append(choice.wrap,P.button('Confirm account link',()=>P.run(box,()=>{if(!choice.input.value)throw Error('Choose a roster entry first.');return P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:choice.input.value});})));
       }
-      box.append(P.el('h2','','Brotherhood'),P.button(b.chapter+' Chapter',()=>P.chapter(b.chapter)));
-      if(matches.length!==1){box.append(P.empty(matches.length?'Multiple roster matches need administrator review.':'No unique roster match yet. Ask an administrator to review the roster.'));if(P.me.isAdmin)box.append(P.button('Review roster',()=>P.go('roster')));}
+      membership.append(P.el('h2','','Chapter & class'),P.button(b.chapter+' Chapter',()=>P.chapter(b.chapter),'p-btn p-chapter-link'));
+      if(matches.length!==1){membership.append(P.el('p','p-muted','Class details will appear once your roster entry is verified.'));if(P.me.isAdmin)admin.append(P.button('Review roster',()=>P.go('roster')));}
       else {
-        const r=matches[0],c=data.classes.find(c=>c.id===r.classID),linked=data.links[r.id],node=data.tree.find(t=>t.id===linked?.treeID);
-        box.append(P.el('h3','',c?.pledgeClass+' Class'),(()=>{const names=P.el('div','p-class-members');data.people.filter(p=>p.classID===r.classID).forEach(p=>names.append(P.el('span','',p.pledgeName||p.fullName)));return names;})());
-        if(node){const big=data.tree.find(t=>t.id===node.bigId),littles=data.tree.filter(t=>t.bigId===node.id);box.append(P.el('p','','Big: '+(big?.pledgeName||big?.name||'Founding branch')),P.el('p','','Littles: '+(littles.map(t=>t.pledgeName||t.name).join(', ')||'None recorded')),P.button('View family tree',()=>window.napFocusFamilyMember(node.id)));}
-        else box.append(P.empty('Family-tree link awaits verification. No records have been automatically merged.'));
+        const r=matches[0],c=data.classes.find(c=>c.id===r.classID);
+        membership.append(P.el('h3','',c?.pledgeClass+' Class'),(()=>{const names=P.el('div','p-class-members');data.people.filter(p=>p.classID===r.classID).forEach(p=>names.append(P.el('span','',p.pledgeName||p.fullName)));return names;})());
+
       }
-      box.append(P.el('h3','','Leadership'),P.el('p','',(b.leadershipTitles||[]).join(' · ')||'No current leadership appointments'));
-      const history=P.el('div');box.append(history);db.collection('leadershipHistory/'+b.uid+'/entries').orderBy('createdAt','desc').limit(50).get().then(s=>{if(!history.isConnected)return;s.docs.forEach(d=>{const h=d.data();history.append(P.el('p','p-muted',P.when(h.createdAt)+' · '+((h.titles||[]).join(', ')||'Appointment ended')));});}).catch(e=>P.error(history,e));
+      box.append(lineageCard(b));
+      const leadership=P.el('section','p-card p-leadership-card');leadership.append(P.el('h2','','Leadership'));
+      const titles=P.el('div','p-leadership-titles');(b.leadershipTitles||[]).forEach(title=>titles.append(P.el('span','p-chip',title)));
+      if(!titles.childNodes.length)titles.append(P.el('span','p-muted','No current appointments'));leadership.append(titles);box.append(leadership);
+      if(P.me.isAdmin)box.append(admin);
+      const history=P.el('div');leadership.append(history);db.collection('leadershipHistory/'+b.uid+'/entries').orderBy('createdAt','desc').limit(50).get().then(s=>{if(!history.isConnected)return;s.docs.forEach(d=>{const h=d.data();history.append(P.el('p','p-muted',P.when(h.createdAt)+' · '+((h.titles||[]).join(', ')||'Appointment ended')));});}).catch(e=>P.error(history,e));
     }
     else {
       const posts = P.posts.filter((p) => p.authorUid === b.uid && !P.blocks.has(b.uid));

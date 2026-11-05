@@ -28,8 +28,9 @@
     <link href="css/portal-design.css" rel="stylesheet">
 <link href="css/portal-985.css?v=20261104-paste" rel="stylesheet">
 <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/portal-upgrades.css?v=brotherhood-6">
+    <link rel="stylesheet" href="css/portal-upgrades.css?v=portal-polish-3">
 <link rel="stylesheet" href="css/linktree-surface.css?v=editor-1">
+<link rel="stylesheet" href="/css/portal-selects.css?v=1">
 </head>
 <body class="portal-design">
 
@@ -52,7 +53,6 @@
 
 <nav class="portal-shell__nav" id="portalNav" aria-label="Portal sections">
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Workspace</p>
-                    <a class="portal-shell__nav-btn" href="/operations/" style="text-decoration:none"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14M9 21v-8h6v8M7 9h2m6 0h2"/></svg><span>Chapter Operations</span></a>
                     <button class="portal-shell__nav-btn is-active" type="button" data-tab="home"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Home</span></button>
                     <button class="portal-shell__nav-btn" type="button" data-tab="channels"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 8h16M4 16h16M9 3L7 21M17 3l-2 18"/></svg><span>Channels</span></button>
 <button class="portal-shell__nav-btn" type="button" data-tab="messages"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 3h18v14H8l-5 4z"/></svg><span>Messages</span></button>
@@ -110,7 +110,7 @@
         <main id="main" class="portal-shell__main">
             <header class="portal-workbar">
                 <p class="portal-breadcrumb">National Portal <span>/</span> <strong id="portalCurrentSection">Home</strong></p>
-                <div class="portal-workbar__actions"><time id="portalToday"></time><button class="portal-icon-button" id="portalQuickTheme" type="button" aria-label="Switch to light mode"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a href="index" class="portal-site-link">Main site <svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
+                <div class="portal-workbar__actions"><time id="portalToday"></time><button class="portal-icon-button" id="portalQuickTheme" type="button" aria-label="Switch to light mode"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a href="/operations/" class="portal-site-link">Chapter Operations <svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
             </header>
 
 
@@ -450,15 +450,7 @@
                             <label class="form-label" for="settings-linkedin">LinkedIn</label>
                             <input class="form-input" id="settings-linkedin" name="linkedin" type="text">
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="settings-bigName">Big's Name</label>
-                            <input class="form-input" id="settings-bigName" name="bigName" type="text">
-                        </div>
-
-                        <div class="form-group form-group--full">
-                            <label class="form-label" for="settings-bigPledgeName">Big's Pledge Name</label>
-                            <input class="form-input" id="settings-bigPledgeName" name="bigPledgeName" type="text">
-                        </div>
+                        <p class="form-group form-group--full form-help">Your big and littles are shown on your profile from the family tree. Contact an administrator to correct a relationship.</p>
 
                         <div class="form-group form-group--full">
                             <label class="form-label" for="settings-bio">Bio</label>
@@ -1151,16 +1143,16 @@
     <script src="js/portal-shell.js?v=portal-upgrade-20261104"></script>
     <script src="js/portal-save-feedback.js?v=portal-upgrade-20261104"></script>
     <script src="js/portal-confirm.js?v=portal-upgrade-20261104"></script>
-    <script src="js/portal-settings.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-settings.js?v=tree-lineage-1"></script>
     <script src="js/portal-account-settings.js?v=portal-upgrade-20261104"></script>
 
 
     <script src="js/portal-forms.js?v=sections-polish-3"></script>
-    <script src="js/portal-directory.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-directory.js?v=tree-lineage-1"></script>
 
     <script src="js/portal-member-education.js?v=portal-upgrade-20261104"></script>
     <script src="js/portal-familytree.js?v=portal-upgrade-20261104"></script>
-    <script src="js/portal-gallery.js?v=control-polish-2"></script>
+    <script src="js/portal-gallery.js?v=album-editor-2"></script>
 
     <script src="js/portal-blog.js?v=portal-upgrade-20261104"></script>
     <script src="js/portal-linktree.js?v=canonical-links-3"></script>
@@ -1169,20 +1161,21 @@
 
     <script src="js/portal-design.js?v=portal-upgrade-20261104"></script>
 <script src="js/portal-985-policy.js?v=sections-polish-3"></script>
-<script src="js/portal-985-core.js?v=sections-polish-3"></script>
+<script src="js/portal-985-core.js?v=emoji-popover-1"></script>
 <script src="js/portal-985-attachments.js?v=portal-upgrade-20261104"></script>
 <script src="vendor/qrcode/qrcode.js"></script>
 <script src="js/portal-985-experience.js?v=event-detail-5"></script>
 <script src="js/portal-985-search.js?v=control-polish-2"></script>
-<script src="js/portal-985-feed.js?v=sections-polish-3"></script>
+<script src="js/portal-985-feed.js?v=compact-poll-5"></script>
 <script src="js/portal-985-settings.js?v=portal-upgrade-20261104"></script>
-<script src="js/portal-985-profiles.js?v=brotherhood-6"></script>
-<script src="js/portal-985-chat.js?v=sections-polish-3"></script>
+<script src="js/portal-985-profiles.js?v=tree-lineage-1"></script>
+<script src="js/portal-985-chat.js?v=channel-menus-1"></script>
 <script src="js/portal-985-events.js?v=brotherhood-6"></script>
 <script src="js/portal-985-roster.js?v=brotherhood-6"></script>
 <script src="js/portal-985-admin.js?v=sections-polish-3"></script>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="js/portal-985-map.js?v=portal-upgrade-20261104"></script>
     <script src="js/site.js"></script>
+<script src="/js/portal-selects.js?v=1"></script>
 </body>
 </html>

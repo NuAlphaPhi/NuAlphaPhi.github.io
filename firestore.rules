@@ -27,7 +27,7 @@ service cloud.firestore {
       allow read: if (request.auth != null && request.auth.uid == uid) || isSignedIn();
       allow create: if false; // Only the server approval workflow creates profiles.
       allow update: if isSignedIn()
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['id','disabled','deletionRequestedAt','accountStatusUpdatedAt','accountStatusUpdatedBy','uid','email','membershipStatus','isAdmin','leadershipBaseAdmin','adminAccessOverride','leadershipTitles','nationalTitle','chapterPresident','alumniAdvisor','membershipStanding'])
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['big','bigName','bigPledgeName','littles','littlePledgeNames','little','littleName','littleNames','bigId','littleIds','id','disabled','deletionRequestedAt','accountStatusUpdatedAt','accountStatusUpdatedBy','uid','email','membershipStatus','isAdmin','leadershipBaseAdmin','adminAccessOverride','leadershipTitles','nationalTitle','chapterPresident','alumniAdvisor','membershipStanding'])
         && (!(resource.data.get('isAdmin', false) && request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])) || (request.auth.uid == authorityOwner() && uid != authorityOwner()))
         && (isAdmin() || (request.auth.uid == uid && resource.data.get('disabled', false) != true && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])));
       allow delete: if false; // Account deletion must run through the audited server cleanup.
@@ -627,6 +627,16 @@ match /appEvents/{event} {
         && request.resource.data.target is string && request.resource.data.target.matches('^[A-Za-z0-9_-]{1,128}$')
         && request.resource.data.title is string && request.resource.data.title.size() <= 300
         && request.resource.data.createdAt == request.time;
+    }
+    match /channelNotificationSettings/{id} {
+      allow read, delete: if isSocialMember() && resource.data.uid == request.auth.uid;
+      allow create, update: if isSocialMember()
+        && request.resource.data.keys().hasOnly(['uid','roomID','mode'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.roomID is string
+        && request.resource.data.roomID.matches('^[A-Za-z0-9_-]{1,128}$')
+        && id == request.auth.uid + '__' + request.resource.data.roomID
+        && request.resource.data.mode in ['all','mentions','none'];
     }
     match /channelMutes/{uid}/rooms/{room} {
       allow read, delete: if isSocialMember() && request.auth.uid == uid;

@@ -10,11 +10,43 @@
     reply = "",
     roomRows = {},
     mutes = new Set(),
+    channelPreferences = {},
     reads = {},
     items = [];
   const panes = {};
   const previews = {}, previewListeners = new Map();
   let conversationSearch = "";
+  let dismissMenu=()=>{};
+  function menuAt(anchor, x, y) {
+    dismissMenu();
+    const menu=P.el('div','p-chat-context');menu.setAttribute('role','menu');
+    document.body.append(menu);
+    if(menu.showPopover){menu.setAttribute('popover','manual');menu.showPopover();}
+    const outside=e=>{if(!menu.contains(e.target)&&!anchor.contains(e.target))dismissMenu();};
+    const key=e=>{if(e.key==='Escape'){e.preventDefault();dismissMenu();anchor.focus();}else if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();const buttons=[...menu.querySelectorAll('button')].filter(b=>b.getClientRects().length);const index=buttons.indexOf(document.activeElement);buttons[(index+(e.key==='ArrowDown'?1:buttons.length-1))%buttons.length]?.focus();}else if(e.key==='Tab')dismissMenu();};
+    dismissMenu=()=>{menu.remove();anchor.setAttribute('aria-expanded','false');document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',key);};
+    anchor.setAttribute('aria-expanded','true');document.addEventListener('pointerdown',outside);document.addEventListener('keydown',key);
+    menu.style.left=Math.max(10,Math.min(x,innerWidth-250))+'px';menu.style.top=Math.max(10,Math.min(y,innerHeight-230))+'px';
+    const add=(label,action)=>{const b=P.button(label,()=>{dismissMenu();action();},'p-chat-context-item');b.setAttribute('role','menuitem');menu.append(b);return b;};
+    return {menu,add};
+  }
+  async function markChannelRead(r) {
+    await db.doc('roomReads/'+P.uid+'/rooms/channel-'+r.id).set({readAt:P.stamp()});
+    const pending=items.filter(i=>i.roomID===r.id&&i.channel!==false&&!i.read);
+    for(let start=0;start<pending.length;start+=400){const batch=db.batch();pending.slice(start,start+400).forEach(i=>batch.update(db.doc('activity/'+P.uid+'/items/'+i.id),{read:true}));await batch.commit();}
+    lists();
+  }
+  function channelMenu(r,anchor,x,y) {
+    const {menu,add}=menuAt(anchor,x,y);
+    add('Mark as read',()=>P.run(panes.channels.chat,()=>markChannelRead(r)));
+    add(mutes.has(r.id)?'Unmute channel':'Mute channel',()=>P.run(panes.channels.chat,async()=>{const ref=db.doc('channelMutes/'+P.uid+'/rooms/'+r.id);if(mutes.has(r.id))await ref.delete();else await ref.set({createdAt:P.stamp()});}));
+    const group=P.el('div','p-chat-context-group'),toggle=P.button('Notification settings  ›',()=>{group.classList.toggle('is-open');toggle.setAttribute('aria-expanded',String(group.classList.contains('is-open')));},'p-chat-context-item'),sub=P.el('div','p-chat-context-submenu');toggle.setAttribute('role','menuitem');toggle.setAttribute('aria-haspopup','menu');toggle.setAttribute('aria-expanded','false');sub.setAttribute('role','menu');sub.setAttribute('aria-label','Channel notification settings');
+    const current=channelPreferences[r.id]||'mentions';
+    for(const [mode,label]of [['all','All messages'],['mentions','Mentions of you or your chapter'],['none','Nothing']]){const b=P.button((mode===current?'✓  ':'')+label,()=>{dismissMenu();P.run(panes.channels.chat,async()=>{await db.doc('channelNotificationSettings/'+P.uid+'__'+r.id).set({uid:P.uid,roomID:r.id,mode});P.toast('Channel notifications updated');});},'p-chat-context-item');b.setAttribute('role','menuitemradio');b.setAttribute('aria-checked',String(mode===current));sub.append(b);}
+    sub.append(P.el('small','p-muted','Default: mentions only'+(mutes.has(r.id)?' · Channel is muted':'')));group.append(toggle,sub);menu.append(group);
+    if(x+520>innerWidth)menu.classList.add('p-context-open-left');
+    menu.querySelector('button')?.focus();
+  }
   function roomAvatar(r) {
     const ids = (r.memberIds || []).filter(id => id !== P.uid);
     if (r.kind !== "group") return P.avatar(P.person(ids[0]));
@@ -69,6 +101,9 @@
       const roomButton = (r) => {
         const b = P.button((unread(r) ? "● " : "# ") + roomTitle(r), () => open(r));
         if (active?.id === r.id) b.classList.add("selected");
+        b.classList.toggle('is-muted',mutes.has(r.id));b.setAttribute('aria-haspopup','menu');
+        b.oncontextmenu=e=>{e.preventDefault();channelMenu(r,b,e.clientX,e.clientY);};
+        b.addEventListener('keydown',e=>{if(e.key==='ContextMenu'||(e.shiftKey&&e.key==='F10')){e.preventDefault();const rect=b.getBoundingClientRect();channelMenu(r,b,rect.right,rect.top);}});
         return b;
       };
       if (tab === "channels") {
@@ -187,7 +222,7 @@
   }
   let receiptOff, roomPrefsOff, roomPrefs={};
   function open(r, messageLimit = 100, olderHeight = 0) {
-    off?.();receiptOff?.();roomPrefsOff?.();roomPrefs={};
+    dismissMenu();off?.();receiptOff?.();roomPrefsOff?.();roomPrefs={};
     active = r;
     if(r.channel){try{localStorage.setItem('985.lastChannel.'+P.uid,r.id);}catch(_){}}
     reply = "";
@@ -208,18 +243,6 @@
       roomPrefsOff=ref.onSnapshot(s=>{roomPrefs=s.data()||{};settings.replaceChildren(P.button(roomPrefs.muted?'Unmute':'Mute',()=>P.run(head,()=>ref.set({muted:!roomPrefs.muted},{merge:true}))),P.button(roomPrefs.shareReceipts?'Read receipts on':'Read receipts off',()=>P.run(head,async()=>{const enabled=!roomPrefs.shareReceipts;await ref.set({shareReceipts:enabled},{merge:true});if(!enabled)await db.doc('conversations/'+r.id+'/readReceipts/'+P.uid).delete();else await db.doc('conversations/'+r.id+'/readReceipts/'+P.uid).set({readAt:P.stamp()});})));},e=>P.error(head,e));
       receiptOff=db.collection('conversations/'+r.id+'/readReceipts').onSnapshot(s=>{receipt.textContent=s.docs.filter(d=>d.id!==P.uid&&r.memberIds.includes(d.id)).map(d=>P.name(P.person(d.id))+' read '+P.when(d.data().readAt)).join(' · ');},e=>P.error(head,e));
     }
-    if (r.channel)
-      head.append(
-        P.button(mutes.has(r.id) ? "Unmute" : "Mute", () =>
-          P.run(head, async () => {
-            const ref = db.doc("channelMutes/" + P.uid + "/rooms/" + r.id);
-            if (mutes.has(r.id)) await ref.delete();
-            else await ref.set({ createdAt: P.stamp() });
-            open(r);
-          }),
-        ),
-        P.button("Poll", () => P.newPoll(r.id)),
-      );
     log = P.el("div", "p-chat-log");
     log.setAttribute("role", "log");
     composer = P.el("form", "p-chat-compose");
@@ -249,13 +272,19 @@
     send.setAttribute("aria-label", "Send message");
     send.title = "Send message";
     send.append(P.icon("send"));
-    const attach = P.button("", () => file.input.click(), "p-compose-icon");
-    attach.setAttribute("aria-label", "Attach photo");
-    attach.title = "Attach photo";
+    const attach = P.button("", () => {
+      const rect=attach.getBoundingClientRect(),{menu,add}=menuAt(attach,rect.left,rect.top-(r.channel?110:65));
+      add('Upload file',()=>file.input.click());
+      if(r.channel)add('Create poll',()=>P.newPoll(r.id));
+      menu.querySelector('button')?.focus();
+    }, "p-compose-icon");
+    attach.setAttribute("aria-label", "Add to message");
+    attach.setAttribute("aria-haspopup", "menu");
+    attach.title = "Add to message";
     attach.append(P.icon("plus"));
     const emoji = P.button(
       "",
-      () => P.emojiPicker(input.input),
+      () => P.emojiPicker(input.input, emoji),
       "p-compose-icon",
     );
     emoji.setAttribute("aria-label", "Add emoji");
@@ -710,6 +739,7 @@
         lists();
       },
     );
+    P.watch(db.collection('channelNotificationSettings').where('uid','==',P.uid),rows=>{channelPreferences=Object.fromEntries(rows.map(r=>[r.roomID,r.mode]));},P.root('channels'));
     P.watch(db.collection("channelMutes/" + P.uid + "/rooms"), (rows) => {
       mutes = new Set(rows.map((r) => r.id));
       lists();

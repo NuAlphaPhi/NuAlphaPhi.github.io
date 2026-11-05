@@ -52,52 +52,36 @@
     s.append(p);
     return s;
   };
-  P.emojiPicker = (input) => {
-    const box = P.el("div", "p-emoji-grid");
-    const d = P.dialog("Add emoji", box);
-    [
-      "😀",
-      "😂",
-      "🥹",
-      "😎",
-      "🤝",
-      "❤️",
-      "🔥",
-      "🎉",
-      "👍",
-      "🙏",
-      "💪",
-      "👀",
-      "💯",
-      "🎂",
-      "🫡",
-      "😭",
-      "😮",
-      "😡",
-      "🙌",
-      "✅",
-      "🐐",
-      "📣",
-      "🏆",
-      "🎮",
-    ].forEach((e) =>
-      box.append(
-        P.button(
-          e,
-          () => {
-            const start = input.selectionStart || input.value.length,
-              end = input.selectionEnd || start;
-            input.value =
-              input.value.slice(0, start) + e + input.value.slice(end);
-            input.dispatchEvent(new Event("input"));
-            d.close();
-            input.focus();
-            input.setSelectionRange(start + e.length, start + e.length);
-          },
-          "p-emoji",
-        ),
-      ),
-    );
+  let closeEmoji = () => {};
+  P.emojiPicker = (input, anchor = input) => {
+    const alreadyOpen = anchor.getAttribute("aria-expanded") === "true";
+    closeEmoji(); if (alreadyOpen) return;
+    const start = input.selectionStart ?? input.value.length, end = input.selectionEnd ?? start;
+    const box = P.el("div", "p985 p-emoji-popover"), grid = P.el("div", "p-emoji-grid");
+    box.setAttribute("role", "dialog"); box.setAttribute("aria-label", "Choose an emoji");
+    box.append(P.el("span", "p-emoji-heading", "Emoji"), grid);
+    (anchor.closest("dialog") || document.body).append(box);
+    if (box.showPopover) { box.setAttribute("popover", "manual"); box.showPopover(); }
+    anchor.setAttribute("aria-expanded", "true");
+    const close = () => { box.remove(); anchor.setAttribute("aria-expanded", "false"); document.removeEventListener("pointerdown", outside, true); document.removeEventListener("keydown", key); window.removeEventListener("resize", close); document.removeEventListener("scroll", scroll, true); };
+    const outside = e => { if (!box.contains(e.target) && !anchor.contains(e.target)) close(); };
+    const scroll = e => { if (!box.contains(e.target)) close(); };
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); anchor.focus(); } };
+    closeEmoji = close;
+    ["😀","😂","🥹","😎","🤝","❤️","🔥","🎉","👍","🙏","💪","👀","💯","🎂","🫡","😭","😮","😡","🙌","✅","🐐","📣","🏆","🎮"].forEach(emoji => {
+      grid.append(P.button(emoji, () => {
+        input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+        input.dispatchEvent(new Event("input", {bubbles:true})); close(); input.focus(); input.setSelectionRange(start + emoji.length, start + emoji.length);
+      }, "p-emoji"));
+    });
+    const rect = anchor.getBoundingClientRect(), width = Math.min(280, window.innerWidth - 16);
+    box.style.width = width + "px";
+    box.style.left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)) + "px";
+    const height = box.getBoundingClientRect().height;
+    box.style.top = Math.max(8, rect.top >= height + 16 ? rect.top - height - 8 : Math.min(rect.bottom + 8, window.innerHeight - height - 8)) + "px";
+    document.addEventListener("pointerdown", outside, true); document.addEventListener("keydown", key);
+    window.addEventListener("resize", close); document.addEventListener("scroll", scroll, true);
+    grid.firstElementChild?.focus({preventScroll:true});
   };
   P.row = (...els) => {
     const e = P.el("div", "p-row");

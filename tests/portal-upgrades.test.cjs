@@ -137,3 +137,30 @@ test('roster class leadership uses full class order with one captain for a solo 
  assert.equal(roles.get('first'),'Captain');assert.equal(roles.get('last'),'Co-Captain');assert.equal(roles.has('middle'),false);
  assert.deepEqual([...c.P985.rosterClassRoles([{id:'solo'}])],[['solo','Captain']]);assert.equal(c.P985.rosterClassRoles([]).size,0);
 });
+test('profile lineage derives big and all littles from verified tree links, never legacy text',()=>{
+ const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-profiles.js','utf8'),c);const P=c.P985;
+ const b={uid:'bro',firstName:'Aiden',lastName:'Yue',pledgeName:'VIRO',chapter:'Kappa',big:'Wrong Big',littles:['Wrong Little']};
+ const data={accountLinks:{bro:{rosterID:'roster'}},links:{roster:{treeID:'viro'}},tree:[{id:'viro',name:'Aiden Yue',pledgeName:'VIRO',chapter:'Kappa',bigId:'parent'},{id:'parent',name:'Big Name',pledgeName:'Big'},{id:'one',bigId:'viro',pledgeName:'Little One'},{id:'two',bigId:'viro',pledgeName:'Little Two'}]};
+ let f=P.profileLineage(b,data);assert.equal(f.big.id,'parent');assert.deepEqual(Array.from(f.littles,x=>x.id),['one','two']);
+ data.tree[2].bigId='parent';f=P.profileLineage(b,data);assert.equal(f.littles.length,1);
+ data.tree[0].bigId='missing';assert.equal(P.profileLineage(b,data).big,null);
+ data.tree=data.tree.filter(n=>n.id!=='viro');assert.equal(P.profileLineage(b,data).status,'unmatched');
+});
+test('unlinked profiles need a complete unique chapter/name match and do not guess on ambiguity',()=>{
+ const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-profiles.js','utf8'),c);const P=c.P985,b={uid:'bro',firstName:'Aiden',lastName:'Yue',pledgeName:'VIRO',chapter:'Kappa'},node={id:'one',name:'Aiden Yue',pledgeName:'VIRO',chapter:'Kappa'};
+ assert.equal(P.profileLineage(b,{tree:[node]}).status,'linked');
+ assert.equal(P.profileLineage(b,{tree:[node,{...node,id:'two'}]}).status,'unmatched');
+ assert.equal(P.profileLineage(b,{tree:[{...node,chapter:'Alpha'}]}).status,'unmatched');
+ assert.equal(P.profileLineage({...b,lastName:''},{tree:[node]}).status,'unmatched');
+ assert.equal(P.profileLineage(b,undefined).status,'loading');
+});
+test('profile settings no longer offer manually editable big/little fields',()=>{
+ const c=setup();assert.equal(c.document.querySelector('[name="bigName"]'),null);assert.equal(c.document.querySelector('[name="bigPledgeName"]'),null);
+ const code=fs.readFileSync('js/portal-settings.js','utf8');assert.ok(!code.includes('"bigName"'));assert.ok(!code.includes('"bigPledgeName"'));
+});
+test('post metadata is compact while preserving exact timestamps for inspection',()=>{
+ const c=setup();c.db.doc=()=>({get:async()=>({exists:false})});vm.runInContext(fs.readFileSync('js/portal-985-feed.js','utf8'),c);
+ const post={id:'one',authorUid:'other',authorName:'VIRO',chapter:'Kappa',kind:'announcement',body:'Hello',createdAt:'2026-11-04T19:12:00Z',editedAt:'2026-11-05T06:50:00Z'};
+ const card=c.P985.postCard(post),meta=card.querySelector('.p-post-meta');
+ assert.match(meta.textContent,/Kappa · Nov 4/);assert.match(meta.textContent,/edited/);assert.ok(!meta.textContent.includes('announcement'));assert.ok(!meta.textContent.includes('AM'));assert.match(meta.title,/Posted .* · Edited /);assert.equal(card.querySelectorAll(':scope > small').length,1);
+});

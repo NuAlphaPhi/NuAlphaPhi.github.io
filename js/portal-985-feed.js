@@ -76,30 +76,53 @@
     }
   };
   P.newPoll = (scope) => {
-    const form = P.el("form"),
-      q = P.field("Question"),
-      options = P.field("Options — one per line", "textarea");
-    const closes = P.field("Voting closes (optional)","datetime-local");
-    form.append(q.wrap, options.wrap, closes.wrap);
-    const submit = P.button(
-      "Publish poll",
-      () =>
-        P.run(form, async () => {
-          await P.call("pollAction", {
-            action: "create",
-            id: crypto.randomUUID(),
-            scope: scope ? "channel" : "post",
-            roomID: scope || "",
-            question: q.input.value,
-            options: options.input.value.split("\n").filter((x) => x.trim()),
-            closesAt: closes.input.value ? new Date(closes.input.value).getTime() : null,
-          });
+    const form = P.el("form", "p-poll-editor"), q = P.field("Question"), rows = P.el("div", "p-poll-options");
+    q.input.placeholder = "What would you like to ask?";
+    q.input.required = true; q.input.maxLength = 300;
+    const answers = [];
+    const add = P.button("+ Add option", () => addOption(), "p-btn p-poll-add");
+    function refresh() {
+      answers.forEach((item, i) => {
+        item.input.placeholder = "Option " + (i + 1);
+        item.input.setAttribute("aria-label", "Option " + (i + 1));
+        item.number.textContent = String(i + 1);
+        item.remove.disabled = answers.length <= 2;
+        item.remove.setAttribute("aria-label", "Remove option " + (i + 1));
+      });
+      add.disabled = answers.length >= 6;
+    }
+    function addOption() {
+      if (answers.length >= 6) return;
+      const row = P.el("div", "p-poll-option"), input = P.el("input"), number = P.el("span", "p-poll-number");
+      input.required = true; input.maxLength = 100;
+      const item = { row, input, number };
+      item.remove = P.button("×", () => { if (answers.length <= 2) return; answers.splice(answers.indexOf(item), 1); row.remove(); refresh(); }, "p-btn p-poll-remove");
+      row.append(number, input, item.remove); answers.push(item); rows.append(row); refresh();
+    }
+    addOption(); addOption();
+    const settings = P.el("details", "p-poll-settings"), closes = P.field("Closing time (your local time)", "datetime-local");
+    settings.append(P.el("summary", "", "Set a closing time"), closes.wrap);
+    const id = crypto.randomUUID();
+    const submit = P.button("Publish poll", () => {}, "p-btn primary"); submit.type = "submit";
+    const footer = P.el("div", "p-poll-footer");
+    footer.append(P.button("Cancel", () => d.close()), submit);
+    form.append(q.wrap, P.el("label", "p-poll-label", "Answer options"), rows, add, settings, footer);
+    form.onsubmit = e => {
+      e.preventDefault(); if (submit.disabled) return;
+      P.run(form, async () => {
+        const options = answers.map(a => a.input.value.trim());
+        if (!q.input.value.trim() || options.some(o => !o)) throw Error("Add a question and fill in every option.");
+        if (new Set(options.map(o => o.toLowerCase())).size !== options.length) throw Error("Each option needs to be different.");
+        const closesAt = closes.input.value ? new Date(closes.input.value).getTime() : null;
+        if (closesAt !== null && (!Number.isFinite(closesAt) || closesAt <= Date.now())) throw Error("Choose a closing time in the future.");
+        submit.disabled = true;
+        try {
+          await P.call("pollAction", {action:"create",id,scope:scope?"channel":"post",roomID:scope||"",question:q.input.value.trim(),options,closesAt});
           d.close();
-        }),
-      "p-btn primary",
-    );
-    form.append(submit);
-    const d = P.dialog("New poll", form);
+        } finally { submit.disabled = false; }
+      });
+    };
+    const d = P.dialog("Create a poll", form); d.classList.add("p-poll-dialog");
   };
   let previewFrame;
   function measurePreviews() {
@@ -117,19 +140,20 @@
   document.fonts?.ready.then(measurePreviews);
   P.postCard = (post, detail = false) => {
     const c = P.el("article", "p-card p-feed-post");
-    c.append(
-      P.author(post.authorUid, post.authorName),
-      P.el(
-        "small",
-        "",
-        post.chapter +
-          " · " +
-          P.when(post.createdAt) +
-          (post.kind !== "post" ? " · " + (post.kind || "Post") : ""),
-      ),
-    );
-    if(post.pinned)c.append(P.el('span','p-chip','Pinned announcement'));
-    if(post.editedAt)c.append(P.el('small','p-muted','Edited '+P.when(post.editedAt)));
+    const author = P.author(post.authorUid, post.authorName);
+    const meta = P.el("small", "p-post-meta");
+    const date = P.date(post.createdAt);
+    const shortDate = Number.isFinite(date.getTime())
+      ? date.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(date.getFullYear() !== new Date().getFullYear() ? { year: "numeric" } : {}) })
+      : "";
+    meta.append(P.el("span", "", [post.chapter, shortDate].filter(Boolean).join(" · ")));
+    const timestamps = "Posted " + P.when(post.createdAt) + (post.editedAt ? " · Edited " + P.when(post.editedAt) : "");
+    meta.title = timestamps;
+    meta.tabIndex = 0;
+    meta.setAttribute("aria-label", timestamps);
+    if (post.editedAt) meta.append(P.el("span", "p-post-edited", " · edited"));
+    if (post.pinned) meta.append(P.el("span", "p-post-pinned", "Pinned"));
+    c.append(author, meta);
     const body = P.text(post.body, post);
     c.append(body);
     if (!detail) {
@@ -475,7 +499,7 @@
     }
     const emoji = P.button(
       "",
-      () => P.emojiPicker(text.input),
+      () => P.emojiPicker(text.input, emoji),
       "p-compose-icon",
     );
     emoji.setAttribute("aria-label", "Add emoji");

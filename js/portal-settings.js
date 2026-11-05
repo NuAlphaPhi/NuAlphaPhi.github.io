@@ -23,8 +23,6 @@
     "instagram",
     "facebook",
     "linkedin",
-    "bigName",
-    "bigPledgeName",
     "occupation",
     "school",
     "major",
