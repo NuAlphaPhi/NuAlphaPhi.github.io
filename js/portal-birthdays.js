@@ -10,7 +10,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function daysUntilNextBirthday(birthday, today) {
@@ -115,7 +115,7 @@
 
   db.collection("users").onSnapshot(function (snap) {
     var brothers = snap.docs.map(function (doc) {
-      return Object.assign({ uid: doc.id }, doc.data());
+      return Object.assign({}, doc.data(), { uid: doc.id });
     });
     render(brothers);
   });

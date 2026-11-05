@@ -66,7 +66,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function formatBirthday(birthday) {

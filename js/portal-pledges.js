@@ -37,7 +37,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function isAdmin() {
@@ -71,7 +71,7 @@
     db.collection("pledgeClasses").onSnapshot(
       function (snap) {
         allClasses = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderClassGrid();
         if (currentClassId) renderClassDetail();
@@ -88,7 +88,7 @@
 
   /* ---------- Pledge class grid (main Pledges tab) ---------- */
   function classCardHtml(cls, admin) {
-    var html = '<article class="forms-card" data-class-id="' + cls.id + '">';
+    var html = '<article class="forms-card" data-class-id="' + escapeHtml(cls.id) + '">';
     html +=
       '<div class="forms-card__header">' +
       '<h3 class="forms-card__title">' + escapeHtml(cls.className) + "</h3>" +
@@ -96,11 +96,11 @@
       "</div>";
     html += '<p class="forms-card__meta">' + escapeHtml(cls.term) + " " + escapeHtml(cls.year) + (cls.crossed ? " · Crossed" : "") + "</p>";
     html += '<div class="forms-card__actions">';
-    html += '<button class="news-card__action-btn" type="button" data-class-open="' + cls.id + '">View Pledges</button>';
+    html += '<button class="news-card__action-btn" type="button" data-class-open="' + escapeHtml(cls.id) + '">View Pledges</button>';
     if (admin) {
       html +=
-        '<button class="news-card__action-btn" type="button" data-class-edit="' + cls.id + '">Edit</button>' +
-        '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-class-delete="' + cls.id + '">Delete</button>';
+        '<button class="news-card__action-btn" type="button" data-class-edit="' + escapeHtml(cls.id) + '">Edit</button>' +
+        '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-class-delete="' + escapeHtml(cls.id) + '">Delete</button>';
     }
     html += "</div></article>";
     return html;
@@ -489,7 +489,7 @@
       .collection("pledges")
       .onSnapshot(function (snap) {
         currentClassPledges = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderPledgeGrid();
       });
@@ -506,7 +506,7 @@
       .onSnapshot(
         function (snap) {
           currentClassMedia = snap.docs.map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           });
           renderMediaGallery();
         },
@@ -638,7 +638,7 @@
           ? "Dropped"
           : [escapeHtml(p.pledgeName), escapeHtml(p.school)].filter(Boolean).join(" · ");
         return (
-          '<button class="bro-card' + (dropped ? " bro-card--dropped" : "") + '" type="button" data-pledge-id="' + p.id + '">' +
+          '<button class="bro-card' + (dropped ? " bro-card--dropped" : "") + '" type="button" data-pledge-id="' + escapeHtml(p.id) + '">' +
           window.napAvatarHtml({ photoDataUrl: p.photoDataUrl, firstName: p.name }, "md") +
           "<span>" +
           '<p class="bro-card__name">' + escapeHtml(p.name || "Unnamed") + (lineLabel ? ' <span class="bro-card__line">' + escapeHtml(lineLabel) + "</span>" : "") + "</p>" +
@@ -825,8 +825,8 @@
           '<div class="media-card__footer">' +
           '<p class="media-card__meta">' + escapeHtml(m.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
           '<div class="media-card__actions">' +
-          '<button class="media-card__btn" type="button" data-media-download="' + m.id + '">Download</button>' +
-          (canDelete ? '<button class="media-card__btn media-card__btn--danger" type="button" data-media-delete="' + m.id + '">Delete</button>' : "") +
+          '<button class="media-card__btn" type="button" data-media-download="' + escapeHtml(m.id) + '">Download</button>' +
+          (canDelete ? '<button class="media-card__btn media-card__btn--danger" type="button" data-media-delete="' + escapeHtml(m.id) + '">Delete</button>' : "") +
           "</div></div></div>"
         );
       })

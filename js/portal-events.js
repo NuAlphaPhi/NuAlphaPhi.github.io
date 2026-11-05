@@ -48,7 +48,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function pad(n) {
@@ -76,7 +76,7 @@
 
   function renderPhotoPreview(el, url) {
     if (url) {
-      el.innerHTML = '<div class="event-photo-preview"><img src="' + url + '" alt=""></div>';
+      el.innerHTML = '<div class="event-photo-preview"><img src="' + escapeHtml(url) + '" alt=""></div>';
     } else {
       el.innerHTML = '<div class="event-photo-preview">No photo</div>';
     }
@@ -193,10 +193,10 @@
     var description = ev.description || "";
     var descPreview = description.length > 140 ? description.slice(0, 140).trim() + "…" : description;
 
-    var html = '<article class="rsvp-event-card" data-open-event="' + ev.id + '">';
+    var html = '<article class="rsvp-event-card" data-open-event="' + escapeHtml(ev.id) + '">';
 
     if (ev.photoDataUrl) {
-      html += '<img class="rsvp-event-card__photo" src="' + ev.photoDataUrl + '" alt="">';
+      html += '<img class="rsvp-event-card__photo" src="' + escapeHtml(ev.photoDataUrl) + '" alt="">';
     }
 
     var pendingBadge = ev.approved === false ? '<span class="pending-badge">Pending Approval</span>' : "";
@@ -206,8 +206,8 @@
       '<h3 class="rsvp-event-card__title"><button class="rsvp-event-card__title-btn" type="button" data-open-event="' + escapeHtml(ev.id) + '">' + escapeHtml(ev.name) + '</button>' + pendingBadge + "</h3>" +
       (isOwner
         ? '<div class="news-card__actions">' +
-          '<button class="news-card__action-btn" type="button" data-edit-event="' + ev.id + '">Edit</button>' +
-          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-event="' + ev.id + '">Delete</button>' +
+          '<button class="news-card__action-btn" type="button" data-edit-event="' + escapeHtml(ev.id) + '">Edit</button>' +
+          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-event="' + escapeHtml(ev.id) + '">Delete</button>' +
           "</div>"
         : "") +
       "</div>";
@@ -310,7 +310,7 @@
       .orderBy("createdAt", "asc")
       .onSnapshot(function (snap) {
         eventModalComments = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderEventModal();
         if (pendingHighlightCommentId) {
@@ -383,7 +383,7 @@
 
     var html = "";
     if (ev.photoDataUrl) {
-      html += '<img class="event-modal__photo" src="' + ev.photoDataUrl + '" alt="">';
+      html += '<img class="event-modal__photo" src="' + escapeHtml(ev.photoDataUrl) + '" alt="">';
     }
 
     html += '<p class="event-modal__meta">' + escapeHtml(ev.location) + " · " + formatEventTime(ev) + "</p>";
@@ -396,8 +396,8 @@
     if (isOwner) {
       html +=
         '<div class="news-card__actions event-modal__owner-actions">' +
-        '<button class="news-card__action-btn" type="button" data-edit-event="' + ev.id + '">Edit</button>' +
-        '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-event="' + ev.id + '">Delete</button>' +
+        '<button class="news-card__action-btn" type="button" data-edit-event="' + escapeHtml(ev.id) + '">Edit</button>' +
+        '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-event="' + escapeHtml(ev.id) + '">Delete</button>' +
         "</div>";
     }
 
@@ -665,7 +665,7 @@
          before the approval feature (no approved field) count as approved. */
       allEvents = snap.docs
         .map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         })
         .filter(function (ev) {
           return ev.approved !== false || ev.createdByUid === currentUid;

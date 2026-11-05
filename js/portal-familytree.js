@@ -25,7 +25,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function isAdmin() {
@@ -123,7 +123,7 @@
     db.collection("familyTree").onSnapshot(
       function (snap) {
         allMembers = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         render();
       },
@@ -449,7 +449,7 @@
       if (viewportEl) viewportEl.classList.remove("familytree-viewport--animated");
     }, 550);
 
-    var nodeEl = document.querySelector('[data-node-id="' + member.id + '"]');
+    var nodeEl = document.querySelector('[data-node-id="' + escapeHtml(member.id) + '"]');
     if (nodeEl) {
       nodeEl.classList.add("familytree-node--highlight");
       window.setTimeout(function () {

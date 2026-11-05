@@ -21,7 +21,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function formatDate(timestamp) {
@@ -43,7 +43,7 @@
   function postCardHtml(post) {
     var cover = (post.photoThumbUrls && post.photoThumbUrls[0]) || (post.photoUrls && post.photoUrls[0]);
     return (
-      '<button class="blog-card" type="button" data-post-open="' + post.id + '">' +
+      '<button class="blog-card" type="button" data-post-open="' + escapeHtml(post.id) + '">' +
       (cover ? '<div class="blog-card__cover"><img src="' + escapeHtml(cover) + '" alt="" loading="lazy" decoding="async"></div>' : "") +
       '<div class="blog-card__body">' +
       '<p class="blog-card__date">' + escapeHtml(formatDate(post.publishedAt)) + "</p>" +
@@ -117,7 +117,7 @@
       function (snap) {
         allPosts = snap.docs
           .map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           })
           .sort(function (a, b) {
             var aTime = a.publishedAt && a.publishedAt.toMillis ? a.publishedAt.toMillis() : 0;

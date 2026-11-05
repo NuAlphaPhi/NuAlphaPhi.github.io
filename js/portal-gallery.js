@@ -16,7 +16,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function isAdmin() {
@@ -47,7 +47,7 @@
       .onSnapshot(
         function (snap) {
           allAlbums = snap.docs.map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           });
           renderAlbumGrid();
           if (currentAlbumId) renderAlbumDetail();
@@ -70,20 +70,20 @@
       ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(album.coverThumbUrl || album.coverUrl) + '" alt="" loading="lazy" decoding="async"></div>'
       : '<div class="gallery-album-card__cover gallery-album-card__cover--empty">' + IMAGE_ICON_SVG + "</div>";
 
-    var count = album.photoCount || 0;
+    var count = Number.isSafeInteger(album.photoCount) && album.photoCount >= 0 ? album.photoCount : 0;
     var manage = canManageAlbum(album);
 
     return (
-      '<article class="gallery-album-card" data-album-id="' + album.id + '">' +
+      '<article class="gallery-album-card" data-album-id="' + escapeHtml(album.id) + '">' +
       cover +
       '<div class="gallery-album-card__body">' +
       '<h3 class="gallery-album-card__title">' + escapeHtml(album.title) + "</h3>" +
       '<p class="gallery-album-card__meta">' + count + (count === 1 ? " photo" : " photos") + " · Started by " + escapeHtml(album.createdByName || "A brother") + "</p>" +
       '<div class="gallery-album-card__actions">' +
-      '<button class="news-card__action-btn" type="button" data-album-open="' + album.id + '">View Album</button>' +
+      '<button class="news-card__action-btn" type="button" data-album-open="' + escapeHtml(album.id) + '">View Album</button>' +
       (manage
-        ? '<button class="news-card__action-btn" type="button" data-album-rename="' + album.id + '">Rename</button>' +
-          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-album-delete="' + album.id + '">Delete</button>'
+        ? '<button class="news-card__action-btn" type="button" data-album-rename="' + escapeHtml(album.id) + '">Rename</button>' +
+          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-album-delete="' + escapeHtml(album.id) + '">Delete</button>'
         : "") +
       "</div></div></article>"
     );
@@ -256,7 +256,7 @@
       .onSnapshot(
         function (snap) {
           currentAlbumPhotos = snap.docs.map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           });
           renderPhotoGrid();
         },
@@ -297,7 +297,7 @@
     }
 
     albumPageTitleEl.textContent = album.title;
-    var count = album.photoCount || 0;
+    var count = Number.isSafeInteger(album.photoCount) && album.photoCount >= 0 ? album.photoCount : 0;
     albumPageMetaEl.textContent = count + (count === 1 ? " photo" : " photos") + " · Started by " + (album.createdByName || "A brother");
 
     albumPageActionsEl.innerHTML = canManageAlbum(album)
@@ -343,13 +343,13 @@
         var when = formatPhotoDate(p.createdAt);
         return (
           '<div class="media-card">' +
-          '<div class="media-card__preview media-card__preview--clickable" data-photo-open="' + p.id + '">' +
+          '<div class="media-card__preview media-card__preview--clickable" data-photo-open="' + escapeHtml(p.id) + '">' +
           '<img src="' + escapeHtml(p.thumbUrl || p.url) + '" alt="" loading="lazy" decoding="async"></div>' +
           '<div class="media-card__footer">' +
           '<p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
           '<div class="media-card__actions">' +
-          '<button class="media-card__btn" type="button" data-photo-download="' + p.id + '">Download</button>' +
-          (canDelete ? '<button class="media-card__btn media-card__btn--danger" type="button" data-photo-delete="' + p.id + '">Delete</button>' : "") +
+          '<button class="media-card__btn" type="button" data-photo-download="' + escapeHtml(p.id) + '">Download</button>' +
+          (canDelete ? '<button class="media-card__btn media-card__btn--danger" type="button" data-photo-delete="' + escapeHtml(p.id) + '">Delete</button>' : "") +
           "</div></div></div>"
         );
       })
@@ -368,6 +368,7 @@
        for anything uploaded before that existed, so it opens in a new tab
        instead of erroring. */
     var a = document.createElement("a");
+    if (!/^https?:\/\//i.test(String(photo.url || ""))) return;
     a.href = photo.url;
     a.download = photo.fileName || "download";
     a.target = "_blank";

@@ -11,7 +11,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   var announcementsCard = document.createElement("div");
@@ -78,7 +78,7 @@
     .onSnapshot(function (snap) {
       var recent = snap.docs
         .map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         })
         .filter(function (a) {
           return a.approved !== false;
@@ -92,7 +92,7 @@
       announcementsListEl.innerHTML = recent
         .map(function (a) {
           return (
-            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-announcement="' + a.id + '">' +
+            '<button class="overview-card__item overview-card__item--clickable" type="button" data-open-announcement="' + escapeHtml(a.id) + '">' +
             '<p class="overview-card__item-title">' + escapeHtml(a.title) + "</p>" +
             '<p class="overview-card__item-meta">' + escapeHtml(a.authorName) + " · " + formatDate(a.createdAt) + "</p>" +
             "</button>"
@@ -113,7 +113,7 @@
       var now = new Date();
       var upcomingAll = snap.docs
         .map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         })
         .filter(function (ev) {
           return ev.endAt && ev.endAt.toDate && ev.startAt && ev.startAt.toDate && ev.endAt.toDate() >= now && ev.approved !== false;
@@ -134,7 +134,7 @@
         .map(function (ev) {
           var start = ev.startAt.toDate();
           return (
-            '<button class="overview-card__item overview-card__item--clickable portal-event-row" type="button" data-open-event="' + ev.id + '">' +
+            '<button class="overview-card__item overview-card__item--clickable portal-event-row" type="button" data-open-event="' + escapeHtml(ev.id) + '">' +
             '<span class="portal-date-badge" aria-hidden="true">' + start.toLocaleDateString(undefined, { month: 'short' }) + '<strong>' + start.getDate() + '</strong></span><span>' +
             '<span class="overview-card__item-title">' + escapeHtml(ev.name) + "</span>" +
             '<span class="overview-card__item-meta">' + escapeHtml(ev.location) + " · " + start.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + "</span></span>" +
@@ -164,7 +164,7 @@
     var today = new Date();
     var allBrothers = snap.docs
       .map(function (doc) {
-        return Object.assign({ uid: doc.id }, doc.data());
+        return Object.assign({}, doc.data(), { uid: doc.id });
       })
       .filter(function (b) {
         return b.disabled !== true;

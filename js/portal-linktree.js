@@ -36,7 +36,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function isAdmin() {
@@ -115,7 +115,7 @@
   function startBrothersListener() {
     db.collection("users").onSnapshot(function (snap) {
       allBrothers = snap.docs.map(function (doc) {
-        return Object.assign({ uid: doc.id }, doc.data());
+        return Object.assign({}, doc.data(), { uid: doc.id });
       });
       if (currentChapter && isAdmin()) renderEditorsList();
     });

@@ -13,7 +13,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function brandHtml() {
@@ -31,7 +31,7 @@
   function renderSignInGate(formId, form) {
     var html = "";
     if (form.bannerImage) {
-      html += '<div class="public-form-card__banner"><img src="' + form.bannerImage + '" alt=""></div>';
+      html += '<div class="public-form-card__banner"><img src="' + escapeHtml(form.bannerImage) + '" alt=""></div>';
     }
     html += '<div class="public-form-card__body">';
     html += brandHtml();
@@ -97,14 +97,14 @@
     html += '<label class="public-form-question__label">' + escapeHtml(q.label) + requiredMark + "</label>";
 
     if (q.type === "paragraph") {
-      html += '<textarea class="form-textarea" name="' + name + '"' + requiredAttr + "></textarea>";
+      html += '<textarea class="form-textarea" name="' + escapeHtml(name) + '"' + requiredAttr + "></textarea>";
     } else if (q.type === "multiple_choice") {
       html += (q.options || [])
         .map(function (opt, i) {
           var id = name + "_" + i;
           return (
-            '<label class="public-form-choice-row" for="' + id + '">' +
-            '<input type="radio" id="' + id + '" name="' + name + '" value="' + escapeHtml(opt) + '"' + requiredAttr + ">" +
+            '<label class="public-form-choice-row" for="' + escapeHtml(id) + '">' +
+            '<input type="radio" id="' + escapeHtml(id) + '" name="' + escapeHtml(name) + '" value="' + escapeHtml(opt) + '"' + requiredAttr + ">" +
             '<span class="public-form-choice-row__indicator" aria-hidden="true"></span>' +
             '<span class="public-form-choice-row__text">' + escapeHtml(opt) + "</span>" +
             "</label>"
@@ -116,8 +116,8 @@
         .map(function (opt, i) {
           var id = name + "_" + i;
           return (
-            '<label class="public-form-choice-row public-form-choice-row--checkbox" for="' + id + '">' +
-            '<input type="checkbox" id="' + id + '" name="' + name + '" value="' + escapeHtml(opt) + '">' +
+            '<label class="public-form-choice-row public-form-choice-row--checkbox" for="' + escapeHtml(id) + '">' +
+            '<input type="checkbox" id="' + escapeHtml(id) + '" name="' + escapeHtml(name) + '" value="' + escapeHtml(opt) + '">' +
             '<span class="public-form-choice-row__indicator" aria-hidden="true"></span>' +
             '<span class="public-form-choice-row__text">' + escapeHtml(opt) + "</span>" +
             "</label>"
@@ -125,7 +125,7 @@
         })
         .join("");
     } else if (q.type === "dropdown") {
-      html += '<select class="form-select" name="' + name + '"' + requiredAttr + ">";
+      html += '<select class="form-select" name="' + escapeHtml(name) + '"' + requiredAttr + ">";
       html += '<option value="">Choose…</option>';
       html += (q.options || [])
         .map(function (opt) {
@@ -134,7 +134,7 @@
         .join("");
       html += "</select>";
     } else {
-      html += '<input class="form-input" type="text" name="' + name + '"' + requiredAttr + ">";
+      html += '<input class="form-input" type="text" name="' + escapeHtml(name) + '"' + requiredAttr + ">";
     }
 
     html += "</div>";
@@ -158,7 +158,7 @@
   function renderForm(formId, form) {
     var html = "";
     if (form.bannerImage) {
-      html += '<div class="public-form-card__banner"><img src="' + form.bannerImage + '" alt=""></div>';
+      html += '<div class="public-form-card__banner"><img src="' + escapeHtml(form.bannerImage) + '" alt=""></div>';
     }
     html += '<div class="public-form-card__body">';
     html += brandHtml();
@@ -224,33 +224,18 @@
     return;
   }
 
-  db.collection("forms")
-    .doc(formId)
-    .get()
-    .then(function (snap) {
-      if (!snap.exists) {
-        renderState("Form not found", "This form may have been deleted.");
-        return;
-      }
+  // Re-fetch after authentication: private questions never come from an anonymous read.
+  auth.onAuthStateChanged(function (user) {
+    db.collection("forms").doc(formId).get().then(function (snap) {
+      if (!snap.exists) { renderState("Form not found", "This form may have been deleted."); return; }
       var form = snap.data();
-      if (!form.published) {
-        renderState("Not accepting responses", "This form is currently closed by its owner.");
-        return;
-      }
-      if (form.requireSignIn) {
-        var unsubscribe = auth.onAuthStateChanged(function (user) {
-          if (user) {
-            if (unsubscribe) unsubscribe();
-            renderForm(formId, form);
-          } else {
-            renderSignInGate(formId, form);
-          }
-        });
-        return;
-      }
+      if (!form.published) { renderState("Not accepting responses", "This form is currently closed by its owner."); return; }
       renderForm(formId, form);
-    })
-    .catch(function () {
-      renderState("Something went wrong", "Please try again in a moment.");
+    }).catch(function (error) {
+      if (error.code === "permission-denied") {
+        if (!user) renderSignInGate(formId, {title:"Brotherhood form"});
+        else renderState("Access unavailable", "An approved, active brother account is required, or this form is private.");
+      } else renderState("Something went wrong", "Please try again in a moment.");
     });
+  });
 })();

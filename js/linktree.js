@@ -12,10 +12,15 @@
   var linksEl = document.getElementById("linktreeLinks");
   if (!chapter || !linksEl) return;
 
+  function safeLink(value) {
+    try { return ["https:", "http:", "mailto:", "tel:"].includes(new URL(String(value)).protocol); }
+    catch (_) { return false; }
+  }
+
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function render(doc) {
@@ -39,6 +44,7 @@
     }
 
     linksEl.innerHTML = links
+      .filter(function (link) { return safeLink(link.url); })
       .map(function (link) {
         return (
           '<a class="linktree-link" href="' + escapeHtml(link.url) + '" target="_blank" rel="noopener noreferrer">' +

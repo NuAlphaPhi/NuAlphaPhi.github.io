@@ -45,7 +45,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function formatDate(timestamp) {
@@ -144,7 +144,7 @@
       .orderBy("createdAt", "asc")
       .onSnapshot(function (snap) {
         commentsById[announcementId] = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderAnnouncementCard(announcementId);
       });
@@ -179,8 +179,8 @@
       '<h3 class="news-card__title">' + escapeHtml(a.title) + pendingBadge + "</h3>" +
       (isOwner
         ? '<div class="news-card__actions">' +
-          '<button class="news-card__action-btn" type="button" data-edit-announcement="' + a.id + '" data-title="' + escapeHtml(a.title) + '" data-body="' + escapeHtml(a.body) + '">Edit</button>' +
-          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-announcement="' + a.id + '">Delete</button>' +
+          '<button class="news-card__action-btn" type="button" data-edit-announcement="' + escapeHtml(a.id) + '" data-title="' + escapeHtml(a.title) + '" data-body="' + escapeHtml(a.body) + '">Edit</button>' +
+          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-announcement="' + escapeHtml(a.id) + '">Delete</button>' +
           "</div>"
         : "") +
       "</div>" +
@@ -356,7 +356,7 @@
       .orderBy("createdAt", "asc")
       .onSnapshot(function (snap) {
         detailComments = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderDetailModal();
       });
@@ -511,7 +511,7 @@
            before the approval feature (no approved field) count as approved. */
         allAnnouncements = snap.docs
           .map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           })
           .filter(function (a) {
             return a.approved !== false || a.authorUid === currentUid;
@@ -531,7 +531,7 @@
 
         listEl.innerHTML = allAnnouncements
           .map(function (a) {
-            return '<article class="news-card" id="announcement-' + a.id + '" data-announcement-id="' + a.id + '"></article>';
+            return '<article class="news-card" id="announcement-' + escapeHtml(a.id) + '" data-announcement-id="' + escapeHtml(a.id) + '"></article>';
           })
           .join("");
 

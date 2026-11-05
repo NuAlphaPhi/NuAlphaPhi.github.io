@@ -21,7 +21,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function isAdmin() {
@@ -83,8 +83,8 @@
       .map(function (s) {
         var isOpen = !!expandedIds[s.id];
         return (
-          '<div class="education-item' + (isOpen ? " is-open" : "") + '" data-section-id="' + s.id + '">' +
-          '<button class="education-item__header" type="button" data-section-toggle="' + s.id + '" aria-expanded="' + isOpen + '">' +
+          '<div class="education-item' + (isOpen ? " is-open" : "") + '" data-section-id="' + escapeHtml(s.id) + '">' +
+          '<button class="education-item__header" type="button" data-section-toggle="' + escapeHtml(s.id) + '" aria-expanded="' + isOpen + '">' +
           '<p class="education-item__title">' + escapeHtml(s.title) + "</p>" +
           CHEVRON_SVG +
           "</button>" +
@@ -92,8 +92,8 @@
           '<p class="education-item__desc">' + escapeHtml(s.description) + "</p>" +
           (admin
             ? '<div class="education-item__admin-actions">' +
-              '<button class="news-card__action-btn" type="button" data-section-edit="' + s.id + '">Edit</button>' +
-              '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-section-delete="' + s.id + '">Delete</button>' +
+              '<button class="news-card__action-btn" type="button" data-section-edit="' + escapeHtml(s.id) + '">Edit</button>' +
+              '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-section-delete="' + escapeHtml(s.id) + '">Delete</button>' +
               "</div>"
             : "") +
           "</div></div>"
@@ -141,7 +141,7 @@
     .onSnapshot(
       function (snap) {
         allSections = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderSections();
       },

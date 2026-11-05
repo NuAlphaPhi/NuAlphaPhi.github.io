@@ -17,7 +17,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   window.napOnAuthReady(function (detail) {
@@ -93,14 +93,14 @@
           : "<strong>" + escapeHtml(n.actorName) + "</strong> commented on " + (isEvent ? "your event " : "your announcement ") +
             "“" + escapeHtml(n.postTitle) + "”: “" + escapeHtml(n.snippet) + "”";
         return (
-          '<div class="notification-item' + (n.read ? "" : " is-unread") + '" data-notification-id="' + n.id + '">' +
+          '<div class="notification-item' + (n.read ? "" : " is-unread") + '" data-notification-id="' + escapeHtml(n.id) + '">' +
           '<button class="notification-item__body" type="button" ' +
           'data-post-type="' + postType + '" ' +
           'data-post-id="' + escapeHtml(n.postId) + '" data-comment-id="' + escapeHtml(n.commentId) + '">' +
           '<p class="notification-item__text">' + text + "</p>" +
           '<p class="notification-item__time">' + when + "</p>" +
           "</button>" +
-          '<button class="notification-item__delete" type="button" data-delete-notification="' + n.id + '" aria-label="Delete notification">×</button>' +
+          '<button class="notification-item__delete" type="button" data-delete-notification="' + escapeHtml(n.id) + '" aria-label="Delete notification">×</button>' +
           "</div>"
         );
       })
@@ -210,7 +210,7 @@
       .limit(30)
       .onSnapshot(function (snap) {
         allNotifications = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderBellDot();
         renderDropdown();

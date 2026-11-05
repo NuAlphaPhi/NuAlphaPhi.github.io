@@ -31,7 +31,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function makeId(prefix) {
@@ -76,7 +76,7 @@
     var descPreview = (form.description || "").length > 120 ? form.description.slice(0, 120).trim() + "…" : form.description || "";
     var questionCount = (form.questions || []).length;
 
-    var html = '<article class="forms-card" data-form-id="' + form.id + '">';
+    var html = '<article class="forms-card" data-form-id="' + escapeHtml(form.id) + '">';
     html +=
       '<div class="forms-card__header">' +
       '<h3 class="forms-card__title">' + escapeHtml(form.title || "Untitled form") + "</h3>" +
@@ -94,12 +94,12 @@
     html += '<div class="forms-card__actions">';
     if (isOwner) {
       html +=
-        '<button class="news-card__action-btn" type="button" data-form-edit="' + form.id + '">Edit</button>' +
-        '<button class="news-card__action-btn" type="button" data-form-share="' + form.id + '">Share</button>';
+        '<button class="news-card__action-btn" type="button" data-form-edit="' + escapeHtml(form.id) + '">Edit</button>' +
+        '<button class="news-card__action-btn" type="button" data-form-share="' + escapeHtml(form.id) + '">Share</button>';
     }
-    html += '<button class="news-card__action-btn" type="button" data-form-responses="' + form.id + '">Responses</button>';
+    html += '<button class="news-card__action-btn" type="button" data-form-responses="' + escapeHtml(form.id) + '">Responses</button>';
     if (isOwner) {
-      html += '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-form-delete="' + form.id + '">Delete</button>';
+      html += '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-form-delete="' + escapeHtml(form.id) + '">Delete</button>';
     }
     html += "</div></article>";
 
@@ -235,7 +235,7 @@
 
   function renderBannerPreview() {
     if (builderBannerImage) {
-      bannerPreviewEl.innerHTML = '<img src="' + builderBannerImage + '" alt="">';
+      bannerPreviewEl.innerHTML = '<img src="' + escapeHtml(builderBannerImage) + '" alt="">';
       bannerRemoveBtn.hidden = false;
     } else {
       bannerPreviewEl.innerHTML = '<p class="news-card__empty">No banner yet.</p>';
@@ -852,7 +852,7 @@
     responsesSidebarEl.innerHTML = currentResponses
       .map(function (r, i) {
         return (
-          '<button class="form-responses-sidebar__item' + (r.id === selectedResponseId ? " is-active" : "") + '" type="button" data-response-id="' + r.id + '">' +
+          '<button class="form-responses-sidebar__item' + (r.id === selectedResponseId ? " is-active" : "") + '" type="button" data-response-id="' + escapeHtml(r.id) + '">' +
           '<span class="form-responses-sidebar__item-index">Response ' + (i + 1) + "</span>" +
           '<span class="form-responses-sidebar__item-time">' + formatResponseTime(r.submittedAt) + "</span>" +
           "</button>"
@@ -934,7 +934,7 @@
       .orderBy("submittedAt", "desc")
       .onSnapshot(function (snap) {
         currentResponses = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderResponsesPage();
       });
@@ -1002,7 +1002,7 @@
       .onSnapshot(
         function (snap) {
           myForms = snap.docs.map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           });
           renderFormsLists();
         },
@@ -1016,7 +1016,7 @@
       .onSnapshot(
         function (snap) {
           sharedForms = snap.docs.map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           });
           renderFormsLists();
         },

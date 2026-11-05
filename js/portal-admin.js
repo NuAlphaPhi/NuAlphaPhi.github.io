@@ -16,7 +16,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function formatDate(timestamp) {
@@ -172,7 +172,7 @@
       .where("approved", "==", false)
       .onSnapshot(function (snap) {
         pendingAnnouncements = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderPending();
       });
@@ -181,7 +181,7 @@
       .where("approved", "==", false)
       .onSnapshot(function (snap) {
         pendingEvents = snap.docs.map(function (doc) {
-          return Object.assign({ id: doc.id }, doc.data());
+          return Object.assign({}, doc.data(), { id: doc.id });
         });
         renderPending();
       });

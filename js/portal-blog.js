@@ -17,7 +17,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function isAdmin() {
@@ -52,7 +52,7 @@
       .onSnapshot(
         function (snap) {
           allPosts = snap.docs.map(function (doc) {
-            return Object.assign({ id: doc.id }, doc.data());
+            return Object.assign({}, doc.data(), { id: doc.id });
           });
           renderPostGrid();
         },
@@ -100,13 +100,13 @@
     var status = post.status || "draft";
     var when = status === "published" ? formatDate(post.publishedAt) : formatDate(post.createdAt);
 
-    var actions = ['<button class="news-card__action-btn" type="button" data-post-edit="' + post.id + '">Edit</button>'];
+    var actions = ['<button class="news-card__action-btn" type="button" data-post-edit="' + escapeHtml(post.id) + '">Edit</button>'];
     if (status === "published") {
-      actions.push('<button class="news-card__action-btn" type="button" data-post-hide="' + post.id + '">Hide</button>');
+      actions.push('<button class="news-card__action-btn" type="button" data-post-hide="' + escapeHtml(post.id) + '">Hide</button>');
     } else {
-      actions.push('<button class="news-card__action-btn" type="button" data-post-publish="' + post.id + '">Publish</button>');
+      actions.push('<button class="news-card__action-btn" type="button" data-post-publish="' + escapeHtml(post.id) + '">Publish</button>');
     }
-    actions.push('<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-post-delete="' + post.id + '">Delete</button>');
+    actions.push('<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-post-delete="' + escapeHtml(post.id) + '">Delete</button>');
 
     return (
       '<article class="blog-admin-card">' +

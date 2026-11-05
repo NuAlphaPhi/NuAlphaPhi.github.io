@@ -129,7 +129,7 @@
   function escapeHtml(value) {
     var div = document.createElement("div");
     div.textContent = value === null || value === undefined ? "" : String(value);
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   /* Shared brother directory cache — every portal module can look up a brother
@@ -269,8 +269,8 @@
         comments.forEach(function (c) {
           if (editingCommentId === c.id) {
             html +=
-              '<div class="comment-item" id="comment-' + c.id + '">' +
-              '<form class="comment-edit-form" data-comment-id="' + c.id + '" style="display:flex;gap:0.5rem;">' +
+              '<div class="comment-item" id="comment-' + escapeHtml(c.id) + '">' +
+              '<form class="comment-edit-form" data-comment-id="' + escapeHtml(c.id) + '" style="display:flex;gap:0.5rem;">' +
               '<input class="form-input" name="body" value="' + escapeHtml(c.body) + '" required>' +
               '<button class="form-submit form-submit--small" type="submit">Save</button>' +
               '<button class="news-card__action-btn" type="button" data-cancel-comment-edit>Cancel</button>' +
@@ -278,13 +278,13 @@
           } else {
             var isOwner = c.authorUid === currentUid;
             html +=
-              '<div class="comment-item" id="comment-' + c.id + '">' +
+              '<div class="comment-item" id="comment-' + escapeHtml(c.id) + '">' +
               '<div class="comment-item__meta">' +
               window.napAuthorBadgeHtml(c.authorUid, c.authorName, "comment-item__author") +
               (isOwner
                 ? '<span class="comment-item__actions">' +
-                  '<button class="news-card__action-btn" type="button" data-comment-edit="' + c.id + '">Edit</button>' +
-                  '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-comment-delete="' + c.id + '">Delete</button>' +
+                  '<button class="news-card__action-btn" type="button" data-comment-edit="' + escapeHtml(c.id) + '">Edit</button>' +
+                  '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-comment-delete="' + escapeHtml(c.id) + '">Delete</button>' +
                   "</span>"
                 : "") +
               "</div>" +
