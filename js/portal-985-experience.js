@@ -10,7 +10,7 @@
     P.download('985-event.ics',lines.join('\r\n')+'\r\n','text/calendar');
   };
   P.eventTools=(e,root)=>{
-    const row=P.row(P.button('Add to calendar / reminder',()=>P.calendarFile(e)),P.button('My ticket',()=>P.run(root,async()=>{
+    const row=P.row(P.button('Add to calendar',()=>P.calendarFile(e)),P.button('My ticket',()=>P.run(root,async()=>{
       const t=await P.call('eventTicket',{action:'issue',eventID:e.id}),box=P.el('div');
       const qr=qrcode(0,'M');qr.addData(t.code);qr.make();const image=P.el('img');image.alt='Your event admission QR ticket';image.src=qr.createDataURL(6,24);image.style.maxWidth='100%';box.append(image);
       box.append(P.el('h3','',t.title),P.el('p','',t.checkedInAt?'Already checked in':'Confirmed · party of '+(1+t.plusOneCount)),P.el('p','p-muted','Present this ticket code to the check-in team.'),P.el('code','p-text',t.code),P.button('Copy ticket',async()=>{await navigator.clipboard.writeText(t.code);P.toast('Ticket copied');}));P.dialog('Your ticket',box);
@@ -18,7 +18,7 @@
     root.append(row);
     P.call('eventTicket',{action:'capabilities',eventID:e.id}).then(cap=>{if(cap.canScan)row.append(P.button('Check-in desk',()=>P.checkin(e)));}).catch(err=>P.error(root,err));
     const remaining=P.date(e.deadline)-Date.now();
-    root.append(P.el('p','p-muted',remaining>0?'RSVP closes in '+Math.ceil(remaining/3600000)+' hours':'RSVP deadline has passed'));
+    root.append(P.el('p','p-muted',remaining>0?'RSVP closes in '+(remaining>=86400000?Math.ceil(remaining/86400000)+' days':Math.ceil(remaining/3600000)+' hours'):'RSVP deadline has passed'));
   };
   P.checkin=e=>{const box=P.el('div'),search=P.field('Search attendee','search'),code=P.field('Paste or scan ticket code'),list=P.el('div');let rows=[];
     const draw=()=>{list.replaceChildren();rows.filter(r=>(r.name+' '+r.realName+' '+r.chapter).toLowerCase().includes(search.input.value.toLowerCase())).forEach(r=>list.append(P.el('p','',r.name+' · '+r.realName+' · '+(1+r.plusOneCount)+' guests in party · '+(r.checkedInAt?'Checked in':'Awaiting arrival'))));};

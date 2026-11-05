@@ -295,7 +295,7 @@
     };
   };
   P.openEvent = (id) => {
-    const box = P.el("div");
+    const box = P.el("div", "p-event-detail");
     const page=P.root('event-detail');
     page.replaceChildren(P.button('← All events',()=>P.go('events')),box);
     window.napSetTab('event-detail','events');
@@ -306,34 +306,15 @@
         throw Error("This event is unavailable.");
       const e = { id, ...snap.data() },
         organizer = e.hostUid === P.uid || e.collaboratorIds?.includes(P.uid);
-      box.append(
-        P.image(e.coverPath, "p-event-cover", e.title),
-        P.el("h2", "", e.title),
-        P.author(e.hostUid, e.hostName),
-        P.el(
-          "p",
-          "p-muted",
-          P.when(e.start) + (e.end ? " — " + P.when(e.end) : ""),
-        ),
-        P.el("p", "", e.locationTBD ? "Location to be announced" : e.location),
-        P.text(e.description),
-        P.el(
-          "p",
-          "p-muted",
-          "RSVP by " +
-            P.when(e.deadline) +
-            " · " +
-            (e.capacity
-              ? e.reservedSeats + "/" + e.capacity + " places reserved"
-              : "No capacity limit") +
-            " · " +
-            (e.plusOnes
-              ? "Plus-ones welcome" +
-                (e.plusOneLimit ? " (up to " + e.plusOneLimit + ")" : "")
-              : "No plus-ones"),
-        ),
-      );
-      const actions = P.row();
+      const hero=P.el('div','p-event-hero'),intro=P.el('div','p-event-intro');
+      intro.append(P.el('span','p-event-eyebrow','BROTHERHOOD EVENT'),P.el('h1','',e.title),P.author(e.hostUid,e.hostName));
+      const facts=P.el('div','p-event-facts');
+      facts.append(P.el('p','',P.when(e.start)+(e.end?' — '+P.when(e.end):'')),P.el('p','',e.locationTBD?'Location to be announced':e.location));
+      intro.append(facts);hero.append(P.image(e.coverPath,'p-event-cover',e.title),intro);box.append(hero);
+      const about=P.el('section','p-event-about');about.append(P.el('h2','','About the event'),P.text(e.description));box.append(about);
+      const limits=P.el('p','p-event-limits','RSVP by '+P.when(e.deadline)+' · '+(e.capacity?(e.reservedSeats||0)+'/'+e.capacity+' places reserved':'No capacity limit')+' · '+(e.plusOnes?'Plus-ones welcome'+(e.plusOneLimit?' (up to '+e.plusOneLimit+')':''):'No plus-ones'));
+      box.append(limits);
+      const actions = P.row();actions.classList.add("p-event-actions");
       if (organizer || P.me.isAdmin)
         actions.append(
           P.button("Edit", () => {
@@ -382,6 +363,10 @@
             }),
           ),
         );
+      const management=P.el('details','p-event-management'),managementMenu=P.el('div','p-event-management-menu');
+      management.append(P.el('summary','','Manage event'),managementMenu);
+      while(actions.firstChild)managementMenu.append(actions.firstChild);
+      if(managementMenu.childElementCount)actions.append(management);
       if (e.status === "published") {
         actions.append(
           P.button("Copy event link", () =>
@@ -399,11 +384,11 @@
         a.rel = "noopener";
         actions.append(a);
       }
-      if(organizer && e.hostUid!==P.uid && !P.me.isAdmin) actions.querySelector('.danger')?.remove();
+      if(organizer && e.hostUid!==P.uid && !P.me.isAdmin) managementMenu.querySelector('.danger')?.remove();
       box.append(actions);
       if(e.status==='published'){
-        P.eventTools(e,box);
-        if(organizer||P.me.isAdmin)actions.append(P.button('Send attendee announcement',()=>{
+        const tools=P.el('div','p-event-tools');box.append(tools);P.eventTools(e,tools);
+        if(organizer||P.me.isAdmin)managementMenu.append(P.button('Send attendee announcement',()=>{
           const content=P.el('div'),field=P.field('Announcement','textarea');field.input.maxLength=1500;
           content.append(field.wrap,P.button('Send to attendees',()=>P.run(content,async()=>{await P.event('announce',id,{body:field.input.value});d.close();P.toast('Announcement sent');})));const d=P.dialog('Event announcement',content);
         }));
@@ -412,8 +397,8 @@
         box.append(P.empty("Status: " + e.status));
         return;
       }
-      const rsvp = P.el("div", "p-card"),
-        community = P.el("div"),
+      const rsvp = P.el("div", "p-card p-event-rsvp"),
+        community = P.el("div", "p-event-community"),
         guests = P.el("div");
       const own = await P.event("attendance", id);
       rsvp.append(
@@ -475,13 +460,13 @@
           "p-btn primary",
         ),
       );
-      box.append(rsvp, community);
+      const body=P.el('div','p-event-body');body.append(community,rsvp);box.append(body);
       await loadCommunity();
       async function loadCommunity() {
-        community.replaceChildren(P.el("h3", "", "Conversation"));
+        community.replaceChildren();
         const c = await P.event("conversation", id);
         if (c.attendeesUnlocked) {
-          const attendance = P.el("div", "p-card");
+          const attendance = P.el("div", "p-card p-event-attendees");
           attendance.append(P.el("h3", "", "Guest list"));
           community.append(attendance);
           await attendees(attendance);
@@ -489,11 +474,11 @@
           community.append(
             P.empty("RSVP to see who is going, maybe, busy, or waitlisted."),
           );
-        const rows = P.el("div");
-        community.append(rows);
+        const rows = P.el("div", "p-event-activity");
+        community.append(P.el("h3", "", "Conversation"),rows);
         function drawRows(data) {
           data.rows.forEach((r) => {
-            const item = P.el("div", "p-card");
+            const item = P.el("div", r.kind === "comment" ? "p-event-comment" : "p-event-system-note");
             item.append(
               P.el("strong", "", r.name),
               P.el("small", "", " · " + P.when(r.createdAt)),
@@ -555,7 +540,7 @@
         for (const status of ["going", "maybe", "busy", "waitlist"]) {
           const people = data.rows.filter((p) => p.status === status);
           if (!people.length) continue;
-          root.append(P.el("h3", "", status));
+          root.append(P.el("h4", "", ({going:"Going",maybe:"Maybe",busy:"Not going",waitlist:"Waitlisted"})[status]));
           people.forEach((p) =>
             root.append(
               P.row(

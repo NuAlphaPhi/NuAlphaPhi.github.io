@@ -116,3 +116,17 @@ test('embedded and public chapter pages use the same rendering and reject outsid
  assert.equal(preview.document.querySelectorAll('.linktree-link').length,1);
  assert.equal(preview.document.getElementById('linktreeTitle').querySelector('chapter'),null);
 });
+test('event detail separates organizer actions from RSVP and conversation',async()=>{
+ const c=setup(),P=c.P985;P.uid='host';P.me={isAdmin:true};
+ c.window.napSetTab=()=>{};P.ready=()=>{};
+ c.db.doc=()=>({get:async()=>({exists:true,data:()=>({title:'Chapter meetup',hostUid:'host',status:'published',start:123,deadline:456,description:'Meet the brothers',location:'Campus',plusOnes:true})})});
+ P.image=()=>c.document.createElement('img');P.author=()=>c.document.createElement('span');P.eventTools=()=>{};
+ P.event=async action=>action==='attendance'?{status:'going',partySize:1}:action==='conversation'?{attendeesUnlocked:true,rows:[]}: {rows:[]};
+ P.select=(label,options,value)=>P.field(label,'text',value);
+ let pending;P.run=(box,fn)=>{pending=fn();return pending;};
+ vm.runInContext(fs.readFileSync('js/portal-985-events.js','utf8'),c);P.openEvent('one');await pending;
+ assert.equal(c.document.querySelector('.p-event-hero h1').textContent,'Chapter meetup');
+ const menu=c.document.querySelector('.p-event-management-menu');assert.match(menu.textContent,/Delete event/);assert.match(menu.textContent,/Send attendee announcement/);
+ assert.ok(c.document.querySelector('.p-event-body>.p-event-rsvp'));assert.ok(c.document.querySelector('.p-event-body>.p-event-community'));
+ assert.match(c.document.querySelector('.p-event-rsvp').textContent,/Save RSVP/);
+});
