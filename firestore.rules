@@ -2,46 +2,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() {
-      return request.auth != null;
+      return request.auth != null
+        && !exists(/databases/$(database)/documents/accountDeletionJobs/$(request.auth.uid))
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false) != true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('membershipStatus', 'approved') == 'approved';
     }
 
-    // Admins are brothers whose own user doc carries isAdmin == true. The flag
-    // can only be set two ways (enforced below): another admin grants it, or
-    // the brother redeems the admin code — which lives HERE in the rules, not
-    // in the site's JS, so it isn't discoverable via View Source.
-    // .get() with a default everywhere a field may be absent: in rules,
-    // touching a missing property throws (which denies), it doesn't return null.
     function isAdmin() {
       return isSignedIn()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false) != true;
     }
 
     // Brother profiles: any signed-in brother can read (needed to show names on
     // announcements/events/comments). A brother manages their own doc; admins
     // can edit anyone's (that's their "change info on other accounts" power)
     // and can disable accounts. isAdmin/disabled are protected fields a normal
-    // brother can never set on themselves — except isAdmin via the code path.
+    // brother can never set on themselves. Admin grants are server-managed.
+    function authorityOwner() {
+      return get(/databases/$(database)/documents/organization/adminAuthority).data.ownerUid;
+    }
     match /users/{uid} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.auth.uid == uid
-        && request.resource.data.get('isAdmin', false) != true
-        && request.resource.data.get('disabled', false) != true;
-      allow update: if isSignedIn() && (
-        isAdmin()
-        // Normal self-edit: anything except the protected fields, and only
-        // while the account isn't disabled.
-        || (request.auth.uid == uid
-          && resource.data.get('disabled', false) != true
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'disabled']))
-        // Admin-code redemption: may ONLY flip isAdmin (plus the transient
-        // adminCode field the client removes right afterwards).
-        || (request.auth.uid == uid
-          && resource.data.get('disabled', false) != true
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isAdmin', 'adminCode'])
-          && request.resource.data.get('isAdmin', false) == true
-          && request.resource.data.get('adminCode', '') == 'virodabest')
-      );
-      allow delete: if isAdmin();
+      allow read: if (request.auth != null && request.auth.uid == uid) || isSignedIn();
+      allow create: if false; // Only the server approval workflow creates profiles.
+      allow update: if isSignedIn()
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['membershipStatus','isAdmin','leadershipBaseAdmin','adminAccessOverride','leadershipTitles','nationalTitle','chapterPresident','alumniAdvisor','membershipStanding'])
+        && (!(resource.data.get('isAdmin', false) && request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])) || (request.auth.uid == authorityOwner() && uid != authorityOwner()))
+        && (isAdmin() || (request.auth.uid == uid && resource.data.get('disabled', false) != true && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])));
+      allow delete: if isAdmin() && uid != authorityOwner()
+        && (!resource.data.get('isAdmin', false) || request.auth.uid == authorityOwner());
     }
 
     // Announcements go through admin approval: non-admins can only create with
@@ -263,6 +253,360 @@ service cloud.firestore {
         // form (which may have responses from other brothers) gets deleted.
         allow delete: if isSignedIn() && get(/databases/$(database)/documents/forms/$(formId)).data.createdByUid == request.auth.uid;
       }
+    }
+
+    // App-specific membership checks. Legacy portal permissions above are unchanged.
+    function isSocialMember() { return isSignedIn(); }
+    function isSocialAdmin() {
+      return isSocialMember() && isAdmin();
+    }
+
+// Master roster is separate from accounts and family-tree records.
+function rosterClassValid(d) {
+  return d.keys().hasOnly(['chapter','pledgeClass'])
+    && d.chapter in ['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa']
+    && d.pledgeClass is string && d.pledgeClass.size() > 0 && d.pledgeClass.size() <= 80;
+}
+match /masterRosterClasses/{id} {
+  allow read: if isSocialMember();
+  allow create, update: if isSocialAdmin() && rosterClassValid(request.resource.data);
+  allow delete: if isSocialAdmin();
+}
+match /rosterTreeLinks/{id} {
+  allow read: if isSocialMember();
+  allow create, update: if isSocialAdmin()
+    && exists(/databases/$(database)/documents/masterRoster/$(id))
+    && request.resource.data.keys().hasOnly(['treeID','updatedBy','updatedAt'])
+    && request.resource.data.treeID is string
+    && request.resource.data.treeID.matches('^[A-Za-z0-9_-]{1,128}$')
+    && exists(/databases/$(database)/documents/familyTree/$(request.resource.data.treeID))
+    && request.resource.data.updatedBy == request.auth.uid
+    && request.resource.data.updatedAt == request.time;
+  allow delete: if isSocialAdmin();
+}
+
+match /masterRoster/{id} {
+  allow read: if isSocialMember();
+  allow create, update: if isSocialAdmin()
+    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber'])
+    && request.resource.data.classID is string
+    && existsAfter(/databases/$(database)/documents/masterRosterClasses/$(request.resource.data.classID))
+    && request.resource.data.pledgeName is string && request.resource.data.pledgeName.size() > 0 && request.resource.data.pledgeName.size() <= 100
+    && request.resource.data.fullName is string && request.resource.data.fullName.size() > 0 && request.resource.data.fullName.size() <= 200
+    && request.resource.data.disaffiliated is bool
+    && request.resource.data.get('fallen', false) is bool
+    && request.resource.data.get('pledgeNumber', '') is string
+    && request.resource.data.get('pledgeNumber', '').matches('^[0-9]{0,2}$')
+    && request.resource.data.sourcePage is int && request.resource.data.sourcePage >= 0 && request.resource.data.sourcePage <= 10000;
+  allow delete: if isSocialAdmin();
+}
+
+match /organization/{document} { allow read: if isSocialMember(); allow write: if false; }
+match /leadershipAudit/{id} { allow read: if isAdmin(); allow write: if false; }
+match /membershipApplications/{uid} {
+  allow read: if request.auth != null && (request.auth.uid == uid || isSocialAdmin());
+  allow write: if false;
+}
+match /membershipNotices/{uid} {
+  allow read: if request.auth != null && request.auth.uid == uid;
+  allow write: if false;
+}
+match /membershipMail/{id} {
+  allow read, write: if false;
+}
+
+match /postStatistics/{postId} {
+  allow read: if isSocialMember();
+  allow write: if false;
+}
+
+match /contentReports/{id} {
+  allow read: if isSocialAdmin();
+  allow write: if false;
+}
+match /accountDeletionJobs/{uid} { allow read, write: if false; }
+match /announcementRequests/{id} {
+  allow read: if isSocialMember() && (isSocialAdmin() || resource.data.authorUid == request.auth.uid);
+  allow write: if false;
+}
+
+match /forumPosts/{postId} {
+  allow read: if isSocialMember();
+  allow create: if isSocialMember()
+    && request.resource.data.keys().hasAll(['authorUid','authorName','chapter','body','createdAt'])
+    && request.resource.data.keys().hasOnly(['authorUid','authorName','chapter','body','createdAt','photoPath','mentionIds','mentionChapters','kind','eventDate'])
+    && validMentions()
+    && request.resource.data.get('kind', 'post') in ['post','announcement','event']
+    && (request.resource.data.get('kind', 'post') == 'post' || (request.resource.data.get('kind', 'post') == 'announcement' && isSocialAdmin()) || (request.resource.data.get('kind', 'post') == 'event' && socialGrant().get('role', '') == 'nationalBoard'))
+    && (request.resource.data.get('kind', 'post') != 'event' || request.resource.data.eventDate is timestamp)
+    && request.resource.data.authorUid == request.auth.uid
+    && request.resource.data.authorName is string && request.resource.data.authorName.size() > 0 && request.resource.data.authorName.size() <= 200
+    && request.resource.data.chapter is string && request.resource.data.chapter.size() <= 100
+    && request.resource.data.body is string && request.resource.data.body.size() <= 2000
+    && request.resource.data.get('photoPath', '') is string
+    && (request.resource.data.body.size() > 0 || request.resource.data.get('photoPath', '') != '')
+    && (request.resource.data.get('photoPath', '') == '' || request.resource.data.photoPath == 'postPhotos/' + postId + '/' + request.auth.uid + '.jpg')
+    && request.resource.data.createdAt == request.time;
+  allow update: if false;
+  allow delete: if isSocialMember() && resource.data.get('eventID', '') == '' && (resource.data.authorUid == request.auth.uid || isSocialAdmin());
+  match /likes/{uid} {
+    allow read: if isSocialMember();
+    allow create: if isSocialMember() && request.auth.uid == uid
+      && exists(/databases/$(database)/documents/forumPosts/$(postId))
+      && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+    allow delete: if isSocialMember() && request.auth.uid == uid;
+  }
+  match /replies/{rid} {
+    allow read: if isSocialMember() && exists(/databases/$(database)/documents/forumPosts/$(postId));
+    allow create: if isSocialMember() && exists(/databases/$(database)/documents/forumPosts/$(postId))
+      && request.resource.data.keys().hasOnly(['senderUid','senderName','body','createdAt','mentionIds','mentionChapters','replyToID'])
+      && validMentions()
+      && (request.resource.data.get('replyToID', '') == '' || (request.resource.data.replyToID is string && request.resource.data.replyToID.matches('^[A-Za-z0-9_-]{1,128}$') && exists(/databases/$(database)/documents/forumPosts/$(postId)/replies/$(request.resource.data.replyToID))))
+      && request.resource.data.senderUid == request.auth.uid && request.resource.data.senderName is string
+      && request.resource.data.senderName.size() <= 200
+      && request.resource.data.body is string && request.resource.data.body.size() > 0 && request.resource.data.body.size() <= 1000
+      && request.resource.data.createdAt == request.time;
+    allow delete: if isSocialMember() && (resource.data.senderUid == request.auth.uid || isSocialAdmin());
+  }
+}
+
+function socialGrant() {
+  return get(/databases/$(database)/documents/socialAccess/$(request.auth.uid)).data;
+}
+function circleRole(g, roles) {
+  return g.get('role', '') in roles || g.get('roles', []).hasAny(roles);
+}
+function channelAllowed(room) {
+  let g = exists(/databases/$(database)/documents/socialAccess/$(request.auth.uid)) ? get(/databases/$(database)/documents/socialAccess/$(request.auth.uid)).data : {};
+  let active = g.get('status', '') == 'active';
+  return isSocialMember() && (
+    room in ['general','shitposting','gaming','sports','finance']
+    || (g.get('chapter', '') != '' && (
+      room == 'chapter-' + g.chapter
+      || (active && room == 'chapter-actives-' + g.chapter)
+      || (!active && room == 'chapter-alumni-' + g.chapter)))
+    || (g.get('term', '') in ['fall','spring','summer'] && g.get('year', '') != '' && room == 'pbs-' + g.term + '-' + g.year)
+    || (room == 'leadership' && circleRole(g, ['president','nationalBoard','nationalIntern']))
+    || (room == 'nationals' && circleRole(g, ['nationalBoard']))
+    || (room == 'nationals-interns' && circleRole(g, ['nationalBoard','nationalIntern']))
+    || (room == 'alumni-advisors' && circleRole(g, ['alumniAdvisor','nationalBoard','nationalIntern']))
+    || (room == 'pledge-leadership' && circleRole(g, ['pledgeMaster','pledgeWarden']))
+    || (room == 'actives' && active)
+    || (room == 'alumni' && !active)
+  );
+}
+function conversationMember(room) {
+  return isSocialMember() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(room)).data.memberIds;
+}
+function validMessage(root, room, mid) {
+  let d = request.resource.data;
+  return d.keys().hasOnly(['senderUid', 'senderName', 'body', 'photoPath', 'createdAt', 'reactions', 'mentionIds','mentionChapters', 'replyToID', 'sharedPostID'])
+    && validMentions()
+    && d.senderUid == request.auth.uid && d.senderName is string && d.senderName.size() <= 200
+    && d.body is string && d.body.size() <= 2000 && d.photoPath is string
+    && (d.body.size() > 0 || d.photoPath != '' || d.get('sharedPostID', '') != '')
+    && validChatReference(root, room)
+    && (d.get('sharedPostID', '') == '' || (root == 'chatPhotos' && d.sharedPostID is string && d.sharedPostID.matches('^[A-Za-z0-9_-]{1,128}$') && exists(/databases/$(database)/documents/forumPosts/$(d.sharedPostID))))
+    && (d.photoPath == '' || d.photoPath == root + '/' + room + '/' + mid + '/' + request.auth.uid + '.jpg')
+    && d.createdAt == request.time && d.reactions == {};
+}
+function validChatReference(root, room) {
+  let id = request.resource.data.get('replyToID', '');
+  return id == '' || (id is string && id.matches('^[A-Za-z0-9_-]{1,128}$') &&
+    ((root == 'channelPhotos' && exists(/databases/$(database)/documents/socialChannels/$(room)/messages/$(id))) ||
+     (root == 'chatPhotos' && exists(/databases/$(database)/documents/conversations/$(room)/messages/$(id)))));
+}
+function ownReactionOnly() {
+  let next = request.resource.data;
+  return next.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+    && next.reactions is map
+    && next.reactions.diff(resource.data.reactions).affectedKeys().hasOnly([request.auth.uid])
+    && next.reactions.get(request.auth.uid, '') in ['', '❤️', '😂', '🔥', '👍', '🤝', '😮', '😢', '😡'];
+}
+match /socialAccess/{uid} {
+  allow read: if isSocialMember() && (request.auth.uid == uid || isSocialAdmin());
+  allow create, update: if isSocialAdmin()
+    && request.resource.data.keys().hasOnly(['chapter','term','year','status','role','roles'])
+    && request.resource.data.chapter in ['', 'Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa']
+    && request.resource.data.term in ['', 'spring','summer','fall']
+    && request.resource.data.year is string
+    && (request.resource.data.year == '' || request.resource.data.year.matches('^[0-9]{4}$'))
+    && request.resource.data.get('status', '') in ['', 'active','alumni']
+    && request.resource.data.get('role', '') in ['', 'president','pledgeMaster','pledgeWarden','nationalBoard','nationalIntern','alumniAdvisor'];
+  allow delete: if isSocialAdmin();
+}
+match /socialChannels/{room}/messages/{mid} {
+  allow read: if channelAllowed(room);
+  allow create: if channelAllowed(room) && validMessage('channelPhotos', room, mid);
+  allow update: if channelAllowed(room) && ownReactionOnly();
+  allow delete: if channelAllowed(room) && (resource.data.senderUid == request.auth.uid || isSocialAdmin());
+}
+match /conversations/{room} {
+  // Reading a missing deterministic DM id is needed for race-safe creation.
+  allow get: if isSocialMember() && (resource == null || request.auth.uid in resource.data.memberIds);
+  allow list: if isSocialMember() && request.auth.uid in resource.data.memberIds;
+  allow create: if isSocialMember()
+    && request.resource.data.keys().hasOnly(['memberIds','title','kind','createdBy','createdAt'])
+    && request.resource.data.createdBy == request.auth.uid
+    && request.resource.data.createdAt == request.time
+    && request.resource.data.memberIds is list
+    && request.resource.data.memberIds.size() >= 2 && request.resource.data.memberIds.size() <= 30
+    && request.resource.data.memberIds.toSet().size() == request.resource.data.memberIds.size()
+    && request.auth.uid in request.resource.data.memberIds
+    && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
+    && ((request.resource.data.kind == 'direct' && request.resource.data.memberIds.size() == 2)
+      || (request.resource.data.kind == 'group' && request.resource.data.memberIds.size() > 2));
+  allow update: if conversationMember(room) && resource.data.kind == 'group'
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','avatarPath','updatedAt'])
+    && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 80
+    && request.resource.data.updatedAt == request.time
+    && (request.resource.data.get('avatarPath','') == resource.data.get('avatarPath','')
+      || request.resource.data.avatarPath.matches('^groupPhotos/' + room + '/' + request.auth.uid + '/[A-Za-z0-9_-]+[.]jpg$'));
+  allow delete: if false;
+  match /messages/{mid} {
+    allow read: if conversationMember(room);
+    allow create: if conversationMember(room) && unblockedDM(room) && validMessage('chatPhotos', room, mid);
+    allow update: if conversationMember(room) && ownReactionOnly();
+    allow delete: if conversationMember(room) && (resource.data.senderUid == request.auth.uid || isSocialAdmin());
+  }
+}
+
+function validMentions() {
+  return request.resource.data.get('mentionIds', []) is list
+    && request.resource.data.get('mentionIds', []).size() <= 30
+    && request.resource.data.get('mentionChapters', []) is list
+    && request.resource.data.get('mentionChapters', []).size() <= 10
+    && request.resource.data.get('mentionChapters', []).hasOnly(['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa']);
+}
+function unblockedDM(room) {
+  let d = get(/databases/$(database)/documents/conversations/$(room)).data;
+  let other = d.memberIds[0] == request.auth.uid ? d.memberIds[1] : d.memberIds[0];
+  return d.kind != 'direct' || (
+    !exists(/databases/$(database)/documents/blocks/$(other)/members/$(request.auth.uid))
+    && !exists(/databases/$(database)/documents/blocks/$(request.auth.uid)/members/$(other)));
+}
+match /activity/{uid}/items/{item} {
+  allow read: if isSocialMember() && request.auth.uid == uid;
+  allow update: if isSocialMember() && request.auth.uid == uid
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+    && request.resource.data.read == true;
+}
+match /notificationPreferences/{uid} {
+  allow read: if isSocialMember() && request.auth.uid == uid;
+  allow create, update: if isSocialMember() && request.auth.uid == uid
+    && request.resource.data.keys().hasOnly(['announcements','events','mentions','directMessages','groupMessages','replies','newPosts'])
+    && request.resource.data.get('announcements', true) is bool
+    && request.resource.data.get('events', true) is bool
+    && request.resource.data.get('mentions', true) is bool
+    && request.resource.data.get('directMessages', true) is bool
+    && request.resource.data.get('groupMessages', true) is bool
+    && request.resource.data.get('replies', true) is bool
+    && request.resource.data.get('newPosts', false) is bool;
+}
+match /blocks/{uid}/members/{other} {
+  allow read, delete: if isSocialMember() && request.auth.uid == uid;
+  allow create: if isSocialMember() && request.auth.uid == uid && other != uid
+    && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+}
+match /pushDevices/{uid}/tokens/{device} {
+  allow read, delete: if request.auth != null && request.auth.uid == uid;
+  allow create, update: if isSocialMember() && request.auth.uid == uid
+    && request.resource.data.keys().hasOnly(['token','updatedAt'])
+    && request.resource.data.token is string && request.resource.data.token.size() <= 4096
+    && request.resource.data.updatedAt == request.time;
+}
+match /roomReads/{uid}/rooms/{room} {
+  allow read: if isSocialMember() && request.auth.uid == uid;
+  allow create, update: if isSocialMember() && request.auth.uid == uid
+    && request.resource.data.keys().hasOnly(['readAt']) && request.resource.data.readAt == request.time;
+}
+
+// Approximate area sharing: no device coordinates or location history accepted.
+match /locationPreferences/{uid} {
+  allow read: if request.auth != null && request.auth.uid == uid;
+  allow create, update: if isSocialMember() && request.auth.uid == uid
+    && request.resource.data.keys().hasOnly(['enabled'])
+    && request.resource.data.enabled is bool
+    && (request.resource.data.enabled == true || !existsAfter(/databases/$(database)/documents/brotherLocations/$(uid)));
+}
+match /brotherLocations/{uid} {
+  allow read: if isSocialMember();
+  allow create, update: if isSocialMember() && request.auth.uid == uid
+    && get(/databases/$(database)/documents/locationPreferences/$(uid)).data.enabled == true
+    && request.resource.data.keys().hasOnly(['label','latitudeCell','longitudeCell','updatedAt'])
+    && request.resource.data.label is string && request.resource.data.label.size() > 0 && request.resource.data.label.size() <= 240
+    && request.resource.data.latitudeCell is int && request.resource.data.latitudeCell >= -4500 && request.resource.data.latitudeCell <= 4500
+    && request.resource.data.longitudeCell is int && request.resource.data.longitudeCell >= -9000 && request.resource.data.longitudeCell <= 9000
+    && request.resource.data.updatedAt == request.time;
+  allow delete: if request.auth != null && request.auth.uid == uid;
+}
+
+
+function eventReviewer() { return isAdmin(); }
+function eventVisible(d) {
+  return isSocialMember() && (d.status == 'published' || d.hostUid == request.auth.uid || request.auth.uid in d.collaboratorIds || request.auth.uid in d.invitedIds || (d.status == 'pending' && eventReviewer()));
+}
+function eventHasRSVP(event) {
+  return request.auth != null && exists(/databases/$(database)/documents/appEvents/$(event)/attendees/$(request.auth.uid))
+    && get(/databases/$(database)/documents/appEvents/$(event)/attendees/$(request.auth.uid)).data.status in ['going','maybe','busy','waitlist'];
+}
+function eventOrganizer(d) { return d.hostUid == request.auth.uid || request.auth.uid in d.collaboratorIds; }
+match /appEvents/{event} {
+  allow read: if eventVisible(resource.data);
+  allow write: if false;
+  match /attendees/{uid} {
+    allow read: if eventVisible(get(/databases/$(database)/documents/appEvents/$(event)).data)
+      && (request.auth.uid == uid || eventHasRSVP(event));
+    allow write: if false;
+  }
+  match /activity/{item} {
+    allow read: if eventVisible(get(/databases/$(database)/documents/appEvents/$(event)).data)
+      && (resource.data.kind == 'comment' || eventHasRSVP(event));
+    allow write: if false;
+  }
+  match /guestLists/{uid} {
+    allow read: if eventVisible(get(/databases/$(database)/documents/appEvents/$(event)).data)
+      && (request.auth.uid == uid || eventOrganizer(get(/databases/$(database)/documents/appEvents/$(event)).data));
+    allow write: if false;
+  }
+  match /tickets/{id} { allow read, write: if false; }
+  match /ticketOwners/{uid} { allow read, write: if false; }
+  match /checkins/{uid} { allow read, write: if false; }
+  match /requests/{id} { allow read, write: if false; }
+}
+    match /libraryFolders/{id} { allow read: if isSocialMember(); allow write: if false; }
+    match /libraryFiles/{id} { allow read: if isSocialMember(); allow write: if false; }
+
+    function pollVisible(id) {
+      let poll = get(/databases/$(database)/documents/polls/$(id)).data;
+      return isSocialMember() && ((poll.scope == 'post' && exists(/databases/$(database)/documents/forumPosts/$(id))) ||
+        (poll.scope == 'channel' && channelAllowed(poll.roomID) && exists(/databases/$(database)/documents/socialChannels/$(poll.roomID)/messages/$(id))));
+    }
+    match /polls/{id} {
+      allow read: if pollVisible(id); allow write: if false;
+      match /votes/{uid} { allow read: if pollVisible(id) && request.auth.uid == uid; allow write: if false; }
+    }
+    match /saved/{uid}/items/{id} {
+      allow read, delete: if isSocialMember() && request.auth.uid == uid;
+      allow create, update: if isSocialMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['kind','target','title','createdAt'])
+        && request.resource.data.kind in ['event','document']
+        && request.resource.data.target is string && request.resource.data.target.matches('^[A-Za-z0-9_-]{1,128}$')
+        && request.resource.data.title is string && request.resource.data.title.size() <= 300
+        && request.resource.data.createdAt == request.time;
+    }
+    match /channelMutes/{uid}/rooms/{room} {
+      allow read, delete: if isSocialMember() && request.auth.uid == uid;
+      allow create, update: if isSocialMember() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['createdAt']) && request.resource.data.createdAt == request.time;
+    }
+    match /notificationControls/{uid} {
+      allow read: if isSocialMember() && request.auth.uid == uid;
+      allow create, update: if isSocialMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['quietEnabled','startMinute','endMinute','timeZone'])
+        && request.resource.data.quietEnabled is bool && request.resource.data.startMinute is int
+        && request.resource.data.startMinute >= 0 && request.resource.data.startMinute < 1440
+        && request.resource.data.endMinute is int && request.resource.data.endMinute >= 0 && request.resource.data.endMinute < 1440
+        && request.resource.data.timeZone is string && request.resource.data.timeZone.size() <= 100;
     }
   }
 }

@@ -7,19 +7,21 @@ rules_version = '2';
 // initialize on the free Spark plan.
 service firebase.storage {
   match /b/{bucket}/o {
+    function legacySession() { return isActiveMember(); }
+
     // Pledge class photos & videos: any signed-in brother can upload; every
     // brother can view. Deleting an object is only allowed for whoever
     // uploaded it (recorded as custom metadata at upload time) or an admin
     // (checked against their Firestore user doc, mirroring firestore.rules'
     // isAdmin()).
     match /pledgeClassMedia/{classId}/{fileName} {
-      allow read: if request.auth != null;
+      allow read: if legacySession();
 
-      allow create: if request.auth != null
+      allow create: if legacySession()
         && request.resource.size < 100 * 1024 * 1024
         && request.resource.contentType.matches('image/.*|video/.*');
 
-      allow delete: if request.auth != null
+      allow delete: if legacySession()
         && (resource.metadata.uploaderUid == request.auth.uid
           || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true);
     }
@@ -29,13 +31,13 @@ service firebase.storage {
     // an admin can delete one. Images only (no video, unlike pledge class
     // media).
     match /galleryAlbums/{albumId}/{fileName} {
-      allow read: if request.auth != null;
+      allow read: if legacySession();
 
-      allow create: if request.auth != null
+      allow create: if legacySession()
         && request.resource.size < 100 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
 
-      allow delete: if request.auth != null
+      allow delete: if legacySession()
         && (resource.metadata.uploaderUid == request.auth.uid
           || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true);
     }
@@ -46,12 +48,12 @@ service firebase.storage {
     match /blogPhotos/{postId}/{fileName} {
       allow read: if true;
 
-      allow create: if request.auth != null
+      allow create: if isActiveMember()
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true
         && request.resource.size < 15 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
 
-      allow delete: if request.auth != null
+      allow delete: if isActiveMember()
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
@@ -62,15 +64,98 @@ service firebase.storage {
     match /linktreeAvatars/{chapter}/{fileName} {
       allow read: if true;
 
-      allow create: if request.auth != null
+      allow create: if isActiveMember()
         && (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true
           || request.auth.uid in firestore.get(/databases/(default)/documents/chapterLinktrees/$(chapter)).data.get('editorUids', []))
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
 
-      allow delete: if request.auth != null
+      allow delete: if isActiveMember()
         && (firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true
           || request.auth.uid in firestore.get(/databases/(default)/documents/chapterLinktrees/$(chapter)).data.get('editorUids', []));
+    }
+    // Authenticated storage paths require a non-disabled portal profile.
+    function isActiveMember() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('disabled', false) != true
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('membershipStatus', 'approved') == 'approved';
+    }
+    // Private images are downloaded with the authenticated SDK, never token URLs.
+    // Two cross-service document reads maximum: active profile + access/room.
+    function socialAccess() {
+      return firestore.get(/databases/(default)/documents/socialAccess/$(request.auth.uid)).data;
+    }
+function circleRole(g, roles) {
+  return g.get('role', '') in roles || g.get('roles', []).hasAny(roles);
+}
+function socialChannel(room) {
+  let g = firestore.exists(/databases/(default)/documents/socialAccess/$(request.auth.uid)) ? firestore.get(/databases/(default)/documents/socialAccess/$(request.auth.uid)).data : {};
+  let active = g.get('status', '') == 'active';
+  return isActiveMember() && (
+    room in ['general','shitposting','gaming','sports','finance']
+    || (g.get('chapter', '') != '' && (
+      room == 'chapter-' + g.chapter
+      || (active && room == 'chapter-actives-' + g.chapter)
+      || (!active && room == 'chapter-alumni-' + g.chapter)))
+    || (g.get('term', '') in ['fall','spring','summer'] && g.get('year', '') != '' && room == 'pbs-' + g.term + '-' + g.year)
+    || (room == 'leadership' && circleRole(g, ['president','nationalBoard','nationalIntern']))
+    || (room == 'nationals' && circleRole(g, ['nationalBoard']))
+    || (room == 'nationals-interns' && circleRole(g, ['nationalBoard','nationalIntern']))
+    || (room == 'alumni-advisors' && circleRole(g, ['alumniAdvisor','nationalBoard','nationalIntern']))
+    || (room == 'pledge-leadership' && circleRole(g, ['pledgeMaster','pledgeWarden']))
+    || (room == 'actives' && active)
+    || (room == 'alumni' && !active)
+  );
+}
+    function socialConversation(room) {
+      return isActiveMember() && request.auth.uid in firestore.get(/databases/(default)/documents/conversations/$(room)).data.memberIds;
+    }
+    function jpegUnderLimit() {
+      return request.resource.size <= 5 * 1024 * 1024 && request.resource.contentType == 'image/jpeg';
+    }
+    match /reportEvidence/{file} {
+      allow read: if isActiveMember() && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+      allow write: if false;
+    }
+    match /profilePhotos/{uid}/{file} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember() && request.auth.uid == uid && jpegUnderLimit();
+      allow delete: if isActiveMember() && request.auth.uid == uid;
+    }
+    match /postPhotos/{post}/{file} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember() && file == request.auth.uid + '.jpg' && jpegUnderLimit();
+      allow delete: if isActiveMember() && file == request.auth.uid + '.jpg';
+    }
+    match /groupPhotos/{room}/{uid}/{file} {
+      allow read: if socialConversation(room);
+      allow create: if socialConversation(room) && request.auth.uid == uid && jpegUnderLimit()
+        && firestore.get(/databases/(default)/documents/conversations/$(room)).data.kind == 'group';
+      allow delete: if socialConversation(room) && request.auth.uid == uid;
+    }
+    match /chatPhotos/{room}/{message}/{file} {
+      allow read: if socialConversation(room);
+      allow create: if socialConversation(room) && file == request.auth.uid + '.jpg' && jpegUnderLimit();
+      allow delete: if socialConversation(room) && (file == request.auth.uid + '.jpg' || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true);
+    }
+    match /channelPhotos/{room}/{message}/{file} {
+      allow read: if socialChannel(room);
+      allow create: if socialChannel(room) && file == request.auth.uid + '.jpg' && jpegUnderLimit();
+      allow delete: if socialChannel(room) && (file == request.auth.uid + '.jpg' || firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true);
+    }
+    match /eventCovers/{uid}/{file} {
+      allow read: if isActiveMember();
+      allow create: if resource == null && isActiveMember() && request.auth.uid == uid && jpegUnderLimit();
+      // Referenced covers stay available for published events; replacement uses a new file.
+    }
+    match /brotherLibrary/{fileId}/asset {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true
+        && request.resource.size > 0 && request.resource.size <= 50 * 1024 * 1024;
+      allow delete: if isActiveMember()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
     }
   }
 }
