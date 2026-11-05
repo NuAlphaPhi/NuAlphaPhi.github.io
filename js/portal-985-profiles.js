@@ -2,7 +2,7 @@
   "use strict";
   const P = P985;
   let current;
-  let profileTab = "posts";
+  let profileTab = "about";
   const slogans = [
     "ALMIGHTY ALPHAS",
     "BROLIC BETAS",
@@ -168,7 +168,7 @@
       .querySelectorAll("dialog.p-dialog[open]")
       .forEach((d) => d.close());
     current = uid;
-    profileTab = "posts";
+    profileTab = "about";
     P.go(uid === P.uid ? "myprofile" : "profile");
     render();
   };
@@ -351,7 +351,7 @@
       );
     const tabs = P.el("div", "p-profile-tabs");
     tabs.setAttribute("role", "tablist");
-    ["posts", "about"].forEach((tab) => {
+    ["about", "posts"].forEach((tab) => {
       const button = P.button(tab === "posts" ? "Posts" : "About", () => { profileTab = tab; render(); }, "p-profile-tab" + (profileTab === tab ? " is-selected" : ""));
       button.setAttribute("role", "tab");
       button.setAttribute("aria-selected", String(profileTab === tab));
