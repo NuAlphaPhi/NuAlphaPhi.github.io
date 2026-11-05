@@ -45,3 +45,37 @@ test('post management stays inside the options menu and editing opens correctly'
  const edit=[...dialogs[0].content.querySelectorAll('button')].find(b=>b.textContent==='Edit post');edit.click();
  assert.equal(closed,1);assert.equal(dialogs[1].title,'Edit post');
 });
+test('channel resume selects only accessible channels and otherwise falls back to General',()=>{
+ const policy=require('../js/portal-985-policy.js');
+ assert.equal(policy.resumeChannel({},'').id,'general');
+ assert.equal(policy.resumeChannel({},'gaming').id,'gaming');
+ assert.equal(policy.resumeChannel({},'nationals').id,'general');
+ assert.equal(policy.resumeChannel({role:'nationalBoard'},'nationals').id,'nationals');
+});
+test('recipient picker reveals the group name only for multiple recipients',()=>{
+ const c=setup(),P=c.P985;
+ vm.runInContext(fs.readFileSync('js/portal-985-chat.js','utf8'),c);
+ P.uid='me';P.brothers=[{uid:'one',pledgeName:'One',chapter:'Alpha'},{uid:'two',pledgeName:'Two',chapter:'Beta'}];
+ let dialog;
+ P.dialog=(title,content)=>{dialog=c.document.createElement('dialog');const header=c.document.createElement('div');header.className='p-row';header.append(c.document.createElement('button'));dialog.append(header,content);c.document.body.append(dialog);return dialog;};
+ P.newConversation();
+ const field=dialog.querySelector('input[aria-label="Group name"]').parentElement;
+ assert.equal(field.hidden,true);assert.equal(dialog.querySelector('.p-message-start').disabled,true);
+ dialog.querySelectorAll('.p-recipient-row')[0].click();assert.equal(field.hidden,true);
+ dialog.querySelectorAll('.p-recipient-row')[1].click();assert.equal(field.hidden,false);
+ assert.equal(dialog.querySelectorAll('.p-recipient-chip').length,2);
+ dialog.querySelector('.p-recipient-chip').click();assert.equal(field.hidden,true);
+});
+test('entering Channels opens General, then restores the last channel after leaving',()=>{
+ const c=setup(),P=c.P985,paths=[];
+ const query={where(){return this;},orderBy(){return this;},limit(){return this;},doc(){return this;},onSnapshot(){return ()=>{};},set:async()=>{}};
+ c.db.collection=path=>{paths.push(path);return query;};c.db.doc=()=>query;
+ P.watch=()=>()=>{};P.photoAttachment=()=>({clear(){}});
+ c.P985Policy=require('../js/portal-985-policy.js');P.uid='member';P.accessReady=true;P.grant={};
+ P.go=tab=>{c.document.querySelectorAll('[data-panel]').forEach(e=>e.hidden=e.dataset.panel!==tab);c.document.dispatchEvent(new c.CustomEvent('nap:tab-changed',{detail:{tab}}));};
+ vm.runInContext(fs.readFileSync('js/portal-985-chat.js','utf8'),c);
+ P.go('channels');assert.ok(paths.includes('socialChannels/general/messages'));
+ const gaming=[...c.document.querySelectorAll('.p-channel-group-rooms button')].find(b=>b.textContent.includes('Gaming'));gaming.click();
+ assert.equal(c.localStorage.getItem('985.lastChannel.member'),'gaming');
+ P.go('home');paths.length=0;P.go('channels');assert.ok(paths.includes('socialChannels/gaming/messages'));
+});

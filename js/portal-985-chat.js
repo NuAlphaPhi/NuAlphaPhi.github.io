@@ -27,6 +27,11 @@
   function channels() {
     return P985Policy.channels(P.grant);
   }
+  function restoreChannel(){
+    if(!P.uid||!P.accessReady||!panes.channels||active?.channel||document.querySelector('[data-panel="channels"]')?.hidden!==false)return;
+    let previous='';try{previous=localStorage.getItem('985.lastChannel.'+P.uid)||'';}catch(_){}
+    const room=P985Policy.resumeChannel(P.grant,previous);if(room)open(room);
+  }
   function roomTitle(r) {
     if (r.channel || r.kind === "group") return r.title;
     return P.name(P.person(r.memberIds.find((x) => x !== P.uid)));
@@ -62,7 +67,7 @@
       if (!el) continue;
       el.replaceChildren();
       const roomButton = (r) => {
-        const b = P.button((unread(r) ? "● " : "") + roomTitle(r), () => open(r));
+        const b = P.button((unread(r) ? "● " : "# ") + roomTitle(r), () => open(r));
         if (active?.id === r.id) b.classList.add("selected");
         return b;
       };
@@ -184,6 +189,7 @@
   function open(r, messageLimit = 100, olderHeight = 0) {
     off?.();receiptOff?.();roomPrefsOff?.();roomPrefs={};
     active = r;
+    if(r.channel){try{localStorage.setItem('985.lastChannel.'+P.uid,r.id);}catch(_){}}
     reply = "";
     const tab = r.channel ? "channels" : "messages";
     P.go(tab);
@@ -525,17 +531,19 @@
     lists();
   }
   P.newConversation = (preselected = [], sharedPost) => {
-    const box = P.el("div"),
-      search = P.field("Search brothers"),
-      name = P.field("Group name (for 3 or more members)"),
-      matches = P.el("div", "p-suggestions"),
+    const box = P.el("div", "p-new-message"),
+      search = P.field("Search brothers", "search"),
+      name = P.field("Group name"),
+      matches = P.el("div", "p-recipient-list"),
       selected = new Set(preselected),
-      summary = P.el("p");
-    box.append(search.wrap, matches, summary, name.wrap);
+      summary = P.el("div", "p-recipient-chips");
+    search.input.placeholder='Search by name or pledge name';search.wrap.classList.add('p-recipient-search');name.input.placeholder='Give your group a name';name.input.maxLength=80;
+    box.append(P.el('p','p-new-message-hint','Choose a brother, or select several to start a group.'),search.wrap,summary,matches,name.wrap);
     function draw() {
-      summary.textContent =
-        [...selected].map((id) => P.name(P.person(id))).join(", ") ||
-        "Choose one brother for a DM, or several for a group.";
+      summary.replaceChildren();name.wrap.hidden=selected.size<2;
+      selected.forEach(id=>{const chip=P.button(P.name(P.person(id))+' ×',()=>{selected.delete(id);draw();},'p-recipient-chip');chip.setAttribute('aria-label','Remove '+P.name(P.person(id)));summary.append(chip);});
+      summary.hidden=!selected.size;
+      const start=box.querySelector('.p-message-start');if(start){start.disabled=!selected.size;start.textContent=sharedPost?'Send post':selected.size>1?'Create group':'Start conversation';}
       matches.replaceChildren();
       P.brothers
         .filter(
@@ -547,20 +555,12 @@
               .includes(search.input.value.toLowerCase()),
         )
         .slice(0, 40)
-        .forEach((b) =>
-          matches.append(
-            P.button(
-              (selected.has(b.uid) ? "✓ " : "") + P.name(b) + " · " + b.chapter,
-              () => {
-                selected.has(b.uid)
-                  ? selected.delete(b.uid)
-                  : selected.add(b.uid);
-                draw();
-              },
-              "p-choice",
-            ),
-          ),
-        );
+        .forEach(b=>{
+          const button=P.button('',()=>{selected.has(b.uid)?selected.delete(b.uid):selected.add(b.uid);draw();},'p-recipient-row');button.setAttribute('aria-pressed',String(selected.has(b.uid)));
+          const identity=P.el('span','p-recipient-identity');identity.append(P.el('strong','',P.name(b)),P.el('small','',[b.firstName,b.lastName].filter(Boolean).join(' ')+' · '+(b.chapter||'Brother')));
+          button.append(P.avatar(b),identity,P.el('span','p-recipient-check',selected.has(b.uid)?'✓':''));matches.append(button);
+        });
+      if(!matches.childElementCount)matches.append(P.empty('No brothers found. Try another name.'));
     }
     search.input.oninput = draw;
     draw();
@@ -609,13 +609,14 @@
               kind: direct ? "direct" : "group",
             });
           }),
-        "p-btn primary",
+        "p-btn primary p-message-start",
       ),
     );
     const d = P.dialog(
       sharedPost ? "Share to a new conversation" : "New message",
       box,
     );
+    d.classList.add('p-new-message-dialog');const close=d.querySelector('.p-row > button');if(close){close.textContent='×';close.setAttribute('aria-label','Close new message');}draw();search.input.focus();
   };
   async function sendShared(id, post) {
     await db.collection("conversations/" + id + "/messages").add({
@@ -682,7 +683,7 @@
         tools.append(P.button("New message",()=>P.newConversation(),"p-btn primary"),search.wrap);
         sidebar.append(tools,list);layout.append(sidebar,chat);
         const empty=P.el("div","p-chat-welcome");empty.append(P.icon("send"),P.el("h2","","Your conversations, together."),P.el("p","p-muted","Catch up with a brother or bring the group together."),P.button("Start a conversation",()=>P.newConversation(),"p-btn primary"));chat.replaceChildren(empty);
-      } else layout.append(list, chat);
+      } else {root.classList.add("p-channels-page");layout.append(list, chat);}
       root.append(layout);
       panes[tab] = { list, chat };
     }
@@ -729,7 +730,7 @@
         notifications();
       },
     );
-    lists();
+    lists();restoreChannel();
   });
   let notificationFilter="all";
   function notifications() {
@@ -781,7 +782,7 @@
       .getElementById("notificationBellBtn")
       .setAttribute("aria-expanded", String(!d.hidden));
   };
-  document.addEventListener("p985:access", lists);
+  document.addEventListener("p985:access", ()=>{lists();restoreChannel();});
   document.addEventListener("p985:blocks", () => {
     lists();
     if (active) open(active);
@@ -796,5 +797,6 @@
       off = null;
       active = null;
     }
+    if(e.detail.tab==="channels")restoreChannel();
   });
 })();

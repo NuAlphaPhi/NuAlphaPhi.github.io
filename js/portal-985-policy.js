@@ -54,7 +54,8 @@
       updated <= now + 60000
     );
   }
-  const api = { channels, freshArea };
+  const resumeChannel = (grant, previous) => channels(grant).find(r => r.id === previous) || channels(grant).find(r => r.id === 'general');
+  const api = { channels, freshArea, resumeChannel };
   if (typeof module !== "undefined") module.exports = api;
   else root.P985Policy = api;
 })(typeof window === "undefined" ? globalThis : window);

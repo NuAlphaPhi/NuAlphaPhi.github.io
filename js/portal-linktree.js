@@ -139,14 +139,16 @@
     chapterGridEl.innerHTML = accessible
       .map(function (chapter) {
         var doc = allChapterDocs[chapter] || {};
-        var linkCount = (doc.links || []).length;
+        var linkCount = Array.isArray(doc.links) ? doc.links.length : 0;
+        var greek=['Α','Β','Γ','Δ','Ε','Ζ','Η','Θ','Ι','Κ'][window.NAP_CHAPTERS.indexOf(chapter)]||'';
+        var accent=/^#[0-9a-f]{6}$/i.test(colorFor(chapter))?colorFor(chapter):defaultColorFor(chapter);
         return (
           '<button class="linktree-admin-card" type="button" data-chapter-open="' + chapter + '">' +
-          '<span class="linktree-admin-card__dot" style="background:' + colorFor(chapter) + '"></span>' +
+          '<span class="linktree-admin-card__seal" style="--chapter-accent:' + accent + '" aria-hidden="true">'+greek+'</span>' +
           '<span class="linktree-admin-card__body">' +
           '<p class="linktree-admin-card__title">' + escapeHtml(chapter) + "</p>" +
-          '<p class="linktree-admin-card__meta">' + linkCount + (linkCount === 1 ? " link" : " links") + " · nualphaphi.com/" + chapter.toLowerCase() + "</p>" +
-          "</span></button>"
+          '<p class="linktree-admin-card__meta">nualphaphi.com/' + chapter.toLowerCase() + '</p>' +
+          '</span><span class="linktree-admin-card__count">'+linkCount+(linkCount===1?' link':' links')+'</span><span class="linktree-admin-card__arrow" aria-hidden="true">→</span></button>'
         );
       })
       .join("");

@@ -18,7 +18,8 @@
         ),
       ),
     );
-    const tabs = P.el("div", "p-tabs");
+    root.firstElementChild.classList.add("p-events-heading");
+    const tabs = P.el("div", "p-event-filters");
     [
       "upcoming",
       "completed",
@@ -32,11 +33,12 @@
             filter = t;
             render();
           },
-          "p-btn" + (filter === t ? " selected" : ""),
+          "p-event-filter" + (filter === t ? " selected" : ""),
         ),
       ),
     );
-    tabs.append(P.button(view === 'list' ? 'Calendar view' : 'List view',()=>{view=view==='list'?'calendar':'list';render();}));
+    tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.classList.contains('selected'))));
+    tabs.append(P.button(view === 'list' ? 'Calendar' : 'List',()=>{view=view==='list'?'calendar':'list';render();},'p-event-view-toggle'));
     root.append(tabs);
     const grid = P.el("div", "p-grid");
     P.events = [...all.values()].filter((e) => e.status !== "deleted");

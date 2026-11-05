@@ -93,7 +93,7 @@
 
     html += '<div class="forms-card__actions">';
     if (isOwner) {
-      html += '<button class="news-card__action-btn" type="button" data-form-duplicate="'+escapeHtml(form.id)+'">Duplicate / use as template</button>';
+      html += '<button class="news-card__action-btn" type="button" data-form-duplicate="'+escapeHtml(form.id)+'">Duplicate</button>';
       html +=
         '<button class="news-card__action-btn" type="button" data-form-edit="' + escapeHtml(form.id) + '">Edit</button>' +
         '<button class="news-card__action-btn" type="button" data-form-share="' + escapeHtml(form.id) + '">Share</button>';
@@ -109,7 +109,7 @@
 
   function renderFormsList(forms, container, isOwner, emptyText) {
     if (!forms.length) {
-      container.innerHTML = '<p class="news-card__empty">' + emptyText + "</p>";
+      container.innerHTML = '<div class="p-forms-empty"><span class="p-forms-empty-icon" aria-hidden="true">'+(isOwner?'＋':'↗')+'</span><h2>'+(isOwner?'Your next form starts here':'Nothing shared yet')+'</h2><p>'+(isOwner?'Collect RSVPs, feedback, or chapter updates in one place.':'Forms shared by other brothers will appear here.')+'</p>'+(isOwner?'<button type="button" class="p-forms-create" data-create-form>Create a form</button>':'')+'</div>';
       return;
     }
     container.innerHTML = forms
@@ -149,6 +149,7 @@
   }
 
   listsContainer.addEventListener("click", function (e) {
+    if(e.target.closest("[data-create-form]")){openBuilderPage(null);return;}
     var duplicate=e.target.closest('[data-form-duplicate]');
     if(duplicate){var source=findForm(duplicate.dataset.formDuplicate);if(source){openBuilderPage(Object.assign({},source,{id:null,title:source.title+' (copy)',published:false}));currentEditFormId=null;builderPageTitle.textContent='New form from template';}return;}
     var editBtn = e.target.closest("[data-form-edit]");

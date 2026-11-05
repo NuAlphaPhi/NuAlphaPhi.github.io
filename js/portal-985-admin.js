@@ -58,7 +58,7 @@
       root.append(P.empty("Administrator access is required."));
       return;
     }
-    const tabs = P.el("div", "p-tabs p-admin-tabs"),
+    const tabs = P.el("nav", "p-admin-nav"),
       options = P.me.isAdmin
         ? [
             "Applications",
@@ -76,29 +76,26 @@
         : ["Actives & alumni"];
     if (!options.includes(section)) section = options[0];
     const pendingCounts={'Applications':apps.filter(a=>['pending','hold'].includes(a.status)).length,'Content reports':reports.filter(r=>r.status==='open').length,'Events':(P.events||[]).filter(e=>e.status==='pending').length,'Announcements':announcementRequests.filter(r=>r.status==='pending').length};
-    options.forEach((t) =>
-      tabs.append(
-        P.button(
-          t+(pendingCounts[t]?" ("+pendingCounts[t]+")":""),
-          () => {
-            section = t;
-            render();
-          },
-          "p-btn" + (section === t ? " selected" : ""),
-        ),
-      ),
-    );
-    root.append(tabs);
-    if(P.me.isAdmin)root.append(P.button('Preview member permissions',()=>choose('Choose a brother to inspect',async uid=>{
+    tabs.setAttribute('aria-label','Administration sections');
+    for(const [label,sections] of [['Review',['Applications','Content reports','Events','Announcements']],['People',['Accounts','Leadership','Pledging','Actives & alumni','Alumni advisors','Admins']],['Records',['Activity']]]){
+      const available=sections.filter(t=>options.includes(t));if(!available.length)continue;
+      const group=P.el('div','p-admin-nav-group');group.append(P.el('h2','',label));
+      available.forEach(t=>{const button=P.button('',()=>{section=t;render();},'p-admin-nav-item');button.append(P.el('span','',t));if(pendingCounts[t])button.append(P.el('span','p-admin-nav-count',pendingCounts[t]));if(section===t)button.setAttribute('aria-current','page');group.append(button);});tabs.append(group);
+    }
+    const header=root.firstElementChild,headingText=P.el('div');headingText.append(...Array.from(header.childNodes));header.append(headingText);
+    const layout=P.el('div','p-admin-layout');layout.append(tabs);root.append(layout);
+    if(P.me.isAdmin)header.append(P.button('Permission preview',()=>choose('Choose a brother to inspect',async uid=>{
       const snap=await db.doc('socialAccess/'+uid).get(),grant=snap.data()||{},box=P.el('div'),person=P.person(uid);
       box.append(P.el('h3','',P.name(person)),P.el('p','p-muted','Current circle access is based on the server membership record. Administrator access does not automatically include every private circle.'));
       const roles=P.select('Preview role',['','president','pledgeMaster','pledgeWarden','nationalBoard','nationalIntern','alumniAdvisor'],grant.role||''),list=P.el('div');
       const draw=()=>{list.replaceChildren(...P985Policy.channels({...grant,role:roles.input.value,roles:roles.input.value===grant.role?grant.roles:[]}).map(r=>P.el('p','',r.title)));};
       roles.input.onchange=draw;box.append(roles.wrap,list,P.el('small','p-muted','Preview only. To change access, use the leadership or membership controls.'));draw();P.dialog('Permission preview',box);
-    })));
+    }),'p-admin-header-action'));
 
-    const content = P.el("div");
-    root.append(content);
+    const content = P.el("section", "p-admin-content");content.setAttribute('aria-label',section);layout.append(content);
+    const title=P.el('header','p-admin-content-heading');title.append(P.el('h2','',section));
+    if(pendingCounts[section])title.append(P.el('span','p-admin-nav-count',pendingCounts[section]+' to review'));
+    content.append(title);
     if (section === "Accounts") {
       const search = P.field("Search accounts", "search"), list = P.el("div", "p-admin-account-list");
       content.append(P.el("p", "p-muted", "Deactivation immediately blocks portal access. Reactivation restores sign-in. Deletion permanently removes the account and its associated personal data."), search.wrap, list);
@@ -125,9 +122,7 @@
       const pending = apps.filter((a) =>
         ["pending", "hold"].includes(a.status),
       );
-      content.append(
-        P.el("p", "p-muted", pending.length + " applications awaiting review"),
-      );
+      if(pending.length)content.append(P.el("p","p-muted","Review membership requests and welcome new brothers."));
       pending.forEach((a) => {
         const c = P.el("div", "p-card");
         c.append(
@@ -179,7 +174,7 @@
         content.append(c);
       });
       if (!pending.length)
-        content.append(P.empty("All applications have been reviewed."));
+        {const empty=P.el('div','p-admin-empty');empty.append(P.el('span','p-admin-empty-icon','✓'),P.el('h3','','You’re all caught up'),P.el('p','','New membership applications will appear here for review.'));content.append(empty);}
     }
     if (section === "Events") {
       content.append(

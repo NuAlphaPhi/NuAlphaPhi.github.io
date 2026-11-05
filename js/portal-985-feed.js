@@ -603,20 +603,10 @@
       );
       const top = P.row();
       if (kind === "home") {
-        const sortField = P.select(
-          "Sort posts",
-          [
-            ["latest", "Latest"],
-            ["activity", "Recent activity"],
-            ["top", "Most likes"],
-          ],
-          sort,
-        );
-        sortField.input.onchange = () => {
-          sort = sortField.input.value;
-          render();
-        };
-        r.querySelector(".p-header").append(sortField.wrap);
+        const sortMenu=P.el('details','p-sort-picker'),sortLabel=P.el('summary','',({'latest':'Latest','activity':'Recent activity','top':'Most likes'})[sort]),sortOptions=P.el('div','p-sort-options');
+        sortLabel.setAttribute('aria-label','Sort posts');sortMenu.append(sortLabel,sortOptions);
+        [['latest','Latest'],['activity','Recent activity'],['top','Most likes']].forEach(([value,label])=>{const option=P.button(label,()=>{sort=value;sortLabel.textContent=label;sortMenu.open=false;for(const b of sortOptions.children)b.setAttribute('aria-pressed',String(b.dataset.sort===value));render();sortLabel.focus();},'p-sort-option');option.dataset.sort=value;option.setAttribute('aria-pressed',String(sort===value));sortOptions.append(option);});
+        r.querySelector('.p-header').append(sortMenu);
         const modes=P.el('div','p-feed-switch');modes.setAttribute('role','group');modes.setAttribute('aria-label','Feed');
         [['all','All brothers'],['you','For you']].forEach(([value,label])=>{const b=P.button(label,()=>{feedMode=value;for(const tab of modes.children)tab.setAttribute('aria-pressed',String(tab.dataset.mode===value));render();},'p-feed-switch__tab');b.dataset.mode=value;b.setAttribute('aria-pressed',String(feedMode===value));modes.append(b);});r.append(modes);
         const strip=P.el('div','p-home-status');strip.id='p985-personal-status';strip.hidden=true;r.append(strip);
@@ -805,5 +795,7 @@
       },
     );
   }
+  document.addEventListener('click',e=>{document.querySelectorAll('.p-sort-picker[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.p-sort-picker[open]').forEach(d=>{d.open=false;d.querySelector('summary').focus();});});
   document.addEventListener("p985:blocks", render);
 })();

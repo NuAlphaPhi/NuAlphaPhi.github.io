@@ -493,6 +493,7 @@
     P.me = profile;
     P.watch(db.doc("socialAccess/" + uid), (d) => {
       P.grant = d || {};
+      P.accessReady = true;
       document.dispatchEvent(new Event("p985:access"));
     });
     P.watch(db.collection("blocks").doc(uid).collection("members"), (rows) => {
