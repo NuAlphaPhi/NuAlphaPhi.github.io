@@ -12,6 +12,7 @@
   var currentUid = null;
   var allAlbums = [];
   var started = false;
+  var autoCovers = new Map();
 
   function escapeHtml(value) {
     var div = document.createElement("div");
@@ -49,6 +50,7 @@
           allAlbums = snap.docs.map(function (doc) {
             return Object.assign({}, doc.data(), { id: doc.id });
           });
+          syncAutoCovers();
           renderAlbumGrid();
           if (currentAlbumId) renderAlbumDetail();
         },
@@ -56,6 +58,41 @@
           albumGridEl.innerHTML = '<p class="news-card__empty">Couldn’t load the Gallery — the site’s database permissions may need to be republished.</p>';
         }
       );
+  }
+
+  // Legacy/imported albums may have photos without saved cover metadata.
+  // Listen to just one photo so uploads/deletions update the fallback too,
+  // without downloading an entire album or requiring a database write.
+  function syncAutoCovers() {
+    autoCovers.forEach(function (entry, id) {
+      var album = findAlbum(id);
+      if (!album || album.coverThumbUrl || album.coverUrl) {
+        entry.unsubscribe();
+        autoCovers.delete(id);
+      }
+    });
+    allAlbums.forEach(function (album) {
+      if (album.coverThumbUrl || album.coverUrl) return;
+      var existing = autoCovers.get(album.id);
+      if (existing) {
+        album.autoCoverUrl = existing.url;
+        return;
+      }
+      var entry = { url: null, unsubscribe: function () {} };
+      autoCovers.set(album.id, entry);
+      entry.unsubscribe = db.collection("galleryAlbums").doc(album.id)
+        .collection("photos").limit(1).onSnapshot(function (snap) {
+          if (autoCovers.get(album.id) !== entry) return;
+          var photo = snap.docs.length ? snap.docs[0].data() : null;
+          entry.url = photo ? photo.thumbUrl || photo.url || null : null;
+          var current = findAlbum(album.id);
+          if (current) current.autoCoverUrl = entry.url;
+          renderAlbumGrid();
+        }, function () {
+          // Allow a later album refresh to retry a failed listener.
+          if (autoCovers.get(album.id) === entry) autoCovers.delete(album.id);
+        });
+    });
   }
 
   var IMAGE_ICON_SVG =
@@ -66,8 +103,9 @@
     "</svg>";
 
   function albumCardHtml(album) {
-    var cover = album.coverUrl
-      ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(album.coverThumbUrl || album.coverUrl) + '" alt="" loading="lazy" decoding="async"></div>'
+    var coverUrl = album.coverThumbUrl || album.coverUrl || album.autoCoverUrl;
+    var cover = coverUrl
+      ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(coverUrl) + '" alt="" loading="lazy" decoding="async"></div>'
       : '<div class="gallery-album-card__cover gallery-album-card__cover--empty">' + IMAGE_ICON_SVG + "</div>";
 
     var count = Number.isSafeInteger(album.photoCount) && album.photoCount >= 0 ? album.photoCount : 0;
