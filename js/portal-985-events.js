@@ -5,6 +5,7 @@
     queries = [],
     filter = "upcoming";
   P.events = [];
+  let view = "list", calendarMonth = new Date();
   function render() {
     const root = P.root("events");
     root.replaceChildren(
@@ -35,6 +36,7 @@
         ),
       ),
     );
+    tabs.append(P.button(view === 'list' ? 'Calendar view' : 'List view',()=>{view=view==='list'?'calendar':'list';render();}));
     root.append(tabs);
     const grid = P.el("div", "p-grid");
     P.events = [...all.values()].filter((e) => e.status !== "deleted");
@@ -55,6 +57,7 @@
         ? P.date(b.start) - P.date(a.start)
         : P.date(a.start) - P.date(b.start),
     );
+    if(view==='calendar') { P.renderCalendar(root,rows,calendarMonth,d=>{calendarMonth=d;render();});document.dispatchEvent(new Event('p985:events'));return; }
     rows.forEach((e) => {
       const card = P.el("article", "p-card p-event-card");
       card.append(
@@ -63,6 +66,7 @@
         P.el("h2", "", e.title),
         P.el("p", "p-muted", P.when(e.start)),
         P.el("p", "", e.locationTBD ? "Location to be announced" : e.location),
+        P.el('small','p-muted',(e.reservedSeats || 0)+' reserved'+(e.capacity?' / '+e.capacity:'')+(e.waitlistCount?' · '+e.waitlistCount+' waitlisted':'')),
         P.button("View event", () => P.openEvent(e.id), "p-btn primary"),
       );
       grid.append(card);
@@ -286,7 +290,10 @@
   };
   P.openEvent = (id) => {
     const box = P.el("div");
-    const dialog = P.dialog("Event", box);
+    const page=P.root('event-detail');
+    page.replaceChildren(P.button('← All events',()=>P.go('events')),box);
+    window.napSetTab('event-detail','events');
+    const dialog={close:()=>P.go('events')};
     P.run(box, async () => {
       const snap = await db.doc("appEvents/" + id).get();
       if (!snap.exists || snap.data().status === "deleted")
@@ -386,7 +393,15 @@
         a.rel = "noopener";
         actions.append(a);
       }
+      if(organizer && e.hostUid!==P.uid && !P.me.isAdmin) actions.querySelector('.danger')?.remove();
       box.append(actions);
+      if(e.status==='published'){
+        P.eventTools(e,box);
+        if(organizer||P.me.isAdmin)actions.append(P.button('Send attendee announcement',()=>{
+          const content=P.el('div'),field=P.field('Announcement','textarea');field.input.maxLength=1500;
+          content.append(field.wrap,P.button('Send to attendees',()=>P.run(content,async()=>{await P.event('announce',id,{body:field.input.value});d.close();P.toast('Announcement sent');})));const d=P.dialog('Event announcement',content);
+        }));
+      }
       if (e.status !== "published") {
         box.append(P.empty("Status: " + e.status));
         return;
@@ -397,7 +412,7 @@
       const own = await P.event("attendance", id);
       rsvp.append(
         P.el("h3", "", "Your RSVP"),
-        P.el("p", "", own.status || "Not responded"),
+        P.el("p", "", (own.status || "Not responded")+(own.waitlistPosition?' · Waitlist position '+own.waitlistPosition:'')+' · Party of '+(own.partySize||1)),
       );
       const status = P.select(
         "Response",

@@ -151,11 +151,20 @@
     }
     async function load(){if(loading||exhausted)return;loading=true;draw();try{let query=db.collection(`conversations/${r.id}/messages`).orderBy("createdAt","desc").limit(100);if(cursor)query=query.startAfter(cursor);const page=await query.get();messages.push(...page.docs.map(doc=>({id:doc.id,...doc.data()})));cursor=page.docs.at(-1)||cursor;exhausted=page.size<100;}catch(error){loading=false;draw();P.error(content,error);return;}loading=false;draw();}
     ["Members","Media","Links"].forEach(label=>tabs.append(P.button(label,()=>{selected=label;draw();if(label!=="Members"&&!messages.length&&!exhausted)load();},"p-btn")));
-    box.append(identity,form,tabs,content);const d=P.dialog("Group details",box);d.classList.add("p-group-dialog");draw();
+    const membership=P.el('div','p-card');membership.append(P.el('p','p-muted','New members can read the full group history. Removing a member ends their access.'));
+    const manage=(operation,memberUid)=>P.run(membership,async()=>{await P.call('portalAction',{action:'group',roomID:r.id,operation,memberUid});d.close();P.toast('Group updated');if(operation==='leave'){off?.();active=null;P.go('messages');}});
+    if(r.createdBy===P.uid||P.me.isAdmin){
+      const member=P.select('Current member',r.memberIds.map(id=>[id,P.name(P.person(id))]),r.memberIds[0]);
+      const add=P.select('Add brother',P.brothers.filter(b=>!r.memberIds.includes(b.uid)).map(b=>[b.uid,P.name(b)+' · '+b.chapter]));
+      membership.append(member.wrap,P.button('Remove member',()=>manage('remove',member.input.value)),P.button('Transfer ownership',()=>manage('transfer',member.input.value)),add.wrap,P.button('Add member',()=>manage('add',add.input.value)));
+    }
+    membership.append(P.button('Leave group',()=>manage('leave')));
+    box.append(identity,form,membership,tabs,content);const d=P.dialog("Group details",box);d.classList.add("p-group-dialog");draw();
   }
   async function read() {
     if (!active || document.hidden || location.hash !== (active.channel ? "#channels" : "#messages")) return;
     const room = active;
+    if(!room.channel && roomPrefs.shareReceipts)await db.doc('conversations/'+room.id+'/readReceipts/'+P.uid).set({readAt:P.stamp()});
     const key = (room.channel ? "channel-" : "chat-") + room.id;
     await db
       .doc("roomReads/" + P.uid + "/rooms/" + key)
@@ -171,8 +180,9 @@
       await batch.commit();
     }
   }
-  function open(r) {
-    off?.();
+  let receiptOff, roomPrefsOff, roomPrefs={};
+  function open(r, messageLimit = 100, olderHeight = 0) {
+    off?.();receiptOff?.();roomPrefsOff?.();roomPrefs={};
     active = r;
     reply = "";
     const tab = r.channel ? "channels" : "messages";
@@ -186,6 +196,12 @@
       identity.append(roomAvatar(r),labels);if(r.kind==="group")identity.oncontextmenu=e=>{e.preventDefault();groupDetails(r);};head.append(identity);
     } else head.append(P.el("h2", "", "# " + roomTitle(r)));
     chat.classList.toggle("p-channel-chat", !!r.channel);
+    if(!r.channel){
+      const settings=P.row(),receipt=P.el('small','p-muted');head.append(settings,receipt);
+      const ref=db.doc('chatSettings/'+P.uid+'/rooms/'+r.id);
+      roomPrefsOff=ref.onSnapshot(s=>{roomPrefs=s.data()||{};settings.replaceChildren(P.button(roomPrefs.muted?'Unmute':'Mute',()=>P.run(head,()=>ref.set({muted:!roomPrefs.muted},{merge:true}))),P.button(roomPrefs.shareReceipts?'Read receipts on':'Read receipts off',()=>P.run(head,async()=>{const enabled=!roomPrefs.shareReceipts;await ref.set({shareReceipts:enabled},{merge:true});if(!enabled)await db.doc('conversations/'+r.id+'/readReceipts/'+P.uid).delete();else await db.doc('conversations/'+r.id+'/readReceipts/'+P.uid).set({readAt:P.stamp()});})));},e=>P.error(head,e));
+      receiptOff=db.collection('conversations/'+r.id+'/readReceipts').onSnapshot(s=>{receipt.textContent=s.docs.filter(d=>d.id!==P.uid&&r.memberIds.includes(d.id)).map(d=>P.name(P.person(d.id))+' read '+P.when(d.data().readAt)).join(' · ');},e=>P.error(head,e));
+    }
     if (r.channel)
       head.append(
         P.button(mutes.has(r.id) ? "Unmute" : "Mute", () =>
@@ -209,7 +225,8 @@
     file.input.accept = "image/*";
     const key = "985.draft." + P.uid + "." + tab + "." + r.id;
     input.input.value = localStorage.getItem(key) || "";
-    input.input.oninput = () => localStorage.setItem(key, input.input.value);
+    try { input.input._mentions=JSON.parse(localStorage.getItem(key+".mentions")||"{}"); } catch (_) {}
+    input.input.oninput = () => {localStorage.setItem(key, input.input.value);localStorage.setItem(key+".mentions",JSON.stringify(input.input._mentions||{}));};
     P.mentionPicker(input.input);
     input.wrap.className = "p-chat-input";
     input.wrap.firstChild.className = "p-sr-only";
@@ -253,14 +270,28 @@
         composer.requestSubmit();
       }
     });
-    chat.append(head, log, composer);
+    const roomSearch=P.field('Search loaded messages','search');
+    roomSearch.input.oninput=()=>log.querySelectorAll('.p-message').forEach(el=>{el.hidden=!el.textContent.toLowerCase().includes(roomSearch.input.value.toLowerCase());});
+    head.append(P.button('Search',()=>{roomSearch.wrap.hidden=!roomSearch.wrap.hidden;roomSearch.input.focus();}),P.button('Jump to latest',()=>{log.scrollTop=log.scrollHeight;}));
+    roomSearch.wrap.hidden=true;
+    chat.append(head,roomSearch.wrap,log,composer);
+    let loadingOlder=false;
+    log.addEventListener('scroll',()=>{if(log.scrollTop<20&&!loadingOlder&&Object.keys(roomRows).length>=messageLimit){loadingOlder=true;open(r,messageLimit+100,log.scrollHeight);}});
     const path =
       (r.channel ? "socialChannels/" : "conversations/") + r.id + "/messages";
+    head.append(P.button('Pinned',()=>{
+      const box=P.el('div');P.dialog('Pinned messages',box);P.run(box,async()=>{const snap=await db.collection(path).where('pinned','==',true).get();snap.docs.forEach(doc=>{const m=doc.data();if(P.blocks.has(m.senderUid)&&(r.channel||r.kind==='direct'))return;box.append(P.el('strong','',m.senderName),P.text(m.body,m));if(m.photoPath)box.append(P.image(m.photoPath));});if(!box.childElementCount)box.append(P.empty('No pinned messages.'));});
+    }),P.button('Find in history',()=>{
+      const box=P.el('div'),field=P.field('Search conversation','search'),results=P.el('div'),status=P.el('p','p-muted');let rows=[],closed=false;
+      const d=P.dialog('Search message history',box);d.cleanup=()=>{closed=true;};
+      const draw=()=>{results.replaceChildren();const q=field.input.value.trim().toLowerCase();if(!q)return;rows.filter(m=>String(m.body||'').toLowerCase().includes(q)&&!(P.blocks.has(m.senderUid)&&(r.channel||r.kind==='direct'))).slice(0,100).forEach(m=>{const card=P.el('div','p-card');card.append(P.el('strong','',m.senderName),P.el('small','p-muted',P.when(m.createdAt)),P.text(m.body,m));results.append(card);});};
+      field.input.oninput=draw;box.append(field.wrap,status,results);P.run(box,async()=>{let cursor;do{let q=db.collection(path).orderBy('createdAt','desc').limit(200);if(cursor)q=q.startAfter(cursor);const page=await q.get();if(closed)return;rows.push(...page.docs.map(doc=>({id:doc.id,...doc.data()})));status.textContent='Searching '+rows.length+' messages…';draw();cursor=page.size===200?page.docs.at(-1):null;}while(cursor);status.textContent='All '+rows.length+' messages searched. Up to 100 matching results are shown.';});
+    }));
     let first = true;
     off = db
       .collection(path)
       .orderBy("createdAt", "desc")
-      .limit(100)
+      .limit(messageLimit)
       .onSnapshot(
         (s) => {
           const nearBottom =
@@ -268,6 +299,9 @@
           const rows = s.docs.map((d) => ({ id: d.id, ...d.data() })).reverse();
           roomRows = Object.fromEntries(rows.map((m) => [m.id, m]));
           log.replaceChildren();
+          let divider=false;
+          const seen=P.date(reads[(r.channel?'channel-':'chat-')+r.id]?.readAt).getTime();
+          if(rows.length>=messageLimit)log.append(P.button('Load older messages',()=>open(r,messageLimit+100,log.scrollHeight)));
           rows.forEach((m) => {
             if (P.blocks.has(m.senderUid) && (r.channel || r.kind === "direct"))
               return;
@@ -279,6 +313,7 @@
               );
             } catch {}
             if (hidden.includes(m.id)) return;
+            if(!divider&&m.senderUid!==P.uid&&P.date(m.createdAt).getTime()>seen){log.append(P.el('p','p-unread-divider','New messages'));divider=true;}
             const c = P.el(
               "div",
               "p-message" +
@@ -290,7 +325,7 @@
             );
             c.append(
               P.author(m.senderUid, m.senderName),
-              P.el("small", "", P.when(m.createdAt)),
+              P.el("small", "", P.when(m.createdAt)+(m.editedAt?" · edited":"")+(m.pinned?" · pinned":"")),
             );
             if (m.replyToID)
               c.append(
@@ -335,7 +370,9 @@
             log.append(c);
           });
           if (!rows.length) log.append(P.empty("Start the conversation."));
-          if (first || nearBottom) log.scrollTop = log.scrollHeight;
+          if(first&&olderHeight)log.scrollTop=Math.max(1,log.scrollHeight-olderHeight);
+          else if (first || nearBottom) log.scrollTop = log.scrollHeight;
+          roomSearch.input.oninput();
           first = false;
           read().catch((e) => P.error(head, e));
         },
@@ -389,6 +426,11 @@
           }),
         ),
       );
+      if(m.senderUid===P.uid && !m.pollID)actions.append(P.button('Edit message',()=>{
+        d.close();const box=P.el('div'),f=P.field('Message','textarea',m.body);f.input.maxLength=2000;
+        box.append(f.wrap,P.button('Save',()=>P.run(box,async()=>{await P.call('portalAction',{action:'editMessage',scope:r.channel?'channel':'chat',roomID:r.id,id:m.id,body:f.input.value});edit.close();})));const edit=P.dialog('Edit message',box);
+      }));
+      if(P.me.isAdmin||(!r.channel&&r.createdBy===P.uid))actions.append(P.button(m.pinned?'Unpin message':'Pin message',()=>P.run(box,async()=>{await P.call('portalAction',{action:'pinMessage',scope:r.channel?'channel':'chat',roomID:r.id,id:m.id,pinned:!m.pinned});d.close();})));
       actions.append(P.button("Report message", () => { d.close(); P.reportContent(path + "/" + m.id); }));
       if (m.senderUid === P.uid || P.me.isAdmin)
         actions.append(
@@ -473,7 +515,7 @@
           input.input.style.height = "auto";
           reply = "";
           hint.replaceChildren();
-          localStorage.removeItem(key);
+          localStorage.removeItem(key);localStorage.removeItem(key+".mentions");
           status.textContent = "";
         } finally {
           send.disabled = false;
@@ -650,6 +692,7 @@
         .where("memberIds", "array-contains", P.uid),
       (rows) => {
         conversations = rows;
+        if(active&&!active.channel&&!rows.some(r=>r.id===active.id)){off?.();receiptOff?.();roomPrefsOff?.();active=null;panes.messages.chat.replaceChildren(P.empty("You are no longer a member of this conversation."));}
         if(active&&!active.channel){const current=rows.find(r=>r.id===active.id);if(current){active={...active,...current};const label=head?.querySelector(".p-chat-identity strong");if(label)label.textContent=roomTitle(current);const avatar=head?.querySelector(".p-chat-identity > span:first-child");if(avatar)avatar.replaceWith(roomAvatar(current));}}
 
         for(const [id,unsubscribe] of previewListeners)if(!rows.some(r=>r.id===id)){unsubscribe();previewListeners.delete(id);delete previews[id];}
@@ -681,12 +724,14 @@
         .limit(150),
       (rows) => {
         items = rows;
+        P.activity=rows;document.dispatchEvent(new Event("p985:activity"));
         lists();
         notifications();
       },
     );
     lists();
   });
+  let notificationFilter="all";
   function notifications() {
     const list = document.getElementById("notificationList"),
       bell = document.getElementById("notificationBellDot");
@@ -694,10 +739,12 @@
       (i) =>
         !P.blocks.has(i.actor) &&
         !mutes.has(i.roomID) &&
-        (["mentions", "replies", "applications"].includes(i.kind) || i.eventID || i.announcementRequestID),
+        (notificationFilter==='all'||notificationFilter==='unread'&&!i.read||notificationFilter==='mentions'&&i.kind==='mentions'||notificationFilter==='events'&&i.eventID),
     );
     bell.hidden = !visible.some((i) => !i.read);
     list.replaceChildren();
+    const filter=P.select('Notifications',[['all','All'],['unread','Unread'],['mentions','Mentions'],['events','Events']],notificationFilter);filter.input.onchange=()=>{notificationFilter=filter.input.value;notifications();};
+    list.append(filter.wrap,P.button('Mark all read',()=>P.run(list,async()=>{const pending=items.filter(i=>!i.read);for(let n=0;n<pending.length;n+=400){const batch=db.batch();pending.slice(n,n+400).forEach(i=>batch.update(db.doc('activity/'+P.uid+'/items/'+i.id),{read:true}));await batch.commit();}})));
     visible.forEach((i) => {
       const b = P.button(
         (i.read ? "" : "● ") + (i.title || "985") + " — " + (i.body || ""),
@@ -706,7 +753,8 @@
             await db
               .doc("activity/" + P.uid + "/items/" + i.id)
               .update({ read: true });
-            if (i.reportID) P.reviewReports();
+            if(i.formID)P.go("forms");
+            else if (i.reportID) P.reviewReports();
             else if (i.eventID) P.openEvent(i.eventID);
             else if (i.postID) P.openPost(i.postID);
             else if (i.announcementRequestID) {
@@ -744,7 +792,7 @@
   });
   document.addEventListener("nap:tab-changed", (e) => {
     if (active && e.detail.tab !== (active.channel ? "channels" : "messages")) {
-      off?.();
+      off?.();receiptOff?.();roomPrefsOff?.();
       off = null;
       active = null;
     }

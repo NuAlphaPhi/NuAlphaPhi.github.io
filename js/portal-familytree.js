@@ -479,6 +479,7 @@
     });
   }
 
+  window.napFocusFamilyMember = function(id){window.napSetTab('family-tree');var member=findMember(id);if(member)requestAnimationFrame(function(){focusOnMember(member);});};
   if (searchResultsEl) {
     searchResultsEl.addEventListener("click", function (e) {
       var opt = e.target.closest("[data-search-result]");

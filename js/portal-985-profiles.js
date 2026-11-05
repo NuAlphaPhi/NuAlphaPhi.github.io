@@ -134,18 +134,6 @@
       ? b.leadershipTitles
       : [];
     a.push(...leadership.filter((x) => x !== "Admin" && x !== "App Developer"));
-    const latest = {
-      Alpha: "alpha nu",
-      Beta: "beta iota",
-      Gamma: "alpha upsilon",
-      Delta: "alpha phi",
-      Epsilon: "alpha omicron",
-      Zeta: "alpha sigma",
-      Eta: "alpha beta",
-      Theta: "chi",
-      Iota: "alpha beta",
-      Kappa: "alpha",
-    };
     const alphabet =
       "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega".split(
         " ",
@@ -156,7 +144,8 @@
         .replace(/ class$/, "")
         .split(" ")
         .reduce((n, w) => n * 24 + alphabet.indexOf(w) + 1, 0);
-    const diff = rank(latest[b.chapter]) - rank(b.pledgeClass);
+    const chapterClasses=(P.rosterData?.classes||[]).filter(c=>c.chapter===b.chapter).sort((a,b)=>rank(b.pledgeClass)-rank(a.pledgeClass));
+    const diff = chapterClasses.length && b.pledgeClass ? rank(chapterClasses[0].pledgeClass) - rank(b.pledgeClass) : -1;
     if (diff === 0) a.push("NEO");
     else if (diff === 1) a.push("GEO");
     a.push(b.membershipStanding === "active" ? "Active" : "Alumni");
@@ -351,14 +340,35 @@
       );
     const tabs = P.el("div", "p-profile-tabs");
     tabs.setAttribute("role", "tablist");
-    ["about", "posts"].forEach((tab) => {
-      const button = P.button(tab === "posts" ? "Posts" : "About", () => { profileTab = tab; render(); }, "p-profile-tab" + (profileTab === tab ? " is-selected" : ""));
+    ["about", "brotherhood", "posts"].forEach((tab) => {
+      const button = P.button(tab === "posts" ? "Posts" : tab === "brotherhood" ? "Brotherhood" : "About", () => { profileTab = tab; render(); }, "p-profile-tab" + (profileTab === tab ? " is-selected" : ""));
       button.setAttribute("role", "tab");
       button.setAttribute("aria-selected", String(profileTab === tab));
       tabs.append(button);
     });
     root.append(tabs);
     if (profileTab === "about") root.append(dl);
+    else if(profileTab==='brotherhood'){
+      const data=P.rosterData||{classes:[],people:[],tree:[],links:{}},norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const suggested=data.people.filter(r=>{const c=data.classes.find(c=>c.id===r.classID);return c?.chapter===b.chapter && ((b.pledgeName&&norm(r.pledgeName)===norm(b.pledgeName))||norm(r.fullName)===norm([b.firstName,b.lastName].filter(Boolean).join(' ')));});
+      const verified=data.accountLinks?.[b.uid],matches=verified?data.people.filter(r=>r.id===verified.rosterID):[];
+      const box=P.el('section','p-card');root.append(box);
+      if(verified&&P.me.isAdmin)box.append(P.button('Remove verified link',()=>P.run(box,async()=>{if(!await P.confirm('Remove this account’s verified roster link? The account and roster entry will remain.'))return;await P.call('portalAction',{action:'unlinkProfile',uid:b.uid,expectedRosterID:verified.rosterID});P.toast('Profile link removed',()=>P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:verified.rosterID}));})));
+      if(!verified&&P.me.isAdmin){
+        const candidates=suggested.length?suggested:data.people,choice=P.select('Verify roster identity',candidates.map(r=>[r.id,(r.fullName||'')+' · '+r.pledgeName+' · '+(data.classes.find(c=>c.id===r.classID)?.chapter||'')]));
+        box.append(choice.wrap,P.button('Confirm account link',()=>P.run(box,()=>P.call('portalAction',{action:'linkProfile',uid:b.uid,rosterID:choice.input.value}))));
+      }
+      box.append(P.el('h2','','Brotherhood'),P.button(b.chapter+' Chapter',()=>P.chapter(b.chapter)));
+      if(matches.length!==1){box.append(P.empty(matches.length?'Multiple roster matches need administrator review.':'No unique roster match yet. Ask an administrator to review the roster.'));if(P.me.isAdmin)box.append(P.button('Review roster',()=>P.go('roster')));}
+      else {
+        const r=matches[0],c=data.classes.find(c=>c.id===r.classID),linked=data.links[r.id],node=data.tree.find(t=>t.id===linked?.treeID);
+        box.append(P.el('h3','',c?.pledgeClass+' Class'),P.el('p','',data.people.filter(p=>p.classID===r.classID).map(p=>p.pledgeName||p.fullName).join(' · ')));
+        if(node){const big=data.tree.find(t=>t.id===node.bigId),littles=data.tree.filter(t=>t.bigId===node.id);box.append(P.el('p','','Big: '+(big?.pledgeName||big?.name||'Founding branch')),P.el('p','','Littles: '+(littles.map(t=>t.pledgeName||t.name).join(', ')||'None recorded')),P.button('View family tree',()=>window.napFocusFamilyMember(node.id)));}
+        else box.append(P.empty('Family-tree link awaits verification. No records have been automatically merged.'));
+      }
+      box.append(P.el('h3','','Leadership'),P.el('p','',(b.leadershipTitles||[]).join(' · ')||'No current leadership appointments'));
+      const history=P.el('div');box.append(history);db.collection('leadershipHistory/'+b.uid+'/entries').orderBy('createdAt','desc').limit(50).get().then(s=>{if(!history.isConnected)return;s.docs.forEach(d=>{const h=d.data();history.append(P.el('p','p-muted',P.when(h.createdAt)+' · '+((h.titles||[]).join(', ')||'Appointment ended')));});}).catch(e=>P.error(history,e));
+    }
     else {
       const posts = P.posts.filter((p) => p.authorUid === b.uid && !P.blocks.has(b.uid));
       root.append(...posts.map((p) => P.postCard(p)));
@@ -484,6 +494,7 @@
   });
   document.addEventListener("p985:people", render);
   document.addEventListener("p985:posts", render);
+  document.addEventListener("p985:roster", render);
   P.ready(() => {
     if (location.hash === "#myprofile") {
       current = P.uid;

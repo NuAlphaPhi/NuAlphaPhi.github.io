@@ -75,10 +75,11 @@
           ]
         : ["Actives & alumni"];
     if (!options.includes(section)) section = options[0];
+    const pendingCounts={'Applications':apps.filter(a=>['pending','hold'].includes(a.status)).length,'Content reports':reports.filter(r=>r.status==='open').length,'Events':(P.events||[]).filter(e=>e.status==='pending').length,'Announcements':announcementRequests.filter(r=>r.status==='pending').length};
     options.forEach((t) =>
       tabs.append(
         P.button(
-          t,
+          t+(pendingCounts[t]?" ("+pendingCounts[t]+")":""),
           () => {
             section = t;
             render();
@@ -88,6 +89,14 @@
       ),
     );
     root.append(tabs);
+    if(P.me.isAdmin)root.append(P.button('Preview member permissions',()=>choose('Choose a brother to inspect',async uid=>{
+      const snap=await db.doc('socialAccess/'+uid).get(),grant=snap.data()||{},box=P.el('div'),person=P.person(uid);
+      box.append(P.el('h3','',P.name(person)),P.el('p','p-muted','Current circle access is based on the server membership record. Administrator access does not automatically include every private circle.'));
+      const roles=P.select('Preview role',['','president','pledgeMaster','pledgeWarden','nationalBoard','nationalIntern','alumniAdvisor'],grant.role||''),list=P.el('div');
+      const draw=()=>{list.replaceChildren(...P985Policy.channels({...grant,role:roles.input.value,roles:roles.input.value===grant.role?grant.roles:[]}).map(r=>P.el('p','',r.title)));};
+      roles.input.onchange=draw;box.append(roles.wrap,list,P.el('small','p-muted','Preview only. To change access, use the leadership or membership controls.'));draw();P.dialog('Permission preview',box);
+    })));
+
     const content = P.el("div");
     root.append(content);
     if (section === "Accounts") {
@@ -367,6 +376,7 @@
         );
     }
     if (section === "Activity") {
+      const filter=P.field('Search audit history','search');content.append(filter.wrap);filter.input.oninput=()=>content.querySelectorAll('.p-card').forEach(r=>{r.hidden=!r.textContent.toLowerCase().includes(filter.input.value.toLowerCase());});
       audit.forEach((a) => {
         const row = P.el("div", "p-card");
         row.append(
@@ -380,6 +390,7 @@
               .join(" · "),
           ),
         );
+        if(a.before||a.after){const detail=P.el('details'),summary=P.el('summary','','Before / after');detail.append(summary,P.el('pre','p-text',JSON.stringify({before:a.before||{},after:a.after||{}},null,2)));row.append(detail);}
         content.append(row);
       });
       if (!audit.length) content.append(P.empty("No recent admin activity."));

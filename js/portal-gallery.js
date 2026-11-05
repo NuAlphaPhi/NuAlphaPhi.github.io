@@ -105,14 +105,14 @@
   function albumCardHtml(album) {
     var coverUrl = album.coverThumbUrl || album.coverUrl || album.autoCoverUrl;
     var cover = coverUrl
-      ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(coverUrl) + '" alt="" loading="lazy" decoding="async"></div>'
+      ? '<div class="gallery-album-card__cover"><img src="' + escapeHtml(coverUrl) + '" style="object-position:50% ' + (Number.isFinite(album.coverPosition)?Math.max(0,Math.min(100,album.coverPosition)):50) + '%" alt="" loading="lazy" decoding="async"></div>'
       : '<div class="gallery-album-card__cover gallery-album-card__cover--empty">' + IMAGE_ICON_SVG + "</div>";
 
     var count = Number.isSafeInteger(album.photoCount) && album.photoCount >= 0 ? album.photoCount : 0;
     var manage = canManageAlbum(album);
 
     return (
-      '<article class="gallery-album-card" data-album-id="' + escapeHtml(album.id) + '">' +
+      '<article tabindex="0" aria-label="Open album" class="gallery-album-card" data-album-id="' + escapeHtml(album.id) + '">' +
       cover +
       '<div class="gallery-album-card__body">' +
       '<h3 class="gallery-album-card__title">' + escapeHtml(album.title) + "</h3>" +
@@ -120,8 +120,8 @@
       '<div class="gallery-album-card__actions">' +
       '<button class="news-card__action-btn" type="button" data-album-open="' + escapeHtml(album.id) + '">View Album</button>' +
       (manage
-        ? '<button class="news-card__action-btn" type="button" data-album-rename="' + escapeHtml(album.id) + '">Rename</button>' +
-          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-album-delete="' + escapeHtml(album.id) + '">Delete</button>'
+        ? '<details class="p-album-menu"><summary aria-label="Manage album">⋯</summary><button class="news-card__action-btn" type="button" data-album-rename="' + escapeHtml(album.id) + '">Rename</button>' +
+          '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-album-delete="' + escapeHtml(album.id) + '">Delete</button></details>'
         : "") +
       "</div></div></article>"
     );
@@ -136,6 +136,10 @@
   }
 
   albumGridEl.addEventListener("click", function (e) {
+    if (!e.target.closest('button,summary,details')) {
+      var card = e.target.closest('[data-album-id]');
+      if(card) { openAlbumDetail(card.dataset.albumId); return; }
+    }
     var openBtn = e.target.closest("[data-album-open]");
     var renameBtn = e.target.closest("[data-album-rename]");
     var deleteBtn = e.target.closest("[data-album-delete]");
@@ -159,6 +163,11 @@
     }
   });
 
+  albumGridEl.addEventListener('keydown', function(e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-album-id]')) {
+      e.preventDefault(); openAlbumDetail(e.target.dataset.albumId);
+    }
+  });
   function deleteAlbumCascade(albumId) {
     var albumRef = db.collection("galleryAlbums").doc(albumId);
     albumRef
@@ -171,13 +180,9 @@
           if (data.storagePath) storageDeletes.push(storage.ref(data.storagePath).delete().catch(function () {}));
           if (data.thumbStoragePath) storageDeletes.push(storage.ref(data.thumbStoragePath).delete().catch(function () {}));
         });
-        return Promise.all(storageDeletes).then(function () {
-          var batch = db.batch();
-          snap.forEach(function (doc) {
-            batch.delete(doc.ref);
-          });
-          batch.delete(albumRef);
-          return batch.commit();
+        return Promise.all(storageDeletes).then(async function () {
+          for(var i=0;i<snap.docs.length;i+=400){var batch=db.batch();snap.docs.slice(i,i+400).forEach(function(doc){batch.delete(doc.ref);});await batch.commit();}
+          await albumRef.delete();
         });
       })
       .then(function () {
@@ -200,9 +205,18 @@
 
   var currentEditAlbumId = null;
 
+  ['description', 'eventDate', 'eventId'].forEach(function(name) {
+    var label = document.createElement('label'); label.className = 'form-field';
+    label.textContent = {description:'Description',eventDate:'Event date',eventId:'Linked event (optional)'}[name];
+    var input = document.createElement(name === 'description' ? 'textarea' : name === 'eventId' ? 'select' : 'input');
+    input.name = name; if(input.tagName==='INPUT')input.type = name === 'eventDate' ? 'date' : 'text'; input.maxLength = name === 'description' ? 2000 : 128;
+    label.append(input); albumSubmitBtn.before(label);
+  });
   function openAlbumModal(album) {
+    var events=albumForm.elements.eventId; events.replaceChildren(new Option('No linked event','')); ((window.P985 && P985.events)||[]).forEach(function(e){events.add(new Option(e.title,e.id));});
+    ['description','eventDate','eventId'].forEach(function(name) { albumForm.elements[name].value = album && album[name] || ''; });
     currentEditAlbumId = album ? album.id : null;
-    albumModalTitleEl.textContent = album ? "Rename Album" : "New Album";
+    albumModalTitleEl.textContent = album ? "Edit Album" : "New Album";
     albumSubmitBtn.textContent = album ? "Save Changes" : "Save Album";
     albumForm.querySelector('[name="title"]').value = album ? album.title || "" : "";
     albumFormErrorEl.hidden = true;
@@ -233,11 +247,17 @@
     if (isEdit) {
       writePromise = db.collection("galleryAlbums").doc(currentEditAlbumId).update({
         title: title,
+        description: albumForm.elements.description.value.trim(),
+        eventDate: albumForm.elements.eventDate.value,
+        eventId: albumForm.elements.eventId.value.trim(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
     } else {
       writePromise = db.collection("galleryAlbums").add({
         title: title,
+        description: albumForm.elements.description.value.trim(),
+        eventDate: albumForm.elements.eventDate.value,
+        eventId: albumForm.elements.eventId.value.trim(),
         createdByUid: currentUid,
         createdByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
         photoCount: 0,
@@ -277,6 +297,7 @@
   var photosUnsub = null;
 
   function openAlbumDetail(albumId) {
+    visiblePhotos = 48; selectedPhotos.clear();
     currentAlbumId = albumId;
     currentAlbumPhotos = [];
     renderAlbumDetail();
@@ -303,6 +324,8 @@
         }
       );
   }
+
+  window.napOpenAlbum = openAlbumDetail;
 
   function closeAlbumDetail() {
     if (photosUnsub) {
@@ -338,10 +361,13 @@
     var count = Number.isSafeInteger(album.photoCount) && album.photoCount >= 0 ? album.photoCount : 0;
     albumPageMetaEl.textContent = count + (count === 1 ? " photo" : " photos") + " · Started by " + (album.createdByName || "A brother");
 
+    if(album.description)albumPageMetaEl.textContent += ' · '+album.description;
+    if(album.eventDate)albumPageMetaEl.textContent += ' · '+album.eventDate;
     albumPageActionsEl.innerHTML = canManageAlbum(album)
       ? '<button class="news-card__action-btn" type="button" data-rename-album>Rename Album</button>' +
         '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-album>Delete Album</button>'
       : "";
+    if(album.eventId && window.P985)albumPageActionsEl.append(P985.button('View linked event',function(){P985.openEvent(album.eventId);}));
   }
 
   albumPageActionsEl.addEventListener("click", function (e) {
@@ -366,7 +392,19 @@
     return timestamp.toDate().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
   }
 
+  var visiblePhotos = 48, selectedPhotos = new Set();
+  var tools = document.createElement('div'); tools.className = 'p-gallery-tools p985';
+  photoGridEl.before(tools);
   function renderPhotoGrid() {
+    tools.replaceChildren();
+    if (window.P985) {
+      var P = P985;
+      tools.append(P.button('Select all', function(){ currentAlbumPhotos.forEach(function(p){selectedPhotos.add(p.id);}); renderPhotoGrid(); }),
+        P.button('Clear selection', function(){selectedPhotos.clear();renderPhotoGrid();}),
+        P.button('Download selected (' + selectedPhotos.size + ')',function(){currentAlbumPhotos.filter(function(p){return selectedPhotos.has(p.id);}).forEach(downloadPhoto);}),
+        P.button('Delete selected',function(){P.run(tools,async function(){var eligible=currentAlbumPhotos.filter(function(p){return selectedPhotos.has(p.id)&&(p.uploadedByUid===currentUid||canManageAlbum(findAlbum(currentAlbumId)));});if(!eligible.length)throw Error('Select photos you uploaded, or ask an administrator.');if(await P.confirm('Delete '+eligible.length+' selected photos?')){for(var p of eligible)await deletePhoto(p.id);selectedPhotos.clear();renderPhotoGrid();}});})
+      );
+    }
     if (!photoGridEl) return;
 
     if (!currentAlbumPhotos.length) {
@@ -375,26 +413,47 @@
       return;
     }
 
-    photoGridEl.innerHTML = currentAlbumPhotos
+    photoGridEl.innerHTML = currentAlbumPhotos.slice(0, visiblePhotos)
       .map(function (p) {
-        var canDelete = p.uploadedByUid === currentUid || isAdmin();
+        var canDelete = p.uploadedByUid === currentUid || canManageAlbum(findAlbum(currentAlbumId));
         var when = formatPhotoDate(p.createdAt);
         return (
           '<div class="media-card">' +
-          '<div class="media-card__preview media-card__preview--clickable" data-photo-open="' + escapeHtml(p.id) + '">' +
+          '<label><input type="checkbox" data-photo-select="' + escapeHtml(p.id) + '" ' + (selectedPhotos.has(p.id)?'checked':'') + '> Select photo</label>' +
+          '<div role="button" tabindex="0" aria-label="Open photo" class="media-card__preview media-card__preview--clickable" data-photo-open="' + escapeHtml(p.id) + '">' +
           '<img src="' + escapeHtml(p.thumbUrl || p.url) + '" alt="" loading="lazy" decoding="async"></div>' +
           '<div class="media-card__footer">' +
-          '<p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
+          '<p>' + escapeHtml(p.caption || '') + '</p><p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
           '<div class="media-card__actions">' +
           '<button class="media-card__btn" type="button" data-photo-download="' + escapeHtml(p.id) + '">Download</button>' +
+          (canManageAlbum(findAlbum(currentAlbumId)) ? '<button class="media-card__btn" type="button" data-photo-cover="' + escapeHtml(p.id) + '">Set cover</button>' : '') +
+          (canDelete ? '<button class="media-card__btn" type="button" data-photo-caption="' + escapeHtml(p.id) + '">Caption / tags</button>' : '') +
           (canDelete ? '<button class="media-card__btn media-card__btn--danger" type="button" data-photo-delete="' + escapeHtml(p.id) + '">Delete</button>' : "") +
           "</div></div></div>"
         );
       })
       .join("");
 
+    if (currentAlbumPhotos.length > visiblePhotos && window.P985) photoGridEl.append(P985.button('Load more photos',function(){visiblePhotos+=48;renderPhotoGrid();}));
     syncLightboxWithPhotos();
   }
+  photoGridEl.addEventListener('change',function(e){if(e.target.dataset.photoSelect){var id=e.target.dataset.photoSelect;e.target.checked?selectedPhotos.add(id):selectedPhotos.delete(id);renderPhotoGrid();}});
+  photoGridEl.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.dataset.photoOpen){e.preventDefault();openLightbox(e.target.dataset.photoOpen);}});
+  photoGridEl.addEventListener('click',function(e){
+    var button=e.target.closest('[data-photo-cover],[data-photo-caption]');if(!button)return;
+    var P=P985,photo=currentAlbumPhotos.find(function(p){return p.id===(button.dataset.photoCover||button.dataset.photoCaption);});
+    if(!photo)return;
+    var box=P.el('div');
+    if(button.dataset.photoCover){
+      var img=P.image(photo.url,'p-event-cover'), crop=P.field('Vertical crop position','range',50);crop.input.min=0;crop.input.max=100;
+      img.style.aspectRatio='4/3';img.style.objectFit='cover';crop.input.oninput=function(){img.style.objectPosition='50% '+crop.input.value+'%';};
+      box.append(img,crop.wrap,P.button('Use as album cover',function(){P.run(box,async function(){await db.doc('galleryAlbums/'+currentAlbumId).update({coverUrl:photo.url,coverThumbUrl:photo.thumbUrl||photo.url,coverPosition:Number(crop.input.value),updatedAt:P.stamp()});d.close();});}));
+    }else{
+      var caption=P.field('Caption','textarea',photo.caption||''),tags=P.field('Tag brothers (comma-separated pledge names)','text',(photo.taggedUids||[]).map(function(id){return P.name(P.person(id));}).join(', '));caption.input.maxLength=1000;
+      box.append(caption.wrap,tags.wrap,P.button('Save',function(){P.run(box,async function(){var names=tags.input.value.split(',').map(function(x){return x.trim();}).filter(Boolean);var ids=names.map(function(name){var matches=P.brothers.filter(function(b){return P.name(b).toLowerCase()===name.toLowerCase();});if(matches.length!==1)throw Error('The name '+name+' does not identify exactly one brother.');return matches[0].uid;});if(ids.length>30)throw Error('Tag up to 30 brothers.');await db.doc('galleryAlbums/'+currentAlbumId+'/photos/'+photo.id).update({caption:caption.input.value.trim(),taggedUids:ids,updatedAt:P.stamp()});d.close();});}));
+    }
+    var d=P.dialog(button.dataset.photoCover?'Album cover':'Photo details',box);
+  });
 
   function downloadPhoto(photo) {
     /* fetch()+blob() used to build this, but Firebase Storage's download
@@ -416,35 +475,17 @@
     a.remove();
   }
 
-  function deletePhoto(photoId) {
-    var photo = currentAlbumPhotos.find(function (p) {
-      return p.id === photoId;
+  async function deletePhoto(photoId) {
+    var albumId=currentAlbumId,albumRef=db.doc('galleryAlbums/'+albumId),photoRef=albumRef.collection('photos').doc(photoId);
+    var photo=currentAlbumPhotos.find(function(p){return p.id===photoId;}),next=currentAlbumPhotos.find(function(p){return p.id!==photoId;});
+    await db.runTransaction(async function(tx){
+      var snapshots=await Promise.all([tx.get(albumRef),tx.get(photoRef),next?tx.get(albumRef.collection('photos').doc(next.id)):Promise.resolve(null)]);
+      if(!snapshots[0].exists||!snapshots[1].exists)return;
+      var album=snapshots[0].data(),data=snapshots[1].data(),update={photoCount:Math.max(0,(album.photoCount||1)-1),updatedAt:P985.stamp()};
+      if(album.coverUrl===data.url || album.coverThumbUrl===data.thumbUrl){var replacement=snapshots[2]?.exists?snapshots[2].data():null;update.coverUrl=replacement?replacement.url:null;update.coverThumbUrl=replacement?(replacement.thumbUrl||replacement.url):null;}
+      tx.delete(photoRef);tx.update(albumRef,update);
     });
-    var albumId = currentAlbumId;
-    var album = findAlbum(albumId);
-    var storageDeletes = [
-      photo && photo.storagePath ? storage.ref(photo.storagePath).delete().catch(function () {}) : Promise.resolve(),
-      photo && photo.thumbStoragePath ? storage.ref(photo.thumbStoragePath).delete().catch(function () {}) : Promise.resolve(),
-    ];
-
-    Promise.all(storageDeletes)
-      .then(function () {
-        return db.collection("galleryAlbums").doc(albumId).collection("photos").doc(photoId).delete();
-      })
-      .then(function () {
-        var update = { photoCount: firebase.firestore.FieldValue.increment(-1), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-        if (album && photo && album.coverUrl === photo.url) {
-          var nextCover = currentAlbumPhotos.find(function (p) {
-            return p.id !== photoId;
-          });
-          update.coverUrl = nextCover ? nextCover.url : null;
-          update.coverThumbUrl = nextCover ? nextCover.thumbUrl || nextCover.url : null;
-        }
-        return db.collection("galleryAlbums").doc(albumId).update(update);
-      })
-      .catch(function () {
-        window.alert("Couldn't delete this photo. Please try again.");
-      });
+    await Promise.all([photo?.storagePath,photo?.thumbStoragePath].filter(Boolean).map(function(path){return storage.ref(path).delete().catch(function(){});}));
   }
 
   if (photoGridEl) {
@@ -464,7 +505,7 @@
       if (deleteBtn) {
         var photoId = deleteBtn.getAttribute("data-photo-delete");
         window.napConfirm("This can't be undone.", { title: "Delete this photo?", confirmLabel: "Delete" }).then(function (confirmed) {
-          if (confirmed) deletePhoto(photoId);
+          if (confirmed) P985.run(photoGridEl,function(){return deletePhoto(photoId);});
         });
         return;
       }
@@ -563,100 +604,30 @@
 
   var PHOTO_MAX_BYTES = 100 * 1024 * 1024;
 
-  function uploadPhotoFile(file, albumId) {
-    var safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_");
-    var base = Date.now() + "_" + Math.random().toString(36).slice(2) + "_" + safeName;
-    var storagePath = "galleryAlbums/" + albumId + "/" + base;
-    var thumbStoragePath = "galleryAlbums/" + albumId + "/" + base + "_thumb.jpg";
-
-    var uploadTask = storage.ref(storagePath).put(file, {
-      customMetadata: { uploaderUid: currentUid },
-      contentDisposition: 'attachment; filename="' + file.name.replace(/"/g, "") + '"',
-    });
-
-    if (photoFeedbackEl) {
-      photoFeedbackEl.hidden = false;
-      photoFeedbackEl.className = "form-feedback";
-      photoFeedbackEl.textContent = 'Uploading "' + file.name + '"… 0%';
+  var uploadQueue=document.createElement('div');uploadQueue.setAttribute('aria-live','polite');photoGridEl.before(uploadQueue);
+  function uploadPhotoFile(file, albumId, job) {
+    var P=P985;
+    job=job||{id:crypto.randomUUID(),base:crypto.randomUUID()+'_'+file.name.replace(/[^a-zA-Z0-9_.-]/g,'_')};
+    var row=P.el('div','p-upload-item'),progress=P.el('progress'),status=P.el('span','','Uploading');progress.max=100;progress.value=0;progress.setAttribute('aria-label','Upload '+file.name);row.append(P.el('span','',file.name),progress,status);uploadQueue.append(row);
+    var path='galleryAlbums/'+albumId+'/'+job.base,thumbPath=path+'_thumb.jpg';
+    async function upload(blob,path,onProgress){
+      var ref=storage.ref(path);
+      try{return await ref.getDownloadURL();}catch(error){if(error.code!=='storage/object-not-found')throw error;}
+      var task=ref.put(blob,{customMetadata:{uploaderUid:currentUid}});
+      task.on('state_changed',function(s){if(onProgress)onProgress(s);});await task;return ref.getDownloadURL();
     }
-
-    uploadTask.on("state_changed", function (snapshot) {
-      var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-      if (photoFeedbackEl) photoFeedbackEl.textContent = 'Uploading "' + file.name + '"… ' + pct + "%";
-    });
-
-    /* A small thumbnail uploads alongside the full-res original — the grid
-       renders this instead, so scrolling a big album doesn't mean decoding
-       dozens of multi-MB photos at once. No separate progress UI for it;
-       it's tiny and fast. Falls back to the full photo (thumbUrl null) if
-       the browser can't produce a blob for some reason. */
-    var thumbUploadPromise = new Promise(function (resolve) {
-      window.napResizeImageToBlob(file, 480, 0.75, function (blob) {
-        if (!blob) {
-          resolve(null);
-          return;
-        }
-        storage
-          .ref(thumbStoragePath)
-          .put(blob, { customMetadata: { uploaderUid: currentUid } })
-          .then(function (snapshot) {
-            return snapshot.ref.getDownloadURL();
-          })
-          .then(resolve)
-          .catch(function () {
-            resolve(null);
-          });
+    return (async function(){
+      var url=await upload(file,path,function(s){progress.value=Math.round(s.bytesTransferred/s.totalBytes*100);});
+      var blob=await new Promise(function(resolve){window.napResizeImageToBlob(file,480,.75,resolve);});
+      var thumbUrl=blob?await upload(blob,thumbPath):null;
+      var albumRef=db.doc('galleryAlbums/'+albumId),photoRef=albumRef.collection('photos').doc(job.id);
+      await db.runTransaction(async function(tx){
+        var snapshots=await Promise.all([tx.get(albumRef),tx.get(photoRef)]),album=snapshots[0];if(!album.exists)throw Error('This album was deleted.');if(snapshots[1].exists)return;
+        tx.set(photoRef,{url:url,storagePath:path,thumbUrl:thumbUrl,thumbStoragePath:thumbUrl?thumbPath:null,fileName:file.name,uploadedByUid:currentUid,uploadedByName:window.napDisplayName(window.NAP_CURRENT_PROFILE,'A brother'),createdAt:P.stamp()});
+        var patch={photoCount:firebase.firestore.FieldValue.increment(1),updatedAt:P.stamp()};if(!album.data().coverUrl&&!album.data().coverThumbUrl){patch.coverUrl=url;patch.coverThumbUrl=thumbUrl||url;}tx.update(albumRef,patch);
       });
-    });
-
-    Promise.all([
-      uploadTask.then(function (snapshot) {
-        return snapshot.ref.getDownloadURL();
-      }),
-      thumbUploadPromise,
-    ])
-      .then(function (results) {
-        var url = results[0];
-        var thumbUrl = results[1];
-        return db
-          .collection("galleryAlbums")
-          .doc(albumId)
-          .collection("photos")
-          .add({
-            url: url,
-            storagePath: storagePath,
-            thumbUrl: thumbUrl || null,
-            thumbStoragePath: thumbUrl ? thumbStoragePath : null,
-            fileName: file.name,
-            uploadedByUid: currentUid,
-            uploadedByName: window.napDisplayName(window.NAP_CURRENT_PROFILE, "A brother"),
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-          })
-          .then(function () {
-            var album = findAlbum(albumId);
-            var update = { photoCount: firebase.firestore.FieldValue.increment(1), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-            if (album && !album.coverUrl) {
-              update.coverUrl = url;
-              update.coverThumbUrl = thumbUrl || url;
-            }
-            return db.collection("galleryAlbums").doc(albumId).update(update);
-          });
-      })
-      .then(function () {
-        if (photoFeedbackEl) {
-          photoFeedbackEl.className = "form-feedback form-feedback--success";
-          photoFeedbackEl.textContent = '"' + file.name + '" uploaded.';
-        }
-        window.setTimeout(function () {
-          if (photoFeedbackEl) photoFeedbackEl.hidden = true;
-        }, 2000);
-      })
-      .catch(function () {
-        if (photoFeedbackEl) {
-          photoFeedbackEl.className = "form-feedback form-feedback--error";
-          photoFeedbackEl.textContent = 'Couldn\'t upload "' + file.name + '". Please try again.';
-        }
-      });
+      progress.value=100;status.textContent='Uploaded';
+    })().catch(function(error){status.textContent=error.message||'Upload failed';row.append(P.button('Retry',function(){row.remove();uploadPhotoFile(file,albumId,job);}));});
   }
 
   if (photoUploadInputEl) {

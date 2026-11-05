@@ -113,10 +113,5 @@
       .join("");
   }
 
-  db.collection("users").onSnapshot(function (snap) {
-    var brothers = snap.docs.map(function (doc) {
-      return Object.assign({}, doc.data(), { uid: doc.id });
-    });
-    render(brothers);
-  });
+  window.napOnBrothersUpdated(function(){render(window.NAP_ALL_BROTHERS || []);});
 })();

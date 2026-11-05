@@ -166,6 +166,7 @@
     if (form.description) {
       html += '<p class="public-form-card__desc">' + escapeHtml(form.description) + "</p>";
     }
+    if(form.identified)html += '<p class="public-form-gate__notice">Your brother profile will be recorded with this response and shown to the form owner and collaborators.</p>';
     html += '<form id="publicForm" novalidate>';
     html += (form.questions || []).map(questionFieldHtml).join("");
     html += '<p class="form-error" id="publicFormError" role="alert" hidden></p>';
@@ -197,20 +198,17 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting…";
 
-      db.collection("forms")
-        .doc(formId)
-        .collection("responses")
-        .add({
-          answers: collectAnswers(form, formEl),
-          submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        })
+      var requestID=formEl.dataset.requestId||(formEl.dataset.requestId=crypto.randomUUID());
+      Promise.resolve(auth.currentUser?auth.currentUser.getIdToken():null).then(function(token){
+        return fetch('https://us-central1-nualphaphi-6b330.cloudfunctions.net/submitPortalForm',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},token?{Authorization:'Bearer '+token}:{}),body:JSON.stringify({data:{formID:formId,requestID:requestID,version:form.version||1,answers:collectAnswers(form,formEl)}})});
+      }).then(function(response){return response.json();}).then(function(result){if(result.error)throw Error(result.error.message);if(!result.result?.saved)throw Error('Could not save your response.');})
         .then(function () {
           renderState("Thanks!", "Your response has been recorded.");
         })
-        .catch(function () {
+        .catch(function (err) {
           submitBtn.disabled = false;
           submitBtn.textContent = "Submit";
-          errorEl.textContent = "Something went wrong submitting your response. Please try again.";
+          errorEl.textContent = err.message || "Something went wrong submitting your response. Please try again.";
           errorEl.hidden = false;
         });
     });
@@ -230,6 +228,7 @@
       if (!snap.exists) { renderState("Form not found", "This form may have been deleted."); return; }
       var form = snap.data();
       if (!form.published) { renderState("Not accepting responses", "This form is currently closed by its owner."); return; }
+      if(form.closesAt&&new Date(form.closesAt)<=new Date()||form.responseLimit&&form.responseCount>=form.responseLimit){renderState('Not accepting responses','This form has reached its closing date or response limit.');return;}
       renderForm(formId, form);
     }).catch(function (error) {
       if (error.code === "permission-denied") {

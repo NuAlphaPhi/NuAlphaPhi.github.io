@@ -53,9 +53,14 @@
      a real navigation the user took) pushes a new entry, so the URL hash
      tracks the active tab and Back/Forward move between tabs instead of
      leaving the app after a single press. */
+  var scrollPositions = {}, previousTab;
   function setTab(tab, navTab, opts) {
     opts = opts || {};
     if (!Array.prototype.some.call(panels, function (panel) { return panel.getAttribute("data-panel") === tab; })) return;
+    if(window.napBeforeTabChange && window.napBeforeTabChange(tab)===false)return;
+    var scrollMain = document.querySelector('.portal-shell__main');
+    if(previousTab && scrollMain)scrollPositions[previousTab]=scrollMain.scrollTop;
+    previousTab=tab;
     var activeNavTab = navTab || tab;
     navBtns.forEach(function (btn) {
       var isActive = btn.getAttribute("data-tab") === activeNavTab;
@@ -78,7 +83,7 @@
       heading.focus({ preventScroll: true });
     }
     var main = document.querySelector(".portal-shell__main");
-    if (main) main.scrollTop = 0;
+    if (main) main.scrollTop = scrollPositions[tab] || 0;
 
     if (!opts.fromHistory && validNavTabs.indexOf(activeNavTab) !== -1) {
       var newHash = "#" + activeNavTab;

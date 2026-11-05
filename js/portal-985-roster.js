@@ -4,7 +4,7 @@
   let classes = [],
     people = [],
     tree = [],
-    links = {},
+    links = {}, accountLinks = {},
     chapter = "",
     search = "",
     issuesOnly = false;
@@ -66,6 +66,8 @@
       : "";
   }
   function render() {
+    P.rosterData={classes,people,tree,links,accountLinks};
+    document.dispatchEvent(new Event('p985:roster'));
     const root = P.root("roster");
     root.replaceChildren(
       P.header(
@@ -89,6 +91,14 @@
         P.row(
           P.button("Add brother", () => edit()),
           P.button("Add class", () => editClass()),
+          P.button('Review roster issues',()=>{
+            const box=P.el('div'),duplicates=new Map();
+            people.forEach(r=>{const key=r.classID+':'+norm(r.fullName);duplicates.set(key,[...(duplicates.get(key)||[]),r]);});
+            const rows=people.filter(r=>{const c=classes.find(c=>c.id===r.classID);return !c||issue(r,c)||(duplicates.get(r.classID+':'+norm(r.fullName))||[]).length>1;});
+            box.append(P.el('p','p-muted',rows.length+' entries need review. Review links individually; identities are never merged automatically.'));
+            rows.forEach(r=>{const c=classes.find(c=>c.id===r.classID);const row=P.el('div','p-card');row.append(P.el('strong','',r.fullName+' · '+r.pledgeName),P.el('p','p-muted',!c?'Missing class':issue(r,c)||'Possible duplicate roster entry'));if(c)row.append(P.button('Compare records',()=>compare(r,c)));row.append(P.button('Edit entry',()=>edit(r)));box.append(row);});
+            box.append(P.button('Export review list',()=>P.download('roster-review.csv',P.csv([['Full name','Pledge name','Class','Issue'],...rows.map(r=>{const c=classes.find(c=>c.id===r.classID);return [r.fullName,r.pledgeName,c?.pledgeClass||'',c?issue(r,c)||'Possible duplicate':'Missing class'];})]),'text/csv')));P.dialog('Roster review queue',box);
+          }),
           P.button(
             issuesOnly ? "Show everyone" : "Review tree differences",
             () => {
@@ -412,6 +422,7 @@
     const d = P.dialog("Compare records", box);
   }
   P.ready(() => {
+    P.watch(db.collection('rosterAccountLinks'),rows=>{accountLinks=Object.fromEntries(rows.map(r=>[r.id,r]));render();},P.root('roster'));
     P.watch(db.collection("rosterTreeLinks"), rows => { links = Object.fromEntries(rows.map(r => [r.id,r])); render(); }, P.root("roster"));
     P.watch(
       db.collection("masterRosterClasses"),

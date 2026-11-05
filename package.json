@@ -1,6 +1,7 @@
 {
   "devDependencies": {
-    "linkedom": "^0.18.15"
+    "linkedom": "^0.18.15",
+    "qrcode-generator": "^2.0.4"
   },
   "private": true,
   "scripts": {

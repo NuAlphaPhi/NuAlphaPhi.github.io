@@ -125,6 +125,11 @@ service cloud.firestore {
       match /media/{mediaId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.uploadedByUid == request.auth.uid;
+        allow update: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || isAdmin())
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caption','taggedUids','updatedAt'])
+          && request.resource.data.caption is string && request.resource.data.caption.size() <= 1000
+          && request.resource.data.taggedUids is list && request.resource.data.taggedUids.size() <= 30
+          && request.resource.data.updatedAt == request.time;
         allow delete: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || isAdmin());
       }
     }
@@ -157,7 +162,7 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
       allow update: if isSignedIn() && (
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverUrl', 'photoCount', 'updatedAt'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['coverUrl', 'coverThumbUrl', 'photoCount', 'updatedAt'])
         || resource.data.createdByUid == request.auth.uid
         || isAdmin()
       );
@@ -166,7 +171,12 @@ service cloud.firestore {
       match /photos/{photoId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.uploadedByUid == request.auth.uid;
-        allow delete: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || isAdmin());
+        allow update: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || get(/databases/$(database)/documents/galleryAlbums/$(albumId)).data.createdByUid == request.auth.uid || isAdmin())
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['caption','taggedUids','updatedAt'])
+          && request.resource.data.caption is string && request.resource.data.caption.size() <= 1000
+          && request.resource.data.taggedUids is list && request.resource.data.taggedUids.size() <= 30
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isSignedIn() && (resource.data.uploadedByUid == request.auth.uid || get(/databases/$(database)/documents/galleryAlbums/$(albumId)).data.createdByUid == request.auth.uid || isAdmin());
       }
     }
 
@@ -235,7 +245,7 @@ service cloud.firestore {
         ));
       allow create: if isSignedIn() && request.resource.data.createdByUid == request.auth.uid;
       allow update: if isSignedIn() && resource.data.createdByUid == request.auth.uid
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdByUid']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdByUid','responseCount']);
       allow delete: if isSignedIn() && resource.data.createdByUid == request.auth.uid;
 
       // Responses: anyone (including unauthenticated visitors via the public
@@ -243,7 +253,12 @@ service cloud.firestore {
       // owner turned on requireSignIn — then only a signed-in brother can.
       // Only the form's owner or collaborators can read the responses back.
       match /responses/{responseId} {
-        allow create: if get(/databases/$(database)/documents/forms/$(formId)).data.published == true
+        allow create: if get(/databases/$(database)/documents/forms/$(formId)).data.get('version', 0) == 0
+          && get(/databases/$(database)/documents/forms/$(formId)).data.get('onePerAccount', false) == false
+          && get(/databases/$(database)/documents/forms/$(formId)).data.get('identified', false) == false
+          && get(/databases/$(database)/documents/forms/$(formId)).data.get('closesAt', null) == null
+          && get(/databases/$(database)/documents/forms/$(formId)).data.get('responseLimit', null) == null
+          && get(/databases/$(database)/documents/forms/$(formId)).data.published == true
           && (get(/databases/$(database)/documents/forms/$(formId)).data.get('requireSignIn', false) != true || isSignedIn());
         allow read: if isSignedIn() && (
           get(/databases/$(database)/documents/forms/$(formId)).data.createdByUid == request.auth.uid ||
@@ -444,7 +459,19 @@ match /socialChannels/{room}/messages/{mid} {
   allow update: if channelAllowed(room) && ownReactionOnly();
   allow delete: if channelAllowed(room) && (resource.data.senderUid == request.auth.uid || isSocialAdmin());
 }
+match /chatSettings/{uid}/rooms/{room} {
+ allow read: if isSocialMember() && request.auth.uid == uid;
+ allow create, update: if isSocialMember() && request.auth.uid == uid
+   && request.resource.data.keys().hasOnly(['muted','shareReceipts'])
+   && request.resource.data.get('muted',false) is bool && request.resource.data.get('shareReceipts',false) is bool;
+}
 match /conversations/{room} {
+  match /readReceipts/{uid} {
+    allow read: if conversationMember(room);
+    allow create,update: if conversationMember(room) && request.auth.uid == uid
+      && request.resource.data.keys().hasOnly(['readAt']) && request.resource.data.readAt == request.time;
+    allow delete: if isSocialMember() && request.auth.uid == uid;
+  }
   // Reading a missing deterministic DM id is needed for race-safe creation.
   allow get: if isSocialMember() && (resource == null || request.auth.uid in resource.data.memberIds);
   allow list: if isSocialMember() && request.auth.uid in resource.data.memberIds;
@@ -494,6 +521,9 @@ match /activity/{uid}/items/{item} {
     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
     && request.resource.data.read == true;
 }
+match /rosterAccountLinks/{uid} { allow read: if isSocialMember(); allow write: if false; }
+match /rosterProfileLinks/{id} { allow read: if isSocialAdmin(); allow write: if false; }
+match /leadershipHistory/{uid}/entries/{entry} { allow read: if isSocialMember(); allow write: if false; }
 match /notificationPreferences/{uid} {
   allow read: if isSocialMember() && request.auth.uid == uid;
   allow create, update: if isSocialMember() && request.auth.uid == uid

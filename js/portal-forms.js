@@ -93,6 +93,7 @@
 
     html += '<div class="forms-card__actions">';
     if (isOwner) {
+      html += '<button class="news-card__action-btn" type="button" data-form-duplicate="'+escapeHtml(form.id)+'">Duplicate / use as template</button>';
       html +=
         '<button class="news-card__action-btn" type="button" data-form-edit="' + escapeHtml(form.id) + '">Edit</button>' +
         '<button class="news-card__action-btn" type="button" data-form-share="' + escapeHtml(form.id) + '">Share</button>';
@@ -148,6 +149,8 @@
   }
 
   listsContainer.addEventListener("click", function (e) {
+    var duplicate=e.target.closest('[data-form-duplicate]');
+    if(duplicate){var source=findForm(duplicate.dataset.formDuplicate);if(source){openBuilderPage(Object.assign({},source,{id:null,title:source.title+' (copy)',published:false}));currentEditFormId=null;builderPageTitle.textContent='New form from template';}return;}
     var editBtn = e.target.closest("[data-form-edit]");
     var shareBtn = e.target.closest("[data-form-share]");
     var responsesBtn = e.target.closest("[data-form-responses]");
@@ -345,7 +348,7 @@
   function questionRowHtml(q, idx) {
     var isChoice = CHOICE_TYPES.indexOf(q.type) !== -1;
 
-    var html = '<div class="form-builder__question" data-q-index="' + idx + '">';
+    var html = '<div draggable="true" class="form-builder__question" data-q-index="' + idx + '">';
     html += '<div class="form-builder__question-head">';
     html += '<input class="form-input" type="text" data-q-label placeholder="Question ' + (idx + 1) + '" value="' + escapeHtml(q.label) + '">';
     html += '<select class="form-select form-builder__type-select" data-q-type>';
@@ -411,7 +414,21 @@
     setRequireSignInBtn(!builderRequireSignIn);
   });
 
+  var formOptions=document.createElement('div');formOptions.className='p985';builderSubmitBtn.before(formOptions);
+  var extraFields={};
+  [['closesAt','Close date','datetime-local'],['responseLimit','Response limit (blank = unlimited)','number'],['identified','Record the signed-in brother’s identity','checkbox'],['onePerAccount','One response per account','checkbox']].forEach(function(spec){var label=document.createElement('label');label.className='p-field';label.textContent=spec[1];var input=document.createElement('input');input.type=spec[2];if(spec[2]==='number')input.min=1;label.append(input);formOptions.append(label);extraFields[spec[0]]=input;});
+  var preview=document.createElement('button');preview.type='button';preview.textContent='Preview form';preview.className='news-card__action-btn';formOptions.append(preview);
+  preview.onclick=function(){var P=P985,box=P.el('div');box.append(P.el('h2','',builderForm.elements.title.value),P.el('p','',builderForm.elements.description.value));builderQuestions.forEach(function(q){box.append(P.el('h3','',q.label+(q.required?' *':'')));if(CHOICE_TYPES.includes(q.type))q.options.forEach(function(o){box.append(P.el('p','','○ '+o));});else box.append(P.field('Your answer',q.type==='paragraph'?'textarea':'text').wrap);});P.dialog('Preview · responses are not saved',box);};
+  var dragIndex=null;
+  builderQuestionsEl.addEventListener('dragstart',function(e){var row=e.target.closest('[data-q-index]');if(row){dragIndex=Number(row.dataset.qIndex);e.dataTransfer.setData('text/plain',String(dragIndex));}});
+  builderQuestionsEl.addEventListener('dragover',function(e){if(e.target.closest('[data-q-index]'))e.preventDefault();});
+  builderQuestionsEl.addEventListener('drop',function(e){var row=e.target.closest('[data-q-index]');if(row&&dragIndex!==null){e.preventDefault();builderDirty=true;var target=Number(row.dataset.qIndex),q=builderQuestions.splice(dragIndex,1)[0];builderQuestions.splice(target,0,q);dragIndex=null;renderBuilderQuestions();}});
+  var builderDirty=false;builderForm.addEventListener('input',function(){builderDirty=true;});builderQuestionsEl.addEventListener('click',function(e){if(e.target.closest('button'))builderDirty=true;});[builderAddQuestionBtn,builderPublishBtn,builderRequireSignInBtn].forEach(function(b){b.addEventListener('click',function(){builderDirty=true;});});
+  window.napBeforeTabChange=function(tab){if(builderDirty&&tab!=='form-builder'&&!document.querySelector('[data-panel="form-builder"]').hidden){if(!window.confirm('Leave without saving this form?'))return false;builderDirty=false;}return true;};
+  window.addEventListener('beforeunload',function(e){if(builderDirty){e.preventDefault();e.returnValue='';}});
   function openBuilderPage(form) {
+    builderDirty=false;
+    Object.keys(extraFields).forEach(function(k){var input=extraFields[k];if(input.type==='checkbox')input.checked=!!(form&&form[k]);else if(k==='closesAt'&&form&&form[k]){var d=new Date(form[k]);input.value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);}else input.value=form&&form[k]||'';});
     currentEditFormId = form ? form.id : null;
     builderPageTitle.textContent = form ? "Edit Form" : "New Form";
     builderSubmitBtn.textContent = form ? "Save Changes" : "Create Form";
@@ -565,7 +582,11 @@
       bannerImage: builderBannerImage,
       questions: cleanedQuestions,
       published: builderPublished,
-      requireSignIn: builderRequireSignIn,
+      requireSignIn: builderRequireSignIn || extraFields.identified.checked || extraFields.onePerAccount.checked,
+      identified:extraFields.identified.checked,onePerAccount:extraFields.onePerAccount.checked,
+      closesAt:extraFields.closesAt.value?new Date(extraFields.closesAt.value).toISOString():null,
+      responseLimit:extraFields.responseLimit.value?Math.max(1,Math.floor(Number(extraFields.responseLimit.value))):null,
+      version:(findForm(currentEditFormId)?.version||0)+1,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -585,6 +606,7 @@
 
     writePromise
       .then(function () {
+        builderDirty=false;
         window.napSaveButtonDone(builderSubmitBtn, { savedLabel: "Saved" });
         window.setTimeout(function () {
           window.napSetTab("forms");
@@ -728,6 +750,11 @@
 
   var exportCsvBtn = document.getElementById("formResponsesExportCsvBtn");
   var exportPdfBtn = document.getElementById("formResponsesExportPdfBtn");
+  var chartsBtn=document.createElement('button');chartsBtn.type='button';chartsBtn.className='news-card__action-btn';chartsBtn.textContent='Response charts';exportPdfBtn.after(chartsBtn);
+  chartsBtn.onclick=function(){var P=P985,box=P.el('div'),versions=[...new Set(currentResponses.map(r=>r.formVersion||1))];
+    versions.forEach(function(version){var responses=currentResponses.filter(r=>(r.formVersion||1)===version),questions=responses[0]?.questions||findForm(responsesPageFormId)?.questions||[];box.append(P.el('h3','','Version '+version+' · '+responses.length+' responses'));
+      questions.filter(q=>CHOICE_TYPES.includes(q.type)).forEach(function(q){box.append(P.el('h4','',q.label));q.options.forEach(function(option){var count=responses.filter(r=>Array.isArray(r.answers?.[q.id])?r.answers[q.id].includes(option):r.answers?.[q.id]===option).length,percent=Math.round(count/Math.max(1,responses.length)*100),bar=P.el('div','p-poll-option',option+' · '+count+' ('+percent+'%)');bar.style.setProperty('--percent',percent+'%');bar.style.padding='10px';box.append(bar);});});
+    });if(!versions.length)box.append(P.empty('Charts appear when responses arrive.'));P.dialog('Response summary',box);};
 
   function safeFileName(title) {
     return (title || "form-responses").trim().replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "form-responses";
@@ -742,6 +769,7 @@
      entirely client-side — no server, no external library. */
   function csvCell(value) {
     var str = value === null || value === undefined ? "" : String(value);
+    if (/^[=+@-]/.test(str))str="'"+str;
     if (/[",\n]/.test(str)) str = '"' + str.replace(/"/g, '""') + '"';
     return str;
   }
@@ -750,16 +778,8 @@
     var form = findForm(responsesPageFormId);
     if (!form || !currentResponses.length) return;
 
-    var questions = form.questions || [];
-    var lines = [["Submitted At"].concat(questions.map(function (q) { return q.label; })).map(csvCell).join(",")];
-
-    currentResponses.forEach(function (r) {
-      var cells = [formatResponseTime(r.submittedAt)];
-      questions.forEach(function (q) {
-        cells.push(answerPlainText(r.answers ? r.answers[q.id] : undefined));
-      });
-      lines.push(cells.map(csvCell).join(","));
-    });
+    var lines=[['Submitted At','Form version','Respondent','Question','Answer'].map(csvCell).join(',')];
+    currentResponses.forEach(function(r){(r.questions||form.questions||[]).forEach(function(q){lines.push([formatResponseTime(r.submittedAt),r.formVersion||1,r.respondentUid?window.napDisplayName((window.NAP_ALL_BROTHERS||[]).find(function(b){return b.uid===r.respondentUid;}),'Brother'):'Anonymous',q.label,answerPlainText(r.answers?r.answers[q.id]:undefined)].map(csvCell).join(','));});});
 
     /* Leading BOM so Excel opens the UTF-8 file without mangling non-ASCII names. */
     var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
@@ -805,7 +825,7 @@
 
     currentResponses.forEach(function (r, i) {
       html += '<div class="response"><h2>Response ' + (i + 1) + " &middot; " + escapeHtml(formatResponseTime(r.submittedAt)) + "</h2>";
-      questions.forEach(function (q) {
+      (r.questions || questions).forEach(function (q) {
         var text = answerPlainText(r.answers ? r.answers[q.id] : undefined);
         html += '<div class="qa"><p class="q">' + escapeHtml(q.label) + '</p><p class="a">' + escapeHtml(text || "—") + "</p></div>";
       });
@@ -874,7 +894,8 @@
     if (idx === -1) idx = 0;
     var r = currentResponses[idx];
 
-    var qaHtml = (form.questions || [])
+    var identity=r.respondentUid ? '<p>Submitted by '+escapeHtml(window.napDisplayName((window.NAP_ALL_BROTHERS||[]).find(function(b){return b.uid===r.respondentUid;}), 'Brother'))+'</p>' : '';
+    var qaHtml = (r.questions || form.questions || [])
       .map(function (q) {
         return (
           '<div class="form-response-detail__qa">' +
@@ -893,7 +914,7 @@
       '<button class="news-card__action-btn" type="button" id="formResponsesNextBtn"' + (idx === currentResponses.length - 1 ? " disabled" : "") + ">Next &rarr;</button>" +
       "</div>" +
       "</div>" +
-      qaHtml;
+      identity + qaHtml;
   }
 
   function renderResponsesPage() {

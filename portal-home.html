@@ -28,6 +28,7 @@
     <link href="css/portal-design.css" rel="stylesheet">
 <link href="css/portal-985.css?v=20261104-paste" rel="stylesheet">
 <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/portal-upgrades.css?v=upgrade-1">
 </head>
 <body class="portal-design">
 
@@ -150,7 +151,8 @@
 <section class="portal-tab-panel p985" id="panel-chapter" data-panel="chapter" hidden><div id="p985-chapter"></div></section>
 <section class="portal-tab-panel p985" id="panel-profile" data-panel="profile" hidden><div id="p985-profile"><h1>Brother profile</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
 <section class="portal-tab-panel p985" id="panel-admin" data-panel="admin" hidden><div id="p985-admin"><h1>Administration</h1><p class="p-muted" role="status">Connecting to 985…</p></div></section>
-<section class="portal-tab-panel" id="panel-forms" data-panel="forms" hidden>
+<section class="portal-tab-panel" data-panel="event-detail" id="panel-event-detail" hidden><div class="p985 p-feed" id="p985-event-detail"></div></section>
+            <section class="portal-tab-panel" id="panel-forms" data-panel="forms" hidden>
                 <div class="portal-view-header">
                     <div>
                         <span class="section-label">Surveys</span>
@@ -529,9 +531,9 @@
                     <div class="theme-toggle">
                         <div>
                             <p class="theme-toggle__label">Email Notifications</p>
-                            <p class="theme-toggle__desc">Get an email whenever a new announcement or event is posted.</p>
+                            <p class="theme-toggle__desc">Email delivery is off. Announcement and event updates remain available in your notification inbox.</p>
                         </div>
-                        <button class="theme-toggle__switch" id="emailNotifToggleBtn" type="button" aria-label="Email notifications" aria-pressed="true"></button>
+                        <span class="p-chip">Off</span>
                     </div>
                     <p class="form-feedback" id="email-notif-feedback" role="status" aria-live="polite" hidden></p>
                 </div>
@@ -1142,38 +1144,42 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script src="js/firebase-config.js"></script>
-    <script src="js/portal-auth.js?v=security-render-3"></script>
-    <script src="js/portal-shell.js"></script>
-    <script src="js/portal-save-feedback.js"></script>
-    <script src="js/portal-confirm.js"></script>
-    <script src="js/portal-settings.js"></script>
-    <script src="js/portal-account-settings.js?v=20261104-password-reset"></script>
+    <script src="js/portal-auth.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-shell.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-save-feedback.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-confirm.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-settings.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-account-settings.js?v=portal-upgrade-20261104"></script>
 
 
-    <script src="js/portal-forms.js?v=security-render-3"></script>
-    <script src="js/portal-directory.js?v=security-render-3"></script>
+    <script src="js/portal-forms.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-directory.js?v=portal-upgrade-20261104"></script>
 
-    <script src="js/portal-member-education.js?v=security-render-3"></script>
-    <script src="js/portal-familytree.js?v=security-render-3"></script>
-    <script src="js/portal-gallery.js?v=automatic-cover-1"></script>
+    <script src="js/portal-member-education.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-familytree.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-gallery.js?v=portal-upgrade-20261104"></script>
 
-    <script src="js/portal-blog.js?v=security-render-3"></script>
-    <script src="js/portal-linktree.js?v=security-render-3"></script>
-    <script src="js/portal-birthdays.js?v=security-render-3"></script>
+    <script src="js/portal-blog.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-linktree.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-birthdays.js?v=portal-upgrade-20261104"></script>
 
 
-    <script src="js/portal-design.js"></script>
-<script src="js/portal-985-policy.js"></script>
-<script src="js/portal-985-core.js?v=security-identity-2"></script>
-<script src="js/portal-985-attachments.js?v=20261104"></script>
-<script src="js/portal-985-feed.js?v=20261104-paste"></script>
-<script src="js/portal-985-profiles.js?v=20261104-about-first"></script>
-<script src="js/portal-985-chat.js?v=20261104-paste"></script>
-<script src="js/portal-985-events.js"></script>
-<script src="js/portal-985-roster.js"></script>
-<script src="js/portal-985-admin.js?v=account-controls-1"></script>
+    <script src="js/portal-design.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-policy.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-core.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-attachments.js?v=portal-upgrade-20261104"></script>
+<script src="vendor/qrcode/qrcode.js"></script>
+<script src="js/portal-985-experience.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-search.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-feed.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-settings.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-profiles.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-chat.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-events.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-roster.js?v=portal-upgrade-20261104"></script>
+<script src="js/portal-985-admin.js?v=portal-upgrade-20261104"></script>
 <script src="vendor/leaflet/leaflet.js"></script>
-<script src="js/portal-985-map.js"></script>
+<script src="js/portal-985-map.js?v=portal-upgrade-20261104"></script>
     <script src="js/site.js"></script>
 </body>
 </html>

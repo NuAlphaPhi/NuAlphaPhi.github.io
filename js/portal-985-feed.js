@@ -4,8 +4,10 @@
   let stats = {},
     limit = 50,
     off,
-    sort = "latest";
+    sort = "latest", feedMode = "all";
   const feedSeen = {}, feedReadPending = {};
+  let latestPosts=[],pinnedPosts=[];
+  function mergePosts(){P.posts=[...new Map([...latestPosts,...pinnedPosts].map(p=>[p.id,p])).values()];render();}
   function feedBadges() {
     if(!P.uid)return;
     for(const tab of ["home","announcements"]){
@@ -47,10 +49,11 @@
       const snap = await db.doc("polls/" + id).get();
       if (!snap.exists) return;
       const d = snap.data();
+      const vote = await db.doc("polls/"+id+"/votes/"+P.uid).get();
       const box = P.el("div", "p-card");
       box.append(P.el("h3", "", d.question));
       d.options.forEach((t, i) => {
-        const b = P.button(t + " · " + (d.counts[i] || 0), () =>
+        const b = P.button((vote.data()?.option===i?"✓ ":"")+t + " · " + Math.round((d.counts[i] || 0)/Math.max(1,d.total)*100)+"% · " + (d.counts[i] || 0), () =>
           P.run(box, async () => {
             await P.call("pollAction", { action: "vote", id, option: i });
             box.remove();
@@ -59,11 +62,14 @@
         );
         b.disabled =
           d.closed || (d.closesAt && P.date(d.closesAt) <= new Date());
+        b.classList.add("p-poll-option"); b.style.setProperty("--percent",Math.round((d.counts[i]||0)/Math.max(1,d.total)*100)+"%");
         box.append(b);
       });
       box.append(
         P.el("small", "", d.total + " votes" + (d.closed ? " · Closed" : "")),
       );
+      if(d.closesAt)box.append(P.el('small','p-muted','Closes '+P.when(d.closesAt)));
+      if(!d.closed && (d.creator===P.uid || P.me.isAdmin))box.append(P.button('Close voting',()=>P.run(box,async()=>{await P.call('pollAction',{action:'close',id});box.remove();P.poll(id,root);})));
       root.append(box);
     } catch (e) {
       P.error(root, e);
@@ -73,7 +79,8 @@
     const form = P.el("form"),
       q = P.field("Question"),
       options = P.field("Options — one per line", "textarea");
-    form.append(q.wrap, options.wrap);
+    const closes = P.field("Voting closes (optional)","datetime-local");
+    form.append(q.wrap, options.wrap, closes.wrap);
     const submit = P.button(
       "Publish poll",
       () =>
@@ -85,7 +92,7 @@
             roomID: scope || "",
             question: q.input.value,
             options: options.input.value.split("\n").filter((x) => x.trim()),
-            closesAt: null,
+            closesAt: closes.input.value ? new Date(closes.input.value).getTime() : null,
           });
           d.close();
         }),
@@ -121,6 +128,13 @@
           (post.kind !== "post" ? " · " + (post.kind || "Post") : ""),
       ),
     );
+    if(post.pinned)c.append(P.el('span','p-chip','Pinned announcement'));
+    if(post.editedAt)c.append(P.el('small','p-muted','Edited '+P.when(post.editedAt)));
+    if(post.authorUid===P.uid && !post.eventID && !post.pollID)c.append(P.button('Edit post',()=>{
+      const f=P.field('Post','textarea',post.body),box=P.el('div');f.input.maxLength=2000;
+      box.append(f.wrap,P.button('Save changes',()=>P.run(box,async()=>{await P.call('portalAction',{action:'editPost',id:post.id,body:f.input.value});d.close();P.toast('Post updated');})));const d=P.dialog('Edit post',box);
+    }));
+    if(P.me.isAdmin && post.kind==='announcement')c.append(P.button(post.pinned?'Unpin announcement':'Pin announcement',()=>P.run(c,async()=>{await P.call('portalAction',{action:'pinPost',id:post.id,pinned:!post.pinned});P.toast(post.pinned?'Announcement unpinned':'Announcement pinned',()=>P.call('portalAction',{action:'pinPost',id:post.id,pinned:!!post.pinned}));})));
     const body = P.text(post.body, post);
     c.append(body);
     if (!detail) {
@@ -423,7 +437,8 @@
     text.input.maxLength = 2000;
     const key = "985.draft." + P.uid + "." + kind;
     text.input.value = localStorage.getItem(key) || "";
-    text.input.oninput = () => localStorage.setItem(key, text.input.value);
+    try { text.input._mentions=JSON.parse(localStorage.getItem(key+".mentions")||"{}"); } catch (_) {}
+    text.input.oninput = () => {localStorage.setItem(key, text.input.value);localStorage.setItem(key+".mentions",JSON.stringify(text.input._mentions||{}));};
     P.mentionPicker(text.input);
     const send = P.button(
       kind === "announcement" ? (P.me.isAdmin ? "Publish announcement" : "Submit for approval") : "Post",
@@ -511,7 +526,7 @@
           text.input.value = "";
           photoAttachment.clear();
           count.textContent = "";
-          localStorage.removeItem(key);
+          localStorage.removeItem(key);localStorage.removeItem(key+".mentions");
           status.textContent = result?.status === "pending" ? "Submitted. An admin will review your announcement before it appears in the feed." : "Posted.";
         } finally {
           send.disabled = false;
@@ -530,6 +545,7 @@
           !P.blocks.has(p.authorUid) &&
           (kind === "home" || p.kind === "announcement"),
       );
+      if(kind==='home' && feedMode==='you')posts=posts.filter(p=>p.pinned||p.authorUid===P.uid||p.chapter===P.me.chapter||p.mentionIds?.includes(P.uid)||p.mentionChapters?.includes(P.me.chapter));
       posts.sort((a, b) =>
         sort === "top"
           ? (stats[b.id]?.likeCount || 0) - (stats[a.id]?.likeCount || 0)
@@ -544,6 +560,7 @@
                 : a.createdAt,
             ),
       );
+      posts.sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned));
       list.replaceChildren(...posts.map((p) => P.postCard(p)));
       if (!posts.length)
         list.append(
@@ -556,6 +573,7 @@
     document.dispatchEvent(new Event("p985:posts"));
   }
   P.ready(() => {
+    P.watch(db.collection('forumPosts').where('pinned','==',true),rows=>{pinnedPosts=rows;mergePosts();});
     for(const tab of ["home","announcements"])P.watch(db.doc("roomReads/"+P.uid+"/rooms/feed-"+tab),value=>{feedSeen[tab]=Math.max(feedSeen[tab]||0,P.date(value?.readAt).getTime());feedBadges();});
 
     for (const kind of ["home", "announcements"]) {
@@ -596,6 +614,8 @@
           render();
         };
         r.querySelector(".p-header").append(sortField.wrap);
+        const mode=P.select('Feed',[['all','All brothers'],['you','For you']],feedMode);mode.input.onchange=()=>{feedMode=mode.input.value;render();};r.append(mode.wrap);
+        const strip=P.el('div','p-status-strip');strip.id='p985-personal-status';strip.append(P.button('Your profile',()=>P.profile(P.uid)),P.button('Your events',()=>P.go('events')),P.button('Messages',()=>P.go('messages')));r.append(strip);
         r.append(composer("post"));
       } else {
         const holder = P.el("div");
@@ -631,34 +651,22 @@
     const id = new URLSearchParams(location.search).get("post");
     if (id) P.openPost(id);
   });
+  let statusGeneration=0;
+  function personalStatus(){
+    const strip=document.getElementById('p985-personal-status');if(!strip)return;
+    const run=++statusGeneration,unread=(P.activity||[]).filter(i=>!i.read&&!P.blocks.has(i.actor)).length;
+    strip.replaceChildren(P.button(unread+' recent unread updates',()=>document.getElementById('notificationBellBtn').click()));
+    const next=(P.events||[]).filter(e=>e.status==='published'&&P.date(e.start)>new Date()).sort((a,b)=>P.date(a.start)-P.date(b.start))[0];
+    if(next){const b=P.button('Next: '+next.title,()=>P.openEvent(next.id));strip.append(b);P.event('attendance',next.id).then(own=>{if(run===statusGeneration)b.textContent=next.title+' · '+(own.status||'RSVP needed');}).catch(()=>{});}
+    strip.append(P.button('Your profile',()=>P.profile(P.uid)));
+  }
+  document.addEventListener('p985:activity',personalStatus);
+  document.addEventListener('p985:events',personalStatus);
   function updates() {
     const rail = document.getElementById("p985-updates");
     if (!rail) return;
     rail.replaceChildren();
-    const search = P.field("Search brothers", "search");
-    search.input.placeholder = "Search brothers";
-    const matches = P.el("div", "p-suggestions");
-    search.input.oninput = () => {
-      matches.replaceChildren();
-      if (!search.input.value.trim()) return;
-      P.brothers
-        .filter((b) =>
-          (P.name(b) + " " + b.firstName + " " + b.lastName)
-            .toLowerCase()
-            .includes(search.input.value.toLowerCase()),
-        )
-        .slice(0, 5)
-        .forEach((b) =>
-          matches.append(
-            P.button(
-              P.name(b) + " · " + b.chapter,
-              () => P.profile(b.uid),
-              "p-choice",
-            ),
-          ),
-        );
-    };
-    rail.append(search.wrap, matches);
+    rail.append(P.searchButton());
     function card(title, tab) {
       const c = P.el("section", "p-updates-card");
       c.append(
@@ -786,8 +794,8 @@
     off = P.watch(
       db.collection("forumPosts").orderBy("createdAt", "desc").limit(limit),
       (rows) => {
-        P.posts = rows;
-        render();
+        latestPosts = rows;
+        mergePosts();
       },
     );
   }

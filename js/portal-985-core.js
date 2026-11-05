@@ -472,6 +472,7 @@
                 " " +
                 input.value.slice(end);
               list.replaceChildren();
+              input.dispatchEvent(new Event("input"));
               input.focus();
             },
             "p-choice",
