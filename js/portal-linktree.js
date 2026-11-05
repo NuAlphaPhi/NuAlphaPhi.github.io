@@ -450,7 +450,7 @@
     pageLabelEl.textContent = "Chapter Link Page";
     pageTitleEl.textContent = chapter;
     livePreview.src = chapter.toLowerCase()+".html?preview=1&v=real-preview-2";
-    var url = "https://nualphaphi.com/" + chapter.toLowerCase()+"?v=real-preview-2";
+    var url = "https://nualphaphi.com/" + chapter.toLowerCase();
     pageUrlEl.textContent = url;
     pageUrlEl.href = url;
 

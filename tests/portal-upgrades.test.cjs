@@ -90,6 +90,7 @@ test('chapter preview follows draft content, color and link changes and saves ch
  c.document.querySelector('[data-chapter-open]').click();
  const preview=c.document.getElementById('linktreeLivePreview');
  assert.match(preview.src,/kappa\.html\?preview=1/);assert.equal(draft.backgroundColor,'#112233');
+ assert.equal(c.document.getElementById('linktreeChapterPageUrl').getAttribute('href'),'https://nualphaphi.com/kappa');
  const name=c.document.getElementById('linktree-display-name');name.value='<img src=x onerror=alert(1)>';name.dispatchEvent(new c.Event('input',{bubbles:true}));
  assert.equal(draft.displayName,name.value);
  const color=c.document.getElementById('linktree-color-hex');color.value='#ffffff';color.dispatchEvent(new c.Event('input',{bubbles:true}));
