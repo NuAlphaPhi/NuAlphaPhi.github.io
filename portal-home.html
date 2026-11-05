@@ -262,6 +262,7 @@
                         <p class="portal-view-intro">Every brother's lineage. Drag to pan, scroll to zoom, click a name for details.</p>
                     </div>
                     <div class="news-card__actions">
+                        <button class="news-card__action-btn" type="button" id="familytreeExportBtn" disabled title="Download a chapter-colored Excel tree with notes for every brother">Export Excel ↓</button>
                         <button class="news-card__action-btn" type="button" id="familytreeStatsBtn">Statistics</button>
                         <button class="form-submit form-submit--small" id="newLineageBtn" type="button" hidden>New Lineage</button>
                     </div>
@@ -280,6 +281,7 @@
                     </div>
                 </div>
 
+                <p id="familytreeExportStatus" class="portal-view-intro" role="status" hidden></p>
                 <div class="familytree-stage" id="familytreeStage">
                     <svg class="familytree-svg" id="familytreeSvg"></svg>
                     <p class="familytree-empty" id="familytreeEmpty" hidden>No family tree data yet.</p>
@@ -1152,7 +1154,8 @@
     <script src="js/portal-directory.js?v=tree-lineage-1"></script>
 
     <script src="js/portal-member-education.js?v=portal-upgrade-20261104"></script>
-    <script src="js/portal-familytree.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-familytree-export.js?v=1"></script>
+                <script src="js/portal-familytree.js?v=excel-export-1"></script>
     <script src="js/portal-gallery.js?v=album-editor-2"></script>
 
     <script src="js/portal-blog.js?v=portal-upgrade-20261104"></script>

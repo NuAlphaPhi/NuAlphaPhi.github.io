@@ -16,6 +16,23 @@
   var zoomOutBtn = document.getElementById("familytreeZoomOutBtn");
   var resetBtn = document.getElementById("familytreeResetBtn");
 
+  var exportBtn = document.getElementById("familytreeExportBtn");
+  var exportStatus = document.getElementById("familytreeExportStatus");
+  var exporting = false;
+  if (exportBtn) exportBtn.addEventListener("click", async function () {
+    if (!currentUid || exporting || !allMembers.length) return;
+    exporting = true; exportBtn.disabled = true; exportBtn.textContent = "Exporting…";
+    exportStatus.hidden = false; exportStatus.textContent = "Preparing the full family tree…";
+    try {
+      await window.NAPFamilyTreeExport.download(allMembers);
+      exportStatus.textContent = "Excel file downloaded. To use Google Sheets, open a sheet and choose File → Import → Upload.";
+    } catch (error) {
+      exportStatus.textContent = error.message || "Could not export the tree. Please try again.";
+    } finally {
+      exporting = false; exportBtn.disabled = !allMembers.length; exportBtn.textContent = "Export Excel ↓";
+    }
+  });
+
   var currentUid = null;
   var allMembers = [];
   var started = false;
@@ -125,9 +142,11 @@
         allMembers = snap.docs.map(function (doc) {
           return Object.assign({}, doc.data(), { id: doc.id });
         });
+        if (exportBtn) exportBtn.disabled = exporting || !allMembers.length;
         render();
       },
       function () {
+        if (exportBtn) exportBtn.disabled = true;
         emptyEl.hidden = false;
         emptyEl.textContent = "Couldn’t load the family tree — the site’s database permissions may need to be republished.";
       }
