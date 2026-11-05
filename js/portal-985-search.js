@@ -56,8 +56,12 @@
     dialog.cleanup=()=>{loaded=false;};
   };
   P.searchButton=()=>{
-    const b=P.button('Search 985…',P.search,'p-search-launch');
-    b.append(P.el('kbd','','⌘ / Ctrl K'));return b;
+    const b=P.button('',P.search,'p-search-launch');b.setAttribute('aria-label','Search the portal');
+    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
+    const circle=document.createElementNS(icon.namespaceURI,'circle');circle.setAttribute('cx','10.5');circle.setAttribute('cy','10.5');circle.setAttribute('r','6.5');
+    const line=document.createElementNS(icon.namespaceURI,'path');line.setAttribute('d','M16 16l4.5 4.5');icon.append(circle,line);
+    const mac=typeof navigator!=='undefined'&&/Mac|iPhone|iPad/i.test(navigator.platform||'');
+    b.append(icon,P.el('span','p-search-launch__label','Search the portal'),P.el('kbd','',mac?'⌘ K':'Ctrl K'));return b;
   };
   document.addEventListener('keydown',e=>{if(P.uid&&(e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();P.search();}});
   document.addEventListener('p985:blocks',draw);

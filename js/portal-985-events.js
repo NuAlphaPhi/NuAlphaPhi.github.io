@@ -66,10 +66,11 @@
         P.el("h2", "", e.title),
         P.el("p", "p-muted", P.when(e.start)),
         P.el("p", "", e.locationTBD ? "Location to be announced" : e.location),
-        P.el('small','p-muted',(e.reservedSeats || 0)+' reserved'+(e.capacity?' / '+e.capacity:'')+(e.waitlistCount?' · '+e.waitlistCount+' waitlisted':'')),
-        P.button("View event", () => P.openEvent(e.id), "p-btn primary"),
+
       );
-      grid.append(card);
+      const footer=P.el('div','p-event-card__footer');
+      footer.append(P.el('span','p-event-card__capacity',(e.reservedSeats||0)+(e.capacity?' of '+e.capacity:'')+' reserved'+(e.waitlistCount?' · '+e.waitlistCount+' waitlisted':'')),P.button('View event →',()=>P.openEvent(e.id),'p-event-card__open'));
+      card.append(footer);grid.append(card);
     });
     root.append(grid);
     if (!rows.length) root.append(P.empty("No events here yet."));

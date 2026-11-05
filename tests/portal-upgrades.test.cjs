@@ -21,7 +21,7 @@ test('new portal modules initialize against the actual page markup',()=>{
   assert.doesNotThrow(()=>vm.runInContext(fs.readFileSync('js/'+file+'.js','utf8'),c,{filename:file}));
  }
  assert.ok(c.document.getElementById('p985-event-detail'));
- assert.equal(c.P985.searchButton().textContent,'Search 985…⌘ / Ctrl K');
+ assert.equal(c.P985.searchButton().getAttribute('aria-label'),'Search the portal');
 });
 test('calendar exports preserve dates, escape user content and include a reminder',()=>{
  const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-experience.js','utf8'),c);let result;
@@ -32,4 +32,16 @@ test('calendar exports preserve dates, escape user content and include a reminde
 test('attendee export neutralizes spreadsheet formulas and quotes fields',()=>{
  const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-experience.js','utf8'),c);
  assert.equal(c.P985.csv([['=SUM(1,2)','Name "A"']]),'"\'=SUM(1,2)","Name ""A"""');
+});
+test('post management stays inside the options menu and editing opens correctly',()=>{
+ const c=setup();c.db.doc=()=>({get:async()=>({exists:false,data:()=>({})})});
+ vm.runInContext(fs.readFileSync('js/portal-985-feed.js','utf8'),c);
+ const P=c.P985;P.uid='author';P.me={isAdmin:true};let closed=0;const dialogs=[];
+ P.dialog=(title,content)=>{dialogs.push({title,content});return {close(){closed++;}};};
+ const card=P.postCard({id:'one',authorUid:'author',authorName:'Brother',chapter:'Kappa',kind:'announcement',body:'Announcement',createdAt:123});
+ assert.equal(card.textContent.includes('Edit post'),false);
+ card.querySelector('.p-post-menu').click();
+ assert.equal(dialogs[0].title,'Post options');
+ const edit=[...dialogs[0].content.querySelectorAll('button')].find(b=>b.textContent==='Edit post');edit.click();
+ assert.equal(closed,1);assert.equal(dialogs[1].title,'Edit post');
 });

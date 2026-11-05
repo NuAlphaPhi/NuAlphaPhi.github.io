@@ -297,7 +297,7 @@
   var photosUnsub = null;
 
   function openAlbumDetail(albumId) {
-    visiblePhotos = 48; selectedPhotos.clear();
+    visiblePhotos = 48; selectedPhotos.clear();selectionMode=false;
     currentAlbumId = albumId;
     currentAlbumPhotos = [];
     renderAlbumDetail();
@@ -392,14 +392,15 @@
     return timestamp.toDate().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
   }
 
-  var visiblePhotos = 48, selectedPhotos = new Set();
+  var visiblePhotos = 48, selectedPhotos = new Set(), selectionMode = false;
   var tools = document.createElement('div'); tools.className = 'p-gallery-tools p985';
   photoGridEl.before(tools);
   function renderPhotoGrid() {
     tools.replaceChildren();
     if (window.P985) {
       var P = P985;
-      tools.append(P.button('Select all', function(){ currentAlbumPhotos.forEach(function(p){selectedPhotos.add(p.id);}); renderPhotoGrid(); }),
+      tools.append(P.button(selectionMode?'Done':'Select photos',function(){selectionMode=!selectionMode;if(!selectionMode)selectedPhotos.clear();renderPhotoGrid();},'p-gallery-select-toggle'));
+      if(selectionMode)tools.append(P.button('Select all', function(){ currentAlbumPhotos.forEach(function(p){selectedPhotos.add(p.id);}); renderPhotoGrid(); }),
         P.button('Clear selection', function(){selectedPhotos.clear();renderPhotoGrid();}),
         P.button('Download selected (' + selectedPhotos.size + ')',function(){currentAlbumPhotos.filter(function(p){return selectedPhotos.has(p.id);}).forEach(downloadPhoto);}),
         P.button('Delete selected',function(){P.run(tools,async function(){var eligible=currentAlbumPhotos.filter(function(p){return selectedPhotos.has(p.id)&&(p.uploadedByUid===currentUid||canManageAlbum(findAlbum(currentAlbumId)));});if(!eligible.length)throw Error('Select photos you uploaded, or ask an administrator.');if(await P.confirm('Delete '+eligible.length+' selected photos?')){for(var p of eligible)await deletePhoto(p.id);selectedPhotos.clear();renderPhotoGrid();}});})
@@ -419,12 +420,12 @@
         var when = formatPhotoDate(p.createdAt);
         return (
           '<div class="media-card">' +
-          '<label><input type="checkbox" data-photo-select="' + escapeHtml(p.id) + '" ' + (selectedPhotos.has(p.id)?'checked':'') + '> Select photo</label>' +
+          '<label class="p-photo-select" '+(selectionMode?'':'hidden')+'><input aria-label="Select photo" type="checkbox" data-photo-select="' + escapeHtml(p.id) + '" ' + (selectedPhotos.has(p.id)?'checked':'') + '></label>' +
           '<div role="button" tabindex="0" aria-label="Open photo" class="media-card__preview media-card__preview--clickable" data-photo-open="' + escapeHtml(p.id) + '">' +
           '<img src="' + escapeHtml(p.thumbUrl || p.url) + '" alt="" loading="lazy" decoding="async"></div>' +
           '<div class="media-card__footer">' +
-          '<p>' + escapeHtml(p.caption || '') + '</p><p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
-          '<div class="media-card__actions">' +
+          (p.caption?'<p class="p-photo-caption">'+escapeHtml(p.caption)+'</p>':'') + '<p class="media-card__meta">' + escapeHtml(p.uploadedByName || "A brother") + (when ? " · " + when : "") + "</p>" +
+          '<button class="p-photo-menu" aria-label="Photo options" type="button" data-photo-menu="'+escapeHtml(p.id)+'">•••</button><div class="media-card__actions p-photo-actions" hidden>' +
           '<button class="media-card__btn" type="button" data-photo-download="' + escapeHtml(p.id) + '">Download</button>' +
           (canManageAlbum(findAlbum(currentAlbumId)) ? '<button class="media-card__btn" type="button" data-photo-cover="' + escapeHtml(p.id) + '">Set cover</button>' : '') +
           (canDelete ? '<button class="media-card__btn" type="button" data-photo-caption="' + escapeHtml(p.id) + '">Caption / tags</button>' : '') +
@@ -434,9 +435,10 @@
       })
       .join("");
 
-    if (currentAlbumPhotos.length > visiblePhotos && window.P985) photoGridEl.append(P985.button('Load more photos',function(){visiblePhotos+=48;renderPhotoGrid();}));
+    if (currentAlbumPhotos.length > visiblePhotos && window.P985) photoGridEl.append(P985.button('Load more photos',function(){visiblePhotos+=48;renderPhotoGrid();},'p-feed-more'));
     syncLightboxWithPhotos();
   }
+  photoGridEl.addEventListener('click',function(e){var button=e.target.closest('[data-photo-menu]');if(!button)return;var box=P985.el('div','p-action-sheet'),dialog=P985.dialog('Photo options',box);button.closest('.media-card').querySelectorAll('.p-photo-actions button').forEach(function(original){box.append(P985.button(original.textContent,function(){dialog.close();original.click();},'p-btn'+(original.hasAttribute('data-photo-delete')?' danger':'')));});});
   photoGridEl.addEventListener('change',function(e){if(e.target.dataset.photoSelect){var id=e.target.dataset.photoSelect;e.target.checked?selectedPhotos.add(id):selectedPhotos.delete(id);renderPhotoGrid();}});
   photoGridEl.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.dataset.photoOpen){e.preventDefault();openLightbox(e.target.dataset.photoOpen);}});
   photoGridEl.addEventListener('click',function(e){

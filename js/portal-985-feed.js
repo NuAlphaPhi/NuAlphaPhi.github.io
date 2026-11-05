@@ -130,11 +130,6 @@
     );
     if(post.pinned)c.append(P.el('span','p-chip','Pinned announcement'));
     if(post.editedAt)c.append(P.el('small','p-muted','Edited '+P.when(post.editedAt)));
-    if(post.authorUid===P.uid && !post.eventID && !post.pollID)c.append(P.button('Edit post',()=>{
-      const f=P.field('Post','textarea',post.body),box=P.el('div');f.input.maxLength=2000;
-      box.append(f.wrap,P.button('Save changes',()=>P.run(box,async()=>{await P.call('portalAction',{action:'editPost',id:post.id,body:f.input.value});d.close();P.toast('Post updated');})));const d=P.dialog('Edit post',box);
-    }));
-    if(P.me.isAdmin && post.kind==='announcement')c.append(P.button(post.pinned?'Unpin announcement':'Pin announcement',()=>P.run(c,async()=>{await P.call('portalAction',{action:'pinPost',id:post.id,pinned:!post.pinned});P.toast(post.pinned?'Announcement unpinned':'Announcement pinned',()=>P.call('portalAction',{action:'pinPost',id:post.id,pinned:!!post.pinned}));})));
     const body = P.text(post.body, post);
     c.append(body);
     if (!detail) {
@@ -213,7 +208,14 @@
         P.button(
           "•••",
           () => {
-            const menu = P.el("div");
+            const menu = P.el("div", "p-action-sheet");
+    if(post.authorUid===P.uid && !post.eventID && !post.pollID)menu.append(P.button('Edit post',()=>{
+      d.close();
+      const f=P.field('Post','textarea',post.body),box=P.el('div');f.input.maxLength=2000;
+      box.append(f.wrap,P.button('Save changes',()=>P.run(box,async()=>{await P.call('portalAction',{action:'editPost',id:post.id,body:f.input.value});editDialog.close();P.toast('Post updated');})));const editDialog=P.dialog('Edit post',box);
+    }));
+    if(P.me.isAdmin && post.kind==='announcement')menu.append(P.button(post.pinned?'Unpin announcement':'Pin announcement',()=>P.run(menu,async()=>{await P.call('portalAction',{action:'pinPost',id:post.id,pinned:!post.pinned});d.close();P.toast(post.pinned?'Announcement unpinned':'Announcement pinned',()=>P.call('portalAction',{action:'pinPost',id:post.id,pinned:!!post.pinned}));})));
+
             menu.append(P.button("Report post", () => { d.close(); P.reportContent("forumPosts/" + post.id); }));
             if (!post.eventID && (post.authorUid === P.uid || P.me.isAdmin)) menu.append(
               P.button(
@@ -233,6 +235,7 @@
           "p-post-menu",
         ),
       );
+    c.querySelector(".p-post-menu")?.setAttribute("aria-label","Post options");
     c.append(actions);
     if (!detail)
       c.addEventListener("click", (e) => {
@@ -614,8 +617,9 @@
           render();
         };
         r.querySelector(".p-header").append(sortField.wrap);
-        const mode=P.select('Feed',[['all','All brothers'],['you','For you']],feedMode);mode.input.onchange=()=>{feedMode=mode.input.value;render();};r.append(mode.wrap);
-        const strip=P.el('div','p-status-strip');strip.id='p985-personal-status';strip.append(P.button('Your profile',()=>P.profile(P.uid)),P.button('Your events',()=>P.go('events')),P.button('Messages',()=>P.go('messages')));r.append(strip);
+        const modes=P.el('div','p-feed-switch');modes.setAttribute('role','group');modes.setAttribute('aria-label','Feed');
+        [['all','All brothers'],['you','For you']].forEach(([value,label])=>{const b=P.button(label,()=>{feedMode=value;for(const tab of modes.children)tab.setAttribute('aria-pressed',String(tab.dataset.mode===value));render();},'p-feed-switch__tab');b.dataset.mode=value;b.setAttribute('aria-pressed',String(feedMode===value));modes.append(b);});r.append(modes);
+        const strip=P.el('div','p-home-status');strip.id='p985-personal-status';strip.hidden=true;r.append(strip);
         r.append(composer("post"));
       } else {
         const holder = P.el("div");
@@ -640,7 +644,7 @@
         P.button("Load more", () => {
           limit += 50;
           subscribe();
-        }),
+        }, "p-feed-more"),
       );
     }
     P.watch(db.collection("postStatistics"), (rows) => {
@@ -655,10 +659,12 @@
   function personalStatus(){
     const strip=document.getElementById('p985-personal-status');if(!strip)return;
     const run=++statusGeneration,unread=(P.activity||[]).filter(i=>!i.read&&!P.blocks.has(i.actor)).length;
-    strip.replaceChildren(P.button(unread+' recent unread updates',()=>document.getElementById('notificationBellBtn').click()));
+    strip.replaceChildren();strip.hidden=false;
+    if(unread)strip.append(P.button(unread+' new update'+(unread===1?'':'s'),()=>document.getElementById('notificationBellBtn').click(),'p-home-status__link'));
+    else strip.append(P.el('span','p-home-status__caught-up','You’re all caught up'));
     const next=(P.events||[]).filter(e=>e.status==='published'&&P.date(e.start)>new Date()).sort((a,b)=>P.date(a.start)-P.date(b.start))[0];
-    if(next){const b=P.button('Next: '+next.title,()=>P.openEvent(next.id));strip.append(b);P.event('attendance',next.id).then(own=>{if(run===statusGeneration)b.textContent=next.title+' · '+(own.status||'RSVP needed');}).catch(()=>{});}
-    strip.append(P.button('Your profile',()=>P.profile(P.uid)));
+    if(next){const b=P.button(next.title,()=>P.openEvent(next.id),'p-home-status__event');b.title=next.title;strip.append(b);P.event('attendance',next.id).then(own=>{if(run===statusGeneration){b.replaceChildren(P.el('span','p-home-status__event-name',next.title),P.el('span','p-home-status__rsvp',({going:'Going',maybe:'Maybe',busy:'Not going',waitlist:'Waitlisted'})[own.status]||'RSVP'));}}).catch(()=>{});}
+
   }
   document.addEventListener('p985:activity',personalStatus);
   document.addEventListener('p985:events',personalStatus);
