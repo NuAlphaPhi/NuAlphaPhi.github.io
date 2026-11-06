@@ -153,7 +153,7 @@
       ["Graduation Year", b.graduationYear],
       ["Hometown", b.hometown],
       ["Current Location", b.currentLocation],
-      ["Phone", b.phone],
+      ["Phone", window.napPhone.format(b.phone)],
       ["Email", b.email],
       ["Instagram", b.instagram],
       ["Facebook", b.facebook],

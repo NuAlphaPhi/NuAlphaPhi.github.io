@@ -154,9 +154,8 @@
           for(const key of ['phone','pledgeName','pledgeClass','pledgeNumber','chapter'])fields[key]=document.getElementById('portal-signup-'+key).value.trim();
           const selector=document.getElementById('portal-signup-country');
           const code=selector.value==='custom'?document.getElementById('portal-signup-custom-code').value.trim():selector.value;
-          const national=fields.phone.replace(/[\s().-]/g,'');
-          if(!/^\+[1-9][0-9]{0,2}$/.test(code)||!/^\d+$/.test(national)||!/^\d{7,15}$/.test(code.slice(1)+national))throw Error('Enter a valid country code and phone number.');
-          fields.phone=code+national;
+          fields.phone=window.napPhone.canonical(fields.phone,code);
+          if(!fields.phone)throw Error('Enter a valid country code and phone number. US and Canadian numbers need 10 digits.');
           if(!/^[0-9]{1,2}$/.test(fields.pledgeNumber))throw Error('Pledge number must be 0–99. Leading zeros are allowed.');
 
           await callable('membershipReadiness',{},false);
