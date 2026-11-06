@@ -75,7 +75,7 @@
     panels.forEach(function (panel) {
       panel.hidden = panel.getAttribute("data-panel") !== tab;
     });
-    document.dispatchEvent(new CustomEvent("nap:tab-changed", {detail: {tab: tab}}));
+
     closeMobileNav();
     var activePanel = document.querySelector('.portal-tab-panel:not([hidden])');
     var heading = activePanel && activePanel.querySelector("h1");
@@ -86,9 +86,9 @@
     var main = document.querySelector(".portal-shell__main");
     if (main) main.scrollTop = scrollPositions[tab] || 0;
 
-    if (!opts.fromHistory && validNavTabs.indexOf(activeNavTab) !== -1) {
-      var nextUrl = "/portal-home/" + activeNavTab + location.search;
-      if (location.pathname !== "/portal-home/" + activeNavTab || location.hash) {
+    if (!opts.fromHistory && (validNavTabs.indexOf(activeNavTab) !== -1 || opts.profilePath)) {
+      var nextUrl = opts.profilePath || "/portal-home/" + activeNavTab + location.search;
+      if (location.pathname !== nextUrl || location.hash) {
         if (opts.replace) {
           history.replaceState(null, "", nextUrl);
         } else {
@@ -96,6 +96,7 @@
         }
       }
     }
+    document.dispatchEvent(new CustomEvent("nap:tab-changed", {detail: {tab: tab}}));
   }
 
   var navigationId = 0;
@@ -118,7 +119,7 @@
         document.addEventListener("nap:auth-ready", ready, {once:true});
       });
       var user = auth.currentUser;
-      if (!user) { location.assign("/portal?next=" + encodeURIComponent("/portal-home/" + (navTab || tab))); return; }
+      if (!user) { location.assign("/portal?next=" + encodeURIComponent(tab === "profile" ? location.pathname : "/portal-home/" + (navTab || tab))); return; }
       var timeout;
       var snap;
       try {
@@ -161,7 +162,7 @@
 
   window.addEventListener("popstate", function () {
     var tabFromHash = routeTab();
-    if (validNavTabs.indexOf(tabFromHash) !== -1) {
+    if (validNavTabs.indexOf(tabFromHash) !== -1 || tabFromHash === "profile") {
       setTab(tabFromHash, undefined, { fromHistory: true });
     }
   });
@@ -171,7 +172,7 @@
      Overview. Uses replaceState so this doesn't itself add a history entry. */
   function routeTab() { return location.hash ? location.hash.slice(1) : location.pathname.split("/")[2] || "home"; }
   var initialTab = routeTab();
-  if (validNavTabs.indexOf(initialTab) !== -1) {
+  if(initialTab === "profile"){ setTab("profile", undefined, {fromHistory:true}); } else if (validNavTabs.indexOf(initialTab) !== -1) {
     setTab(initialTab, undefined, { replace: true });
   } else { setTab("home", undefined, {replace:true}); }
 })();

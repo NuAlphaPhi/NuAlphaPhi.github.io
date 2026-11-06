@@ -218,13 +218,15 @@
     const priority = (t) => t === "App Developer" ? 0 : t === "Founding Father" ? 1 : t === "Founder" ? 2 : /National/.test(t) ? (/Intern/.test(t) ? 4 : 3) : t === "NEO" ? 7 : t === "GEO" ? 8 : /^(Active|Alumni)$/.test(t) ? 9 : 5;
     return [...new Set(a)].sort((a, b) => priority(a) - priority(b));
   }
-  P.profile = (uid) => {
+  P.profile = async (uid, options = {}) => {
     document
       .querySelectorAll("dialog.p-dialog[open]")
       .forEach((d) => d.close());
     current = uid;
     profileTab = "about";
-    P.go(uid === P.uid ? "myprofile" : "profile");
+    const b=P.person(uid)||(uid===P.uid?P.me:P.rosterPerson?.(uid));
+    const slug=P.profileSlug?.(b?.pledgeName);
+    if(!options.fromRoute || uid===P.uid)await window.napSetTab(uid===P.uid?'myprofile':'profile',undefined,{replace:!!options.fromRoute,...(uid!==P.uid&&slug?{profilePath:'/portal-home/profile/'+slug}:{})});
     render();
   };
   window.napOpenProfileModal = (uid) => P.profile(uid);
