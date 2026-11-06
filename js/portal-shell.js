@@ -100,6 +100,13 @@
 
   window.napSetTab = setTab;
 
+  var brandLink = document.querySelector(".portal-shell__brand");
+  if (brandLink) brandLink.addEventListener("click", function (event) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    setTab("home");
+  });
+
   navBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {
       setTab(btn.getAttribute("data-tab"));
