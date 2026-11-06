@@ -5,7 +5,15 @@
     limit = 50,
     off,
     sort = "latest", feedMode = "all";
-  const feedSeen = {}, feedReadPending = {};
+  const feedSeen = {}, feedReadPending = {}, moreControls = {};
+  let feedLoading = true, feedHasMore = true;
+  function updateMore() {
+    Object.values(moreControls).forEach(button => {
+      button.disabled = feedLoading || !feedHasMore;
+      button.textContent = feedLoading ? "Loading posts…" : feedHasMore ? "Load more" : "You’ve reached the beginning — no older posts.";
+      button.classList.toggle("is-complete", !feedLoading && !feedHasMore);
+    });
+  }
   let latestPosts=[],pinnedPosts=[];
   function mergePosts(){P.posts=[...new Map([...latestPosts,...pinnedPosts].map(p=>[p.id,p])).values()];render();}
   function feedBadges() {
@@ -614,6 +622,7 @@
         rail.setAttribute("aria-label", "Brotherhood updates");
         layout.append(center, rail);
         r.append(layout);
+        window.napHomeScroll(layout, center, rail);
         r = center;
       }
       r.classList.add("p-feed");
@@ -653,13 +662,13 @@
         }, requests);
       }
       lists[kind] = P.el("div");
-      r.append(
-        lists[kind],
-        P.button("Load more", () => {
-          limit += 50;
-          subscribe();
-        }, "p-feed-more"),
-      );
+      moreControls[kind] = P.button("Loading posts…", () => {
+        if(feedLoading || !feedHasMore) return;
+        limit += 50;
+        subscribe();
+      }, "p-feed-more");
+      r.append(lists[kind], moreControls[kind]);
+      updateMore();
     }
     P.watch(db.collection("postStatistics"), (rows) => {
       stats = Object.fromEntries(rows.map((r) => [r.id, r]));
@@ -810,10 +819,12 @@
   document.addEventListener("p985:events", updates);
   document.addEventListener("p985:people", updates);
   function subscribe() {
+    feedLoading = true; updateMore();
     off?.();
     off = P.watch(
       db.collection("forumPosts").orderBy("createdAt", "desc").limit(limit),
       (rows) => {
+        feedLoading = false; feedHasMore = rows.length >= limit; updateMore();
         latestPosts = rows;
         mergePosts();
       },
