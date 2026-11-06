@@ -419,3 +419,11 @@
 .is-unread .p-notification-dot { background:#c889a0; }
 #notificationDropdown button:focus-visible { outline:2px solid #c889a0;outline-offset:-2px; }
 #notificationDropdown .p-empty { padding:30px 18px;font-size:13px;color:var(--grey-400); }
+
+/* Class membership controls. */
+.p-roster-class-actions{display:flex;gap:8px;flex-wrap:wrap;padding:16px 20px 0}
+.p-class-order{margin:20px 0;max-height:48vh;overflow:auto}
+.p-class-order h3{margin:0 0 6px}.p-class-order>p{font-size:13px;margin:0 0 12px}
+.p-class-order-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--p-border,#303039)}
+.p-class-order-row small{display:block;font-size:12px;margin-top:3px}.p-class-order-controls{display:flex;gap:6px}.p-class-order-controls .p-btn{padding:6px 12px;min-height:36px}.p-class-order-controls .p-btn:disabled{opacity:.3}
+.p-class-editor>.p-btn{margin:4px 8px 4px 0}

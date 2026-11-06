@@ -309,7 +309,7 @@ match /rosterTreeLinks/{id} {
 match /masterRoster/{id} {
   allow read: if isSocialMember();
   allow create, update: if isSocialAdmin()
-    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber'])
+    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber','sortOrder'])
     && request.resource.data.classID is string
     && existsAfter(/databases/$(database)/documents/masterRosterClasses/$(request.resource.data.classID))
     && request.resource.data.pledgeName is string && request.resource.data.pledgeName.size() > 0 && request.resource.data.pledgeName.size() <= 100
@@ -318,6 +318,7 @@ match /masterRoster/{id} {
     && request.resource.data.get('fallen', false) is bool
     && request.resource.data.get('pledgeNumber', '') is string
     && request.resource.data.get('pledgeNumber', '').matches('^[0-9]{0,2}$')
+    && request.resource.data.get('sortOrder', 0) is int && request.resource.data.get('sortOrder', 0) >= 0 && request.resource.data.get('sortOrder', 0) <= 10000
     && request.resource.data.sourcePage is int && request.resource.data.sourcePage >= 0 && request.resource.data.sourcePage <= 10000;
   allow delete: if isSocialAdmin();
 }

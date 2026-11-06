@@ -146,6 +146,15 @@
         people.length + " brothers · All chapters, with or without an account",
       ),
     );
+    const canExport=P.me.isAdmin === true || [P.grant.role,...(P.grant.roles||[])].some(role=>['nationalBoard','president'].includes(role));
+    if(canExport) {
+      const exportButton=P.button('Export Roster',()=>P.run(root,async()=>{
+        exportButton.disabled=true;exportButton.textContent='Preparing export…';
+        try {await window.NAPRosterExport.download();P.toast('Workbook downloaded. Open it in Excel or import it into Google Sheets.');}
+        finally {exportButton.disabled=false;exportButton.textContent='Export Roster';}
+      }),'p-btn');
+      root.firstElementChild.append(exportButton);
+    }
     const q = P.field("Search name or pledge name", "search", search),
       ch = P.select("Chapter", [["", "All chapters"], ...P.chapters], chapter);
     q.input.oninput = () => {
@@ -210,8 +219,11 @@
           const label=P.el("span","p-roster-class-label");label.append(P.el("small","",c.chapter+" Chapter"),P.el("strong","",c.pledgeClass+" Class"));
           label.append(P.el("small","p-roster-crossing",crossing.conflict?"Crossing date under review":crossing.label||"Crossing date not recorded"));
           h.append(label,P.el("span","p-roster-count",members.length+(members.length===1?" brother":" brothers")),P.el("span","p-roster-chevron","⌄"));
-          if (P.me.isAdmin)
-            group.append(P.button("Edit class", () => editClass(c), "p-btn p-roster-edit-class"));
+          if (P.me.isAdmin) {
+            const actions=P.el("div","p-roster-class-actions");
+            actions.append(P.button("Edit Class",()=>editClass(c)),P.button("Add Brother",()=>edit(null,c.id)));
+            group.append(actions);
+          }
           group.prepend(h);
           members.forEach((r) => {
             const row = P.el("div", "p-roster-person"),
@@ -290,24 +302,38 @@
     draw();
   }
   function editClass(c) {
-    const form = P.el("div"),
+    const form = P.el("div", "p-class-editor"),
       chapter = P.select("Chapter", P.chapters, c?.chapter || "Alpha"),
       name = P.field("Class", "text", c?.pledgeClass);
+    const members=c?people.filter(r=>r.classID===c.id):[];
+    const original=members.map(r=>r.id), ordering=P.el('div','p-class-order');
+    function drawOrder(){
+      ordering.replaceChildren();
+      if(!c)return;
+      ordering.append(P.el('h3','','Member Order'),P.el('p','p-muted','First is Captain. Last is Co-Captain. Changes apply when you save.'));
+      members.forEach((r,i)=>{
+        const row=P.el('div','p-class-order-row'), label=P.el('div');
+        label.append(P.el('strong','',r.pledgeName),P.el('small','p-muted',r.fullName));
+        const controls=P.el('div','p-class-order-controls');
+        [-1,1].forEach(direction=>{const button=P.button(direction<0?'↑':'↓',()=>{[members[i],members[i+direction]]=[members[i+direction],members[i]];drawOrder();});button.disabled=i+direction<0||i+direction>=members.length;button.setAttribute('aria-label','Move '+r.pledgeName+(direction<0?' up':' down'));controls.append(button);});
+        row.append(P.el('span','p-muted',String(i+1)),label,controls);ordering.append(row);
+      });
+    }
+    drawOrder();
     form.append(
       chapter.wrap,
       name.wrap,
+      ordering,
       P.button(
         "Save class",
         () =>
           P.run(form, async () => {
             if (!name.input.value.trim()) throw Error("Enter a class name.");
-            await db
-              .collection("masterRosterClasses")
-              .doc(c?.id || crypto.randomUUID())
-              .set({
-                chapter: chapter.input.value,
-                pledgeClass: name.input.value.trim(),
-              }, {merge:true});
+            if(!P.me.isAdmin)throw Error('Only administrators can edit the roster.');
+            const batch=db.batch();
+            batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim()},{merge:true});
+            if(members.some((r,i)=>r.id!==original[i]))members.forEach((r,i)=>batch.update(db.doc('masterRoster/'+r.id),{sortOrder:i}));
+            await batch.commit();
             d.close();
           }),
         "p-btn primary",
@@ -334,7 +360,7 @@
       );
     const d = P.dialog(c ? "Edit class" : "Add class", form);
   }
-  function edit(r) {
+  function edit(r, defaultClassID) {
     const form = P.el("div"),
       full = P.field("Full real name", "text", r?.fullName),
       pledge = P.field("Pledge name", "text", r?.pledgeName),
@@ -342,7 +368,7 @@
       cls = P.select(
         "Chapter and class",
         classes.map((c) => [c.id, c.chapter + " · " + c.pledgeClass]),
-        r?.classID || classes[0]?.id,
+        r?.classID || defaultClassID || classes[0]?.id,
       );
     num.input.pattern = "[0-9]{0,2}";
     num.input.maxLength = 2;
@@ -377,6 +403,7 @@
                 fallen: flags.fallen.checked,
                 disaffiliated: flags.disaffiliated.checked,
                 sourcePage: r?.sourcePage || 0,
+                sortOrder: r?.classID===cls.input.value && Number.isInteger(r.sortOrder) ? r.sortOrder : Math.max(-1,...people.filter(p=>p.classID===cls.input.value).map((p,i)=>Number.isInteger(p.sortOrder)?p.sortOrder:i))+1,
               });
             d.close();
           }),
@@ -517,7 +544,7 @@
     P.watch(
       db.collection("masterRoster"),
       (r) => {
-        loadedSources.add("people"); people = r;
+        loadedSources.add("people"); people = r.map((p,i)=>({...p,_initialOrder:i})).sort((a,b)=>(a.sortOrder??a._initialOrder)-(b.sortOrder??b._initialOrder));
         render();
       },
       P.root("roster"),
@@ -531,6 +558,7 @@
       P.root("roster"),
     );
   });
+  document.addEventListener("p985:access",()=>{if(P.uid)render();});
   document.addEventListener("p985:people", () => {
     if (P.uid) render();
   });
