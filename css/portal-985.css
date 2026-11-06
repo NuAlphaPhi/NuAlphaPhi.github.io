@@ -598,7 +598,7 @@ html:not(:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"])) .
   padding: 7px;
 }
 .p-compose-icon:hover {
-  background: #a5516d20;
+  background: color-mix(in srgb, var(--maroon) 13%, transparent);
   color: var(--maroon);
 }
 .p-compose-icon svg {
@@ -1618,7 +1618,7 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-group-edit .p-field { min-width:0; margin:0; }
 .p-group-edit input { width:100%; min-width:0; box-sizing:border-box; }
 .p-group-tabs { display:flex; gap:8px; margin-top:22px; border-bottom:1px solid var(--grey-200); padding-bottom:10px; }
-.p-group-tabs .selected { background:#8c345526; border-color:#a64b6b; }
+.p-group-tabs .selected { background:#8c345526; border-color:var(--maroon); }
 .p-group-content { padding-top:12px; display:grid; gap:8px; }
 .p-group-member { display:flex; align-items:center; gap:12px; color:var(--black); background:none; border:0; padding:10px; text-align:left; border-radius:10px; cursor:pointer; }
 .p-group-member:hover { background:var(--grey-100); }
@@ -1640,11 +1640,11 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-role-choice{display:flex;align-items:center;justify-content:space-between;gap:16px;border-radius:8px;padding:12px}
 .p-role-choice>span:first-child{display:grid;gap:3px}
 .p-role-choice small{font-size:12px}
-.p-role-choice-action{color:var(--maroon,#b86c84);font-size:13px;white-space:nowrap}
-.p-role-choice:hover,.p-role-choice:focus-visible{background:#b86c841a}
+.p-role-choice-action{color:var(--maroon);font-size:13px;white-space:nowrap}
+.p-role-choice:hover,.p-role-choice:focus-visible{background:color-mix(in srgb, var(--maroon) 10%, transparent)}
 .p-role-choice:disabled{opacity:.6;cursor:wait}
 
 .familytree-profile-link{padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:inherit;border-radius:8px}
-.familytree-profile-link:hover{color:var(--maroon,#b86c84)}
-.familytree-profile-link:focus-visible{outline:2px solid #b86c84;outline-offset:5px}
+.familytree-profile-link:hover{color:var(--maroon)}
+.familytree-profile-link:focus-visible{outline:2px solid var(--maroon);outline-offset:5px}
 #familytreePersonAvatar{border-radius:50%;display:inline-flex}

@@ -65,3 +65,12 @@ html[data-theme=maroon] body.portal-design {
 @media(prefers-reduced-motion:reduce){.settings-switch-row input::after{transition:none}}
 /* Dialogs inherit the selected palette rather than their legacy dark constants. */
 html body.portal-design .p-dialog{--black:inherit;--grey-400:inherit;--grey-200:inherit;--grey-50:inherit;--grey-100:inherit;--portal-card:inherit;--maroon:inherit}
+.settings-accent{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:28px;padding-top:24px;border-top:1px solid var(--grey-200)}
+.settings-accent label{width:100%;font-weight:600}.settings-accent p{width:100%;font-size:13px;margin:0!important}.settings-accent input[type=color]{width:54px;height:42px;padding:4px;border:1px solid var(--grey-200);background:var(--portal-card);border-radius:8px;cursor:pointer}.settings-accent [role=status]{font-size:12px}
+.portal-design :is(.p-avatar,.p-tabs .selected,.p-admin-tabs .p-btn.selected,.p-admin-chapters .selected,.p-messages-badge,.p-feed-badge,.p-chapter-seal){background:var(--portal-button);color:#fff;border-color:var(--portal-button)}
+.portal-design :is(.p-action.selected,.p-profile-shield,.p-chat-context-item[aria-checked=true]){color:var(--maroon)}
+.portal-design .p-profile-tab.is-selected:after{background:var(--portal-button)}
+.portal-design :is(.p-message.mine,.p-compose-icon:hover,.p-group-tabs .selected,.p-notification-filter[aria-pressed=true]){background:var(--maroon-soft)}
+.portal-design input[type=checkbox],.portal-design input[type=range]{accent-color:var(--portal-button)}
+.portal-design .p-profile-cover{background:radial-gradient(ellipse at 90% 0%,var(--portal-button),transparent 65%),linear-gradient(115deg,#180c11,var(--portal-button));color:#fff}
+.portal-design .portal-shell__user .nap-avatar--fallback{background:var(--portal-button);color:#fff}
