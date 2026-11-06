@@ -150,14 +150,21 @@
       submitBtn.textContent = "Creating account…";
 
       Promise.resolve().then(async function () {
+          const fields={firstName,lastName,middleName:'',notifications:true};
+          for(const key of ['phone','pledgeName','pledgeClass','pledgeNumber','chapter'])fields[key]=document.getElementById('portal-signup-'+key).value.trim();
+          const selector=document.getElementById('portal-signup-country');
+          const code=selector.value==='custom'?document.getElementById('portal-signup-custom-code').value.trim():selector.value;
+          const national=fields.phone.replace(/[\s().-]/g,'');
+          if(!/^\+[1-9][0-9]{0,2}$/.test(code)||!/^\d+$/.test(national)||!/^\d{7,15}$/.test(code.slice(1)+national))throw Error('Enter a valid country code and phone number.');
+          fields.phone=code+national;
+          if(!/^[0-9]{1,2}$/.test(fields.pledgeNumber))throw Error('Pledge number must be 0–99. Leading zeros are allowed.');
+
           await callable('membershipReadiness',{},false);
           let credential;
           try { credential=await auth.createUserWithEmailAndPassword(email,password); }
           catch(error){if(error.code!=='auth/email-already-in-use')throw error;credential=await auth.signInWithEmailAndPassword(email,password);}
-          const fields={firstName,lastName,middleName:'',notifications:true};
-          for(const key of ['phone','pledgeName','pledgeClass','pledgeNumber','chapter'])fields[key]=document.getElementById('portal-signup-'+key).value.trim();
           await callable('submitMembership',fields,true);
-          signupForm.reset();showError(signupError,'Your application is in review. You will receive an email when administrators make a decision.');
+          signupForm.reset();document.getElementById('portal-signup-custom-code').hidden=true;document.getElementById('portal-signup-custom-code').required=false;showError(signupError,'Your application is in review. You will receive an email when administrators make a decision.');
         })
         .catch(function (err) {
           showError(signupError, authErrorMessage(err));
@@ -169,3 +176,7 @@
     });
   }
 })();
+
+document.getElementById('portal-signup-country')?.addEventListener('change',function(){
+ const custom=document.getElementById('portal-signup-custom-code');custom.hidden=this.value!=='custom';custom.required=!custom.hidden;
+});

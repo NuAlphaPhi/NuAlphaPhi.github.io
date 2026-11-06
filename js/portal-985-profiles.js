@@ -1,6 +1,22 @@
 (function () {
   "use strict";
   const P = P985;
+  P.rosterProfile = function(b, data = P.rosterData) {
+    if(!b)return b;
+    const norm=v=>String(v||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
+    const linked=data?.accountLinks?.[b.uid]?.rosterID;
+    let record=linked?data.people.find(r=>r.id===linked):null;
+    if(!linked && data){
+      const full=norm([b.firstName,b.middleName,b.lastName].filter(Boolean).join(' '));
+      const matches=data.people.filter(r=>full&&norm(r.fullName)===full&&norm(r.pledgeName)===norm(b.pledgeName)&&data.classes.some(c=>c.id===r.classID&&norm(c.chapter)===norm(b.chapter)));
+      if(matches.length===1)record=matches[0];
+    }
+    const c=record&&data.classes.find(c=>c.id===record.classID);
+    const crossing=c&&P.rosterClassCrossing?P.rosterClassCrossing(c,data.tree||[]):null;
+    const label=c?.semesterCrossed&&c?.yearCrossed?[c.semesterCrossed,c.yearCrossed].join(' '):crossing?.label||'';
+    const [term,year]=label.split(' ');
+    return {...b,chapter:c?.chapter||'',pledgeClass:c?.pledgeClass||'',crossingTerm:term||'',semesterCrossed:term||'',crossingYear:year||'',yearCrossed:year||'',rosterLinked:!!c};
+  };
   P.profileStatus = function(b, data = P.rosterData) {
     const norm=v=>String(v||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
     const people=data?.people||[], classes=data?.classes||[];
@@ -234,8 +250,8 @@
     if (!current) return;
     if(current.startsWith("roster_")){P.renderRosterProfile(current,P.root("profile"));return;}
     const b =
-        P.person(current) ||
-        (current === P.uid ? { uid: P.uid, ...P.me } : null),
+        P.rosterProfile(P.person(current) ||
+        (current === P.uid ? { uid: P.uid, ...P.me } : null)),
       root = P.root(current === P.uid ? "myprofile" : "profile");
     root.replaceChildren();
     if (!b) {
@@ -309,6 +325,7 @@
     const summary = P.el("div", "p-profile-summary");
     if (b.chapter) summary.append(P.button(b.chapter + " Chapter", () => P.chapter(b.chapter), "p-profile-chapter"));
     if (b.school) summary.append(P.el("span", "", b.school));
+    if(!b.rosterLinked)summary.append(P.el("span", "p-muted", "Roster link pending"));
     const crossed = [b.crossingTerm || b.semesterCrossed, b.crossingYear || b.yearCrossed].filter(Boolean).join(" ");
     if (crossed) summary.append(P.el("span", "", "Crossed " + crossed));
     intro.append(summary);
@@ -466,11 +483,8 @@
         "lastName",
         "pledgeName",
         "pledgeNumber",
-        "chapter",
-        "pledgeClass",
-        "semesterCrossed",
-        "yearCrossed",
       );
+    form.append(P.el("p", "p-muted", "Chapter, pledge class, and crossing date are managed in the master roster."));
     keys.forEach((k) => {
       const f =
         k === "chapter"

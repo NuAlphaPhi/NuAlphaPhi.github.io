@@ -15,10 +15,6 @@
     "lastName",
     "pledgeName",
     "pledgeNumber",
-    "chapter",
-    "pledgeClass",
-    "semesterCrossed",
-    "yearCrossed",
     "birthday",
     "instagram",
     "facebook",
@@ -33,6 +29,9 @@
     "bio",
   ];
 
+  ['chapter','pledgeClass','semesterCrossed','yearCrossed'].forEach(function(name){
+    var input=form.querySelector('[name="'+name+'"]');if(input){input.disabled=true;input.closest('.form-group')?.setAttribute('hidden','');}
+  });
   var NUMBER_FIELDS = ["yearCrossed", "graduationYear"];
 
   function fieldEl(name) {
