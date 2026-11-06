@@ -46,3 +46,12 @@ test('timeline and statistics include empty terms, review dates, and reconcile a
   else assert.equal(ws.getCell('C2').value,3);
  }
 });
+
+test('live UID-keyed account links work in both roster views and workbook exports',()=>{
+ const data={...sample,accountLinks:{account:{rosterID:'1'}},brothers:[{uid:'account',firstName:'Lok',middleName:'Man',lastName:'van Kwong'}]};
+ assert.deepEqual(E.rows(data).rows[0].values.slice(3,5),['Lok Man','van Kwong']);
+ assert.equal(E.matrix(data).total,3);
+ for(const mode of ['timeline','statistics'])assert.equal(E.buildView(ExcelJS,data,mode).worksheets.length,1);
+ assert.equal(E.build(ExcelJS,data).getWorksheet('Roster Check').getCell('E2').value,'van Kwong');
+ assert.equal(E.matrix({...data,accountLinks:{}}).total,3);
+});

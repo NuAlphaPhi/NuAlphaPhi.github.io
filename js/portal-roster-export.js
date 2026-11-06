@@ -10,6 +10,8 @@ const border={top:{style:'thin',color:{argb:'FF111111'}},bottom:{style:'thin',co
 function names(person){return [person?.firstName,person?.middleName].filter(Boolean).join(' ');}
 function rows(data){
  const classes=new Map(data.classes.map(c=>[c.id,c])), warnings=[];
+ // Live roster snapshots use a UID-keyed map; export snapshots use an array.
+ const accountLinks=Array.isArray(data.accountLinks)?data.accountLinks:Object.entries(data.accountLinks||{}).map(([id,link])=>({...link,id:link.id||id}));
  const classDates=new Map(data.classes.map(c=>{
   const candidates=data.tree.filter(t=>norm(t.chapter)===norm(c.chapter)&&norm(t.pledgeClass)===norm(c.pledgeClass));
   const values=[...candidates.map(t=>[t.term,t.year]),[c.semesterCrossed,c.yearCrossed]];
@@ -19,8 +21,8 @@ function rows(data){
  }));
  const output=data.people.map((r,index)=>{
   const c=classes.get(r.classID);if(!c||!CHAPTERS.includes(c.chapter))throw Error('A roster entry has no valid chapter/class. Fix Roster discrepancies before exporting.');
-  const accountLink=(data.accountLinks||[]).find(l=>l.rosterID===r.id);
-  const matched=accountLink?(data.brothers||[]).filter(b=>b.id===accountLink.id):(data.brothers||[]).filter(b=>norm(b.chapter)===norm(c.chapter)&&norm([b.firstName,b.middleName,b.lastName].filter(Boolean).join(' '))===norm(r.fullName));
+  const accountLink=accountLinks.find(l=>l.rosterID===r.id);
+  const matched=accountLink?(data.brothers||[]).filter(b=>(b.id||b.uid)===accountLink.id):(data.brothers||[]).filter(b=>norm(b.chapter)===norm(c.chapter)&&norm([b.firstName,b.middleName,b.lastName].filter(Boolean).join(' '))===norm(r.fullName));
   let first,last;
   if(r.firstName&&r.lastName){first=r.firstName;last=r.lastName;}
   else if(matched.length===1&&matched[0].lastName){first=names(matched[0]);last=matched[0].lastName;}
