@@ -89,6 +89,7 @@
     return e;
   };
   P.field = (label, type = "text", value = "") => {
+    label = label.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b[a-z]/g, c => c.toUpperCase());
     const wrap = P.el("label", "p-field"),
       i = P.el(type === "textarea" ? "textarea" : "input");
     if (type !== "textarea") i.type = type;

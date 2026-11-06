@@ -54,13 +54,14 @@
      tracks the active tab and Back/Forward move between tabs instead of
      leaving the app after a single press. */
   var scrollPositions = {}, previousTab;
-  function setTab(tab, navTab, opts) {
+  function showTab(tab, navTab, opts) {
     opts = opts || {};
     if (!Array.prototype.some.call(panels, function (panel) { return panel.getAttribute("data-panel") === tab; })) return;
-    if(window.napBeforeTabChange && window.napBeforeTabChange(tab)===false)return;
+
     var scrollMain = document.querySelector('.portal-shell__main');
     if(previousTab && scrollMain)scrollPositions[previousTab]=scrollMain.scrollTop;
     previousTab=tab;
+    window.napCurrentTab=tab;
     var activeNavTab = navTab || tab;
     navBtns.forEach(function (btn) {
       var isActive = btn.getAttribute("data-tab") === activeNavTab;
@@ -86,9 +87,8 @@
     if (main) main.scrollTop = scrollPositions[tab] || 0;
 
     if (!opts.fromHistory && validNavTabs.indexOf(activeNavTab) !== -1) {
-      var newHash = "#" + activeNavTab;
-      var nextUrl = location.pathname + location.search + newHash;
-      if (location.hash !== newHash) {
+      var nextUrl = "/portal-home/" + activeNavTab + location.search;
+      if (location.pathname !== "/portal-home/" + activeNavTab || location.hash) {
         if (opts.replace) {
           history.replaceState(null, "", nextUrl);
         } else {
@@ -98,6 +98,52 @@
     }
   }
 
+  var navigationId = 0;
+  var loader = document.getElementById("portalRouteLoading");
+  function loading(message, failed) {
+    loader.hidden = false;
+    loader.classList.toggle("is-error", !!failed);
+    loader.querySelector("p").textContent = message;
+    loader.querySelector("button").hidden = !failed;
+  }
+  async function setTab(tab, navTab, opts) {
+    if (!Array.prototype.some.call(panels, p => p.getAttribute("data-panel") === tab)) return;
+    if(window.napBeforeTabChange && window.napBeforeTabChange(tab)===false)return;
+    var ticket = ++navigationId;
+    loading("Verifying your account…");
+    try {
+      if (!window.NAP_AUTH_READY_DETAIL) await new Promise((resolve, reject) => {
+        var timer = setTimeout(() => { document.removeEventListener("nap:auth-ready", ready); reject(Error("Your account is taking longer to load.")); }, 15000);
+        function ready() { clearTimeout(timer); resolve(); }
+        document.addEventListener("nap:auth-ready", ready, {once:true});
+      });
+      var user = auth.currentUser;
+      if (!user) { location.assign("/portal?next=" + encodeURIComponent("/portal-home/" + (navTab || tab))); return; }
+      var timeout;
+      var snap;
+      try {
+        snap = await Promise.race([
+          db.collection("users").doc(user.uid).get({source:"server"}),
+          new Promise((resolve, reject) => { timeout = setTimeout(() => reject(Error("Verification timed out")), 12000); })
+        ]);
+      } finally { clearTimeout(timeout); }
+      if(ticket !== navigationId) return;
+      var profile = snap.exists ? snap.data() : null;
+      if (!profile || profile.disabled || (profile.membershipStatus && profile.membershipStatus !== "approved")) {
+        await auth.signOut(); location.assign("/portal"); return;
+      }
+      if(auth.currentUser?.uid !== user.uid) return;
+      if ((tab === "admin" || tab === "blog") && profile.isAdmin !== true) tab = navTab = "home";
+      loading("Opening your workspace…");
+      showTab(tab, navTab, opts);
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      if(ticket === navigationId) loader.hidden = true;
+    } catch(error) {
+      if(ticket !== navigationId) return;
+      loading("We couldn’t verify your account. Check your connection and try again.", true);
+      loader.querySelector("button").onclick = () => setTab(tab, navTab, opts);
+    }
+  }
   window.napSetTab = setTab;
 
   var brandLink = document.querySelector(".portal-shell__brand");
@@ -114,7 +160,7 @@
   });
 
   window.addEventListener("popstate", function () {
-    var tabFromHash = (location.hash || "#home").replace(/^#/, "");
+    var tabFromHash = routeTab();
     if (validNavTabs.indexOf(tabFromHash) !== -1) {
       setTab(tabFromHash, undefined, { fromHistory: true });
     }
@@ -123,8 +169,9 @@
   /* Restore whichever tab the hash points to on a fresh load (a refresh, or
      landing on a link with a #hash) instead of always defaulting to
      Overview. Uses replaceState so this doesn't itself add a history entry. */
-  var initialTab = (location.hash || "#home").replace(/^#/, "");
+  function routeTab() { return location.hash ? location.hash.slice(1) : location.pathname.split("/")[2] || "home"; }
+  var initialTab = routeTab();
   if (validNavTabs.indexOf(initialTab) !== -1) {
     setTab(initialTab, undefined, { replace: true });
-  }
+  } else { setTab("home", undefined, {replace:true}); }
 })();

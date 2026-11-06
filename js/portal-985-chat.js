@@ -202,7 +202,7 @@
     box.append(identity,form,membership,tabs,content);const d=P.dialog("Group details",box);d.classList.add("p-group-dialog");draw();
   }
   async function read() {
-    if (!active || document.hidden || location.hash !== (active.channel ? "#channels" : "#messages")) return;
+    if (!active || document.hidden || window.napCurrentTab !== (active.channel ? "channels" : "messages")) return;
     const room = active;
     if(!room.channel && roomPrefs.shareReceipts)await db.doc('conversations/'+room.id+'/readReceipts/'+P.uid).set({readAt:P.stamp()});
     const key = (room.channel ? "channel-" : "chat-") + room.id;

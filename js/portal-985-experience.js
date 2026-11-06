@@ -51,6 +51,6 @@
     const nav=P.el('nav','p-mobile-tabs');nav.setAttribute('aria-label','Primary navigation');
     [['home','Home'],['messages','Messages'],['events','Events'],['gallery','Gallery']].forEach(([id,label])=>{const b=P.button(label,()=>P.go(id));b.dataset.mobileTab=id;nav.append(b);});
     nav.append(P.button('More',()=>{const box=P.el('div');document.querySelectorAll('.portal-shell__nav-btn').forEach(b=>{if(b.hidden)return;box.append(P.button(b.textContent.trim(),()=>{d.close();b.click();},'p-search-result'));});const d=P.dialog('Explore 985',box);}));document.body.append(nav);
-    const update=()=>nav.querySelectorAll('[data-mobile-tab]').forEach(b=>{if(location.hash==='#'+b.dataset.mobileTab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});document.addEventListener('nap:tab-changed',()=>setTimeout(update,0));update();
+    const update=()=>nav.querySelectorAll('[data-mobile-tab]').forEach(b=>{if(window.napCurrentTab===b.dataset.mobileTab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});document.addEventListener('nap:tab-changed',()=>setTimeout(update,0));update();
   });
 })();

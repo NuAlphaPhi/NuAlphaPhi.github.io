@@ -59,7 +59,7 @@ test('recipient picker reveals the group name only for multiple recipients',()=>
  let dialog;
  P.dialog=(title,content)=>{dialog=c.document.createElement('dialog');const header=c.document.createElement('div');header.className='p-row';header.append(c.document.createElement('button'));dialog.append(header,content);c.document.body.append(dialog);return dialog;};
  P.newConversation();
- const field=dialog.querySelector('input[aria-label="Group name"]').parentElement;
+ const field=dialog.querySelector('input[aria-label="Group Name"]').parentElement;
  assert.equal(field.hidden,true);assert.equal(dialog.querySelector('.p-message-start').disabled,true);
  dialog.querySelectorAll('.p-recipient-row')[0].click();assert.equal(field.hidden,true);
  dialog.querySelectorAll('.p-recipient-row')[1].click();assert.equal(field.hidden,false);
@@ -163,4 +163,19 @@ test('post metadata is compact while preserving exact timestamps for inspection'
  const post={id:'one',authorUid:'other',authorName:'VIRO',chapter:'Kappa',kind:'announcement',body:'Hello',createdAt:'2026-11-04T19:12:00Z',editedAt:'2026-11-05T06:50:00Z'};
  const card=c.P985.postCard(post),meta=card.querySelector('.p-post-meta');
  assert.match(meta.textContent,/Kappa · Nov 4/);assert.match(meta.textContent,/edited/);assert.ok(!meta.textContent.includes('announcement'));assert.ok(!meta.textContent.includes('AM'));assert.match(meta.title,/Posted .* · Edited /);assert.equal(card.querySelectorAll(':scope > small').length,1);
+});
+
+test('shared editor labels capitalize camel case and spaced field names',()=>{
+ const c=setup();
+ for (const label of ['firstName','first Name','last Name','pledge Number']) {
+  const field=c.P985.field(label);
+  assert.match(field.wrap.firstChild.textContent,/^[A-Z]/);
+  assert.equal(field.input.getAttribute('aria-label'),field.wrap.firstChild.textContent);
+ }
+ assert.equal(c.P985.field('firstName').input.getAttribute('aria-label'),'First Name');
+});
+test('every portal navigation section has a direct static entry',()=>{
+ const html=fs.readFileSync('portal-home.html','utf8');
+ for(const [,tab] of html.matchAll(/data-tab="([^"]+)"/g)) assert.ok(fs.existsSync(`portal-home/${tab}/index.html`),tab);
+ assert.ok(fs.existsSync('portal-home/index.html'));
 });

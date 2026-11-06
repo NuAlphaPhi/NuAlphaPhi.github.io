@@ -437,25 +437,75 @@
         k === "chapter"
           ? P.select("Chapter", P.chapters, b[k])
           : k === "semesterCrossed"
-            ? P.select("Crossing term", ["Fall", "Spring", "Summer"], b[k])
+            ? P.select("Crossing Term", ["Fall", "Spring", "Summer"], b[k])
             : P.field(
-                k.replace(/([A-Z])/g, " $1"),
+                k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()),
                 k === "birthday" ? "date" : k === "bio" ? "textarea" : "text",
                 b[k + "ProfileURL"] || b[k],
               );
       fields[k] = f.input;
       form.append(f.wrap);
     });
-    const photo = P.field("Profile photo", "file"),
+    const photo = P.field("Profile Photo", "file"),
       status = P.el("p");
     photo.input.accept = "image/*";
     photo.wrap.hidden = b.uid !== P.uid;
-    form.append(photo.wrap, status);
+    form.classList.add("profile-editor");
+    photo.wrap.hidden = true;
+    const body = P.el("div", "profile-editor__body");
+    while (form.firstChild) body.append(form.firstChild);
+    const picture = P.el("section", "profile-editor__photo");
+    const photoButton = P.button("", () => photo.input.click(), "profile-editor__avatar");
+    photoButton.setAttribute("aria-label", "Change profile picture");
+    photoButton.append(P.avatar(b));
+    const photoActions = P.el("div");
+    photoActions.append(P.el("strong", "", "Profile Picture"), P.el("p", "", "Choose a photo, then adjust the crop."));
+    const removePhoto = P.button("Remove photo", () => {
+      pendingPhoto = null; removedPhoto = true; crop.hidden = true;
+      photoButton.replaceChildren(P.avatar({...b, avatarPath: "", photoDataUrl: ""}));
+    });
+    photoActions.append(P.button("Change photo", () => photo.input.click()), removePhoto);
+    picture.append(photoButton, photoActions);
+    picture.hidden = b.uid !== P.uid;
+    const crop = P.el("div", "profile-editor__crop"); crop.hidden = true;
+    const canvas = P.el("canvas"); canvas.width = canvas.height = 480;
+    canvas.tabIndex = 0; canvas.setAttribute("aria-label", "Drag to position photo. Arrow keys move the crop.");
+    const zoom = P.field("Zoom", "range", 1); zoom.input.min = 1; zoom.input.max = 4; zoom.input.step = 0.01;
+    let bitmap = null, pendingPhoto = null, removedPhoto = false, offsetX = 0, offsetY = 0, drag = null;
+    function drawCrop() {
+      if (!bitmap) return;
+      const scale = Math.max(480 / bitmap.width, 480 / bitmap.height) * Number(zoom.input.value);
+      const w = bitmap.width * scale, h = bitmap.height * scale;
+      offsetX = Math.max(-(w-480)/2, Math.min((w-480)/2, offsetX));
+      offsetY = Math.max(-(h-480)/2, Math.min((h-480)/2, offsetY));
+      canvas.getContext("2d").drawImage(bitmap, (480-w)/2+offsetX, (480-h)/2+offsetY, w, h);
+    }
+    zoom.input.oninput = drawCrop;
+    canvas.onpointerdown = e => { drag = {x:e.clientX,y:e.clientY,ox:offsetX,oy:offsetY}; canvas.setPointerCapture(e.pointerId); };
+    canvas.onpointermove = e => { if (!drag) return; const scale = 480/canvas.getBoundingClientRect().width; offsetX=drag.ox+(e.clientX-drag.x)*scale; offsetY=drag.oy+(e.clientY-drag.y)*scale; drawCrop(); };
+    canvas.onpointerup = canvas.onpointercancel = () => { drag=null; };
+    canvas.onkeydown = e => { const moves={ArrowLeft:[-10,0],ArrowRight:[10,0],ArrowUp:[0,-10],ArrowDown:[0,10]}; if(moves[e.key]){e.preventDefault();offsetX+=moves[e.key][0];offsetY+=moves[e.key][1];drawCrop();} };
+    crop.append(canvas, P.el("p", "", "Drag to reposition · Use the slider to zoom"), zoom.wrap);
+    photo.input.onchange = () => P.run(form, async () => {
+      const file=photo.input.files[0]; if(!file) return;
+      if(!file.type.startsWith("image/") || file.size>20*1024*1024) throw Error("Choose an image under 20 MB.");
+      const next=await createImageBitmap(file); bitmap?.close(); bitmap=next;
+      pendingPhoto=file; removedPhoto=false; offsetX=offsetY=0; zoom.input.value=1;
+      crop.hidden=false; drawCrop();
+      photoButton.replaceChildren(P.el("span", "", "Adjust below"));
+      photo.input.value="";
+    });
+    body.prepend(picture, crop); body.append(photo.wrap);
+    form.append(body);
+    const initial = JSON.stringify(Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v.value])));
+    const dirty = () => pendingPhoto || removedPhoto || initial !== JSON.stringify(Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v.value])));
+    let saving = false, allowClose = false;
+
     const save = P.button(
       "Save profile",
       () =>
-        P.run(form, async () => {
-          save.disabled = true;
+        P.run(footer, async () => {
+          save.disabled = true; saving = true; body.inert = true;
           try {
             const data = Object.fromEntries(
               Object.entries(fields).map(([k, v]) => [k, v.value.trim()]),
@@ -497,22 +547,59 @@
                 : "";
               delete data[key];
             }
-            if (photo.input.files[0])
+            if (removedPhoto) { data.avatarPath = ""; data.photoDataUrl = ""; }
+            if (pendingPhoto) {
+              const cropped = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .9));
+              if (!cropped) throw Error("Could not prepare your photo. Please try again.");
               data.avatarPath = await P.upload(
-                photo.input.files[0],
+                cropped,
                 "profilePhotos/" + b.uid + "/" + crypto.randomUUID() + ".jpg",
                 status,
               );
+              data.photoDataUrl = "";
+            }
             await db.doc("users/" + b.uid).update(data);
+            allowClose = true;
             dialog.close();
           } finally {
-            save.disabled = false;
+            save.disabled = false; saving = false; body.inert = false;
           }
         }),
       "p-btn primary",
     );
-    form.append(save);
-    const dialog = P.dialog("Edit profile", form);
+    const footer = P.el("div", "profile-editor__footer");
+    status.setAttribute("role", "status");
+    const discard = P.button("Don’t Save", async () => {
+      if(saving) return;
+      const confirmed = !dirty() || (window.napConfirm
+        ? await window.napConfirm("Discard your profile changes? Nothing you edited will be saved.", {title:"Discard Changes?",confirmLabel:"Yes, Discard"})
+        : window.confirm("Discard your profile changes?"));
+      if(confirmed) { allowClose=true; dialog.close(); }
+    });
+    footer.append(status, discard, save); form.append(footer);
+    form.onsubmit = e => { e.preventDefault(); save.click(); };
+    const dialog = P.dialog("Edit Profile", form);
+    dialog.classList.add("profile-editor-dialog");
+    const close = dialog.close.bind(dialog);
+    dialog.close = () => {
+      if(!allowClose && (dirty() || saving)) {
+        status.textContent = saving ? "Saving your profile…" : "Save your changes or choose Don’t Save.";
+        save.classList.remove("shake"); void save.offsetWidth; save.classList.add("shake");
+        return;
+      }
+      close();
+    };
+    dialog.addEventListener("cancel", e => { e.preventDefault(); dialog.close(); });
+    const beforeUnload = e => { if(dirty() && !allowClose) { e.preventDefault(); e.returnValue=""; } };
+    window.addEventListener("beforeunload", beforeUnload);
+    const previousGuard = window.napBeforeTabChange;
+    const guard = tab => { if(dirty() || saving) { dialog.close(); return false; } return previousGuard ? previousGuard(tab) : true; };
+    window.napBeforeTabChange = guard;
+    dialog.cleanup = () => {
+      bitmap?.close(); window.removeEventListener("beforeunload", beforeUnload);
+      if(window.napBeforeTabChange === guard) window.napBeforeTabChange = previousGuard;
+    };
+
   }
   document.addEventListener("nap:tab-changed", (e) => {
     if (e.detail.tab === "myprofile") {
@@ -524,7 +611,7 @@
   document.addEventListener("p985:posts", render);
   document.addEventListener("p985:roster", render);
   P.ready(() => {
-    if (location.hash === "#myprofile") {
+    if (window.napCurrentTab === "myprofile") {
       current = P.uid;
       render();
     }

@@ -177,6 +177,6 @@
     document.addEventListener("p985:people", draw);
     document.addEventListener("p985:blocks", draw);
     setInterval(draw, 60000);
-    if (location.hash === "#globe") ensure();
+    if (window.napCurrentTab === "globe") ensure();
   });
 })();
