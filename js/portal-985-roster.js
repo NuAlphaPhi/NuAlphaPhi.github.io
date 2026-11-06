@@ -137,8 +137,11 @@
       : "";
   }
   function render() {
-    P.rosterData={classes,people,tree,links,accountLinks};
-    document.dispatchEvent(new Event('p985:roster'));
+    const previous=P.rosterData;
+    if(!previous || previous.classes!==classes || previous.people!==people || previous.tree!==tree || previous.links!==links || previous.accountLinks!==accountLinks){
+      P.rosterData={classes,people,tree,links,accountLinks};
+      document.dispatchEvent(new Event('p985:roster'));
+    }
     const root = P.root("roster");
     root.replaceChildren(
       P.header(
@@ -147,17 +150,18 @@
       ),
     );
     const canExport=P.me.isAdmin === true || [P.grant.role,...(P.grant.roles||[])].some(role=>['nationalBoard','president'].includes(role));
+    const exportLabel=()=>viewMode==='classes'?'Export Roster':viewMode==='timeline'?'Export Timeline':'Export Statistics';
+    let exportButton;
     if(canExport) {
-      const exportLabel=viewMode==='classes'?'Export Roster':viewMode==='timeline'?'Export Timeline':'Export Statistics';
-      const exportButton=P.button(exportLabel,()=>P.run(root,async()=>{
+      exportButton=P.button(exportLabel(),()=>P.run(root,async()=>{
         exportButton.disabled=true;exportButton.textContent='Preparing export…';
         try {await window.NAPRosterExport.download(viewMode==='classes'?undefined:viewMode);P.toast('Workbook downloaded. Open it in Excel or import it into Google Sheets.');}
-        finally {exportButton.disabled=false;exportButton.textContent=exportLabel;}
+        finally {exportButton.disabled=false;exportButton.textContent=exportLabel();}
       }),'p-btn');
       root.firstElementChild.append(exportButton);
     }
     const modes=P.el('div','p-roster-view-modes');modes.setAttribute('aria-label','Roster view');
-    for(const [key,label] of [['classes','Class List'],['timeline','Crossing Timeline'],['statistics','Statistics']]){const b=P.button(label,()=>{viewMode=key;render();},'p-btn'+(viewMode===key?' active':''));b.setAttribute('aria-pressed',String(viewMode===key));modes.append(b);}root.append(modes);
+    for(const [key,label] of [['classes','Class List'],['timeline','Crossing Timeline'],['statistics','Statistics']]){const b=P.button(label,()=>{if(viewMode===key)return;viewMode=key;for(const button of modes.children){const active=button===b;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));}if(exportButton)exportButton.textContent=exportLabel();draw();},'p-btn'+(viewMode===key?' active':''));b.setAttribute('aria-pressed',String(viewMode===key));modes.append(b);}root.append(modes);
     const q = P.field("Search name or pledge name", "search", search),
       ch = P.select("Chapter", [["", "All chapters"], ...P.chapters], chapter);
     q.input.oninput = () => {
@@ -193,9 +197,13 @@
       );
     const list = P.el("div", "p-roster-classes");
     root.append(list);
+    const viewCache=new Map();let filterKey='';
     function draw() {
+      const nextFilter=JSON.stringify([chapter,search,issuesOnly]);
+      if(nextFilter!==filterKey){viewCache.clear();filterKey=nextFilter;}
+      if(viewCache.has(viewMode)){list.replaceChildren(...viewCache.get(viewMode));return;}
       list.replaceChildren();
-      if(viewMode!=='classes'){P.renderRosterMatrix(list,P.rosterData,viewMode,chapter,search);return;}
+      if(viewMode!=='classes'){P.renderRosterMatrix(list,P.rosterData,viewMode,chapter,search);viewCache.set(viewMode,[...list.childNodes]);return;}
       const sorted = [...classes].sort(
         (a, b) =>
           P.chapters.indexOf(a.chapter) - P.chapters.indexOf(b.chapter) ||
@@ -283,6 +291,7 @@
         });
       if (!list.children.length)
         list.append(P.empty("No brothers match your search."));
+      viewCache.set(viewMode,[...list.childNodes]);
     }
     draw();
   }

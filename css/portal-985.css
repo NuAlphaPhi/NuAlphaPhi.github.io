@@ -1636,3 +1636,10 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-pasted-photo img {display:block;width:160px;height:120px;object-fit:cover;}
 .p-pasted-photo-remove {position:absolute;right:6px;top:16px;width:30px;height:30px;padding:0!important;border-radius:50%;background:#111!important;color:#fff!important;border:1px solid #777;font-size:23px;line-height:1;}
 .p-pasted-photo-full {display:block;max-width:100%;max-height:75vh;object-fit:contain;margin:auto;}
+
+.p-role-choice{display:flex;align-items:center;justify-content:space-between;gap:16px;border-radius:8px;padding:12px}
+.p-role-choice>span:first-child{display:grid;gap:3px}
+.p-role-choice small{font-size:12px}
+.p-role-choice-action{color:var(--maroon,#b86c84);font-size:13px;white-space:nowrap}
+.p-role-choice:hover,.p-role-choice:focus-visible{background:#b86c841a}
+.p-role-choice:disabled{opacity:.6;cursor:wait}

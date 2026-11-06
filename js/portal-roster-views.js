@@ -1,8 +1,9 @@
 (function(){const P=P985;
+let cache;
 P.renderRosterMatrix=(container,data,mode,chapter,query)=>{
  container.replaceChildren();const E=window.NAPRosterExport,stats=mode==='statistics';
  const filtered={...data,people:data.people.filter(r=>(!query||(r.fullName+' '+r.pledgeName).toLowerCase().includes(query.toLowerCase())))};
- let model;try{model=E.matrix(filtered);}catch(error){container.append(P.empty(error.message));return;}
+ let model;try{if(cache&&cache.data===data&&cache.brothers===P.brothers&&cache.query===query)model=cache.model;else{model=E.matrix({...filtered,brothers:P.brothers});cache={data,brothers:P.brothers,query,model};}}catch(error){container.append(P.empty(error.message));return;}
  const chapters=E.CHAPTERS.filter(c=>!chapter||c===chapter),intro=P.el('div','p-roster-view-summary');
  intro.append(P.el('h2','',stats?'Crossing Statistics':'Crossing Timeline'),P.el('p','p-muted','Historical roster · '+model.total.toLocaleString()+' brothers'+(query?' matching your search':'')+' · Includes disaffiliated and fallen brothers.'));
  if(model.warnings.length)intro.append(P.el('p','p-muted','Classes with missing or conflicting crossing dates appear under Needs review.'));

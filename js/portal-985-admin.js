@@ -336,7 +336,7 @@
             : "Only the account owner can grant or remove administrator access.",
         ),
       );
-      (includeRoster ? P.roleCandidates() : P.brothers)
+      P.brothers
         .filter((b) => b.isAdmin)
         .forEach((b) => {
           const row = P.row(P.author(b.uid), P.el("small", "", b.chapter));
@@ -428,19 +428,31 @@
               .includes(search.input.value.toLowerCase()),
         )
         .slice(0, 50)
-        .forEach((b) =>
-          list.append(
-            P.button(
-              P.name(b) + " · " + b.chapter + (b.rosterOnly ? " · No portal account" : ""),
-              () =>
-                P.run(box, async () => {
-                  await save(b.uid);
-                  d.close();
-                }),
-              "p-choice",
-            ),
-          ),
-        );
+        .forEach((b) => {
+          const choice = P.button("", async () => {
+            if (box.getAttribute("aria-busy") === "true") return;
+            box.setAttribute("aria-busy", "true");
+            list.querySelectorAll("button").forEach(button => button.disabled = true);
+            action.textContent = "Saving…";
+            try {
+              box.querySelector(".p-error")?.remove();
+              await save(b.uid);
+              d.close();
+            } catch (error) {
+              P.error(box, error);
+              action.textContent = "Select →";
+            } finally {
+              box.removeAttribute("aria-busy");
+              list.querySelectorAll("button").forEach(button => button.disabled = false);
+            }
+          }, "p-choice p-role-choice");
+          const details = P.el("span");
+          details.append(P.el("strong", "", P.name(b)),
+            P.el("small", "p-muted", b.chapter + (b.rosterOnly ? " · No portal account" : "")));
+          const action = P.el("span", "p-role-choice-action", "Select →");
+          choice.append(details, action);
+          list.append(choice);
+        });
     }
     search.input.oninput = draw;
     draw();
