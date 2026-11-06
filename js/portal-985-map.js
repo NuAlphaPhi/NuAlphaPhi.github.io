@@ -34,11 +34,11 @@
     );
     const controls = P.row(
       P.button("World view", () => {
-        ensure();
+        refreshLocations();ensure();
         map?.setView([20, 0], 1);
       }),
       P.button("Fit brothers", () => {
-        ensure();
+        refreshLocations();ensure();
         const points = rows
           .filter((r) => P985Policy.freshArea(r) && !P.blocks.has(r.id))
           .map((r) => [r.latitudeCell / 50, r.longitudeCell / 50]);
@@ -83,7 +83,7 @@
         );
         card.append(
           P.button("Show area", () => {
-            ensure();
+            refreshLocations();ensure();
             map.setView([r.latitudeCell / 50, r.longitudeCell / 50], 11);
           }),
         );
@@ -159,23 +159,19 @@
       filter = search.input.value;
       draw();
     };
-    P.watch(
-      db.collection("brotherLocations"),
-      (data) => {
-        rows = data;
-        draw();
-      },
-      root,
-    );
+    let loadingLocations=false;
+    async function refreshLocations(){if(loadingLocations)return;loadingLocations=true;try{rows=(await P.call('visibleBrotherLocations',{})).rows;draw();}catch(e){rows=[];draw();}finally{loadingLocations=false;}}
+    refreshLocations();
+    document.addEventListener('p985:privacy',refreshLocations);
     document.addEventListener("nap:tab-changed", (e) => {
       if (e.detail.tab === "globe") {
-        ensure();
+        refreshLocations();ensure();
         setTimeout(() => map?.invalidateSize(), 100);
         draw();
       }
     });
     document.addEventListener("p985:people", draw);
-    document.addEventListener("p985:blocks", draw);
+    document.addEventListener("p985:blocks", refreshLocations);
     setInterval(draw, 60000);
     if (window.napCurrentTab === "globe") ensure();
   });

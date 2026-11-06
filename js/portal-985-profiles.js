@@ -246,6 +246,8 @@
     render();
   };
   window.napOpenProfileModal = (uid) => P.profile(uid);
+  const contactCache=new Map();
+  document.addEventListener("p985:privacy",()=>{contactCache.clear();render();});
   function render() {
     if (!current) return;
     if(current.startsWith("roster_")){P.renderRosterProfile(current,P.root("profile"));return;}
@@ -253,6 +255,10 @@
         P.rosterProfile(P.person(current) ||
         (current === P.uid ? { uid: P.uid, ...P.me } : null)),
       root = P.root(current === P.uid ? "myprofile" : "profile");
+    if(b){
+      if(contactCache.has(current))Object.assign(b,{phone:'',currentLocation:'',location:''},contactCache.get(current));
+      else {const target=current;contactCache.set(target,{});P.call('profileContacts',{uid:target}).then(v=>{contactCache.set(target,v);if(current===target)render();}).catch(()=>{});}
+    }
     root.replaceChildren();
     if (!b) {
       root.append(P.empty("This profile is unavailable."));
@@ -461,7 +467,9 @@
     }
   }
 
-  function edit(b) {
+  P.editOwnProfile=()=>edit(P.rosterProfile(P.person(P.uid)||{uid:P.uid,...P.me}));
+  async function edit(b) {
+    try{b={...b,...await P.call('profileContacts',{uid:b.uid,editing:true})};}catch(e){P.toast('Could not load profile details. Please try again.');return;}
     const form = P.el("form"),
       fields = {};
     const keys = [
@@ -618,6 +626,10 @@
               );
               data.photoDataUrl = "";
             }
+            const contacts={phone:data.phone||'',currentLocation:data.currentLocation||''};
+            delete data.phone;delete data.currentLocation;
+            await P.call('updateProfileContacts',{uid:b.uid,fields:contacts});
+            contactCache.delete(b.uid);if(b.uid===P.uid)P.ownContacts=contacts;
             await db.doc("users/" + b.uid).update(data);
             allowClose = true;
             dialog.close();

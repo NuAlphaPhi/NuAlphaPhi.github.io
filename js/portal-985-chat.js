@@ -75,7 +75,7 @@
     return items.some(
       (i) =>
         i.roomID === r.id &&
-        !P.blocks.has(i.actor) &&
+        P.inboxAllowed(i) && !P.blocks.has(i.actor) &&
         i.read !== true &&
         P.date(i.createdAt) > P.date(reads[key]?.readAt),
     );
@@ -762,17 +762,18 @@
     );
     lists();restoreChannel();
   });
+  document.addEventListener("p985:inbox-preferences",()=>notifications());
   let notificationFilter="all";
   function notifications() {
     const list = document.getElementById("notificationList"),
       bell = document.getElementById("notificationBellDot");
     const visible = items.filter(
       (i) =>
-        !P.blocks.has(i.actor) &&
+        P.inboxAllowed(i) && !P.blocks.has(i.actor) &&
         !mutes.has(i.roomID) &&
         (notificationFilter==='all'||notificationFilter==='unread'&&!i.read||notificationFilter==='mentions'&&i.kind==='mentions'||notificationFilter==='events'&&i.eventID),
     );
-    bell.hidden = !items.some(i => !i.read && !P.blocks.has(i.actor) && !mutes.has(i.roomID));
+    bell.hidden = !items.some(i => P.inboxAllowed(i) && !i.read && !P.blocks.has(i.actor) && !mutes.has(i.roomID));
     list.replaceChildren();
     const toolbar=P.el('div','p-notification-toolbar'),filters=P.el('div','p-notification-filters');
     filters.setAttribute('aria-label','Filter notifications');

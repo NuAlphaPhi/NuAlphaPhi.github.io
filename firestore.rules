@@ -27,6 +27,7 @@ service cloud.firestore {
       allow read: if (request.auth != null && request.auth.uid == uid) || isSignedIn();
       allow create: if false; // Only the server approval workflow creates profiles.
       allow update: if isSignedIn()
+        && (!exists(/databases/$(database)/documents/memberSettings/$(uid)) || ((!request.resource.data.diff(resource.data).affectedKeys().hasAny(['phone']) || 'everyone' in get(/databases/$(database)/documents/memberSettings/$(uid)).data.get('privacy', {}).get('phone', ['everyone'])) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['currentLocation','location']) || 'everyone' in get(/databases/$(database)/documents/memberSettings/$(uid)).data.get('privacy', {}).get('location', ['everyone']))))
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['chapter','pledgeClass','semesterCrossed','yearCrossed','crossingTerm','crossingYear','big','bigName','bigPledgeName','littles','littlePledgeNames','little','littleName','littleNames','bigId','littleIds','id','disabled','deletionRequestedAt','accountStatusUpdatedAt','accountStatusUpdatedBy','uid','email','membershipStatus','isAdmin','leadershipBaseAdmin','adminAccessOverride','leadershipTitles','nationalTitle','chapterPresident','alumniAdvisor','membershipStanding'])
         && (!(resource.data.get('isAdmin', false) && request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])) || (request.auth.uid == authorityOwner() && uid != authorityOwner()))
         && (isAdmin() || (request.auth.uid == uid && resource.data.get('disabled', false) != true && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['disabled'])));
@@ -581,9 +582,12 @@ match /locationPreferences/{uid} {
     && request.resource.data.enabled is bool
     && (request.resource.data.enabled == true || !existsAfter(/databases/$(database)/documents/brotherLocations/$(uid)));
 }
+match /memberSettings/{uid} { allow read: if request.auth != null && request.auth.uid == uid; allow write: if false; }
+match /privateProfileContacts/{uid} { allow read, write: if false; }
 match /brotherLocations/{uid} {
   allow read: if isSocialMember();
   allow create, update: if isSocialMember() && request.auth.uid == uid
+    && (!exists(/databases/$(database)/documents/memberSettings/$(uid)) || 'everyone' in get(/databases/$(database)/documents/memberSettings/$(uid)).data.get('privacy', {}).get('location', ['everyone']))
     && get(/databases/$(database)/documents/locationPreferences/$(uid)).data.enabled == true
     && request.resource.data.keys().hasOnly(['label','latitudeCell','longitudeCell','updatedAt'])
     && request.resource.data.label is string && request.resource.data.label.size() > 0 && request.resource.data.label.size() <= 240
