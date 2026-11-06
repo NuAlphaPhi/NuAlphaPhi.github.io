@@ -47,7 +47,7 @@ P.renderRosterProfile=(uid,root)=>{
  const facts=()=>{const dl=P.el('dl','p-info');for(const [label,value] of [['Chapter',b.chapter],['Class',b.pledgeClass],['Pledge Number',b.pledgeNumber],['Crossed',crossing.label],['Birthday',b.birthday],['Phone',window.napPhone.format(b.phone)],['Email',b.email],['School',b.school],['Major',b.major],['Education',b.educationStatus],['Graduation',b.graduationYear],['Job',b.occupation],['Hometown',b.hometown],['Location',b.location]])if(value){const item=P.el('div');item.append(P.el('dt','',label),P.el('dd','',String(value)));dl.append(item);}return dl;};
  const show=tab=>{panel.replaceChildren();[...tabs.children].forEach(button=>{const active=button.textContent===tab;button.classList.toggle('is-selected',active);button.setAttribute('aria-selected',String(active));});
   if(tab==='About')panel.append(facts());else{const membership=P.el('section','p-card p-membership-card');membership.append(P.el('h2','',b.pledgeClass.replace(/ class$/i,'')+' Class'));const members=P.el('div','p-class-members');P.rosterData.people.filter(r=>r.classID===b.classID).forEach(r=>members.append(P.el('span','',r.pledgeName||r.fullName)));membership.append(members);panel.append(membership);}
-  panel.append(P.profileLineageCard(b));
+  panel.append(P.classLeadershipCard(b),P.profileLineageCard(b));
  };
  ['About','Brotherhood'].forEach(tab=>{const button=P.button(tab,()=>show(tab),'p-profile-tab');button.setAttribute('role','tab');tabs.append(button);});
  root.append(heading,banner,intro,tabs,panel);show('About');

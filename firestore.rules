@@ -282,7 +282,11 @@ service cloud.firestore {
 
 // Master roster is separate from accounts and family-tree records.
 function rosterClassValid(d) {
-  return d.keys().hasOnly(['chapter','pledgeClass','semesterCrossed','yearCrossed'])
+  return d.keys().hasOnly(['chapter','pledgeClass','semesterCrossed','yearCrossed','pledgeMasterIDs','pledgeWardenIDs'])
+    && d.get('pledgeMasterIDs', []) is list && d.get('pledgeMasterIDs', []).size() <= 4
+    && d.get('pledgeWardenIDs', []) is list && d.get('pledgeWardenIDs', []).size() <= 20
+    && d.get('pledgeMasterIDs', []).toSet().size() == d.get('pledgeMasterIDs', []).size()
+    && d.get('pledgeWardenIDs', []).toSet().size() == d.get('pledgeWardenIDs', []).size()
     && ((!('semesterCrossed' in d) && !('yearCrossed' in d))
       || (d.get('semesterCrossed', '') in ['Spring','Summer','Fall','Winter']
         && d.get('yearCrossed', 0) is int && d.get('yearCrossed', 0) >= 1994 && d.get('yearCrossed', 0) <= 2100))

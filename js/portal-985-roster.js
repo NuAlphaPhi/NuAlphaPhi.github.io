@@ -245,6 +245,15 @@
             group.append(actions);
           }
           group.prepend(h);
+          const leadership=P.el('div','p-class-leadership');
+          for(const [key,title] of [['pledgeMasterIDs','Pledge Masters'],['pledgeWardenIDs','Pledge Wardens']]){
+            const ids=c[key]||[];if(!ids.length)continue;
+            const section=P.el('div');section.append(P.el('small','p-muted',title));
+            const names=P.el('div','p-class-leadership-names');
+            ids.forEach(id=>{const bro=people.find(r=>r.id===id);names.append(bro?P.button(bro.pledgeName||bro.fullName,()=>P.profile('roster_'+id),'p-name'):P.el('span','p-muted','Roster entry unavailable'));});
+            section.append(names);leadership.append(section);
+          }
+          if(leadership.children.length)group.append(leadership);
           members.forEach((r) => {
             const row = P.el("div", "p-roster-person"),
               info = P.el("div");
@@ -334,9 +343,35 @@
       });
     }
     drawOrder();
+    const assignments=P.el('section','p-class-assignments');
+    assignments.append(P.el('h3','','Class Leadership'),P.el('p','p-muted','Select brothers from any chapter. Assignments belong to this class only and save with the class.'));
+    const selected={pledgeMasterIDs:[...(c?.pledgeMasterIDs||[])],pledgeWardenIDs:[...(c?.pledgeWardenIDs||[])]};
+    for(const [key,title,limit] of [['pledgeMasterIDs','Pledge Masters (PMs)',4],['pledgeWardenIDs','Pledge Wardens (PWs)',20]]){
+      const section=P.el('div','p-class-role-picker'),chosen=P.el('div','p-class-role-selected'),results=P.el('div','p-class-role-results');
+      const query=P.field('Find '+title,'search');query.input.placeholder='Search pledge name or full name…';
+      section.append(P.el('h4','',title),chosen,query.wrap,results);assignments.append(section);
+      function drawChoices(){
+        chosen.replaceChildren();results.replaceChildren();
+        selected[key].forEach(id=>{const bro=people.find(r=>r.id===id),chip=P.el('div','p-class-role-chip');
+          chip.append(P.el('span','',bro?(bro.pledgeName+' · '+bro.fullName):'Roster entry unavailable'));
+          const remove=P.button('×',()=>{selected[key]=selected[key].filter(v=>v!==id);drawChoices();});remove.setAttribute('aria-label','Remove '+(bro?.pledgeName||'assignment'));chip.append(remove);chosen.append(chip);
+        });
+        if(!selected[key].length)chosen.append(P.el('small','p-muted','None assigned'));
+        const term=norm(query.input.value);if(!term)return;
+        const matches=people.filter(r=>!selected[key].includes(r.id)&&norm(r.pledgeName+' '+r.fullName).includes(term));
+        matches.slice(0,20).forEach(r=>{const cls=classes.find(v=>v.id===r.classID);const button=P.button('',()=>{selected[key].push(r.id);query.input.value='';drawChoices();});
+          button.append(P.el('strong','',r.pledgeName),P.el('small','p-muted',r.fullName+' · '+(cls?.chapter||'Unknown chapter')+' · '+(cls?.pledgeClass||'')));
+          button.disabled=selected[key].length>=limit;results.append(button);
+        });
+        if(!matches.length)results.append(P.el('small','p-muted','No matching brothers.'));
+        if(selected[key].length>=limit)results.prepend(P.el('small','p-muted','Maximum '+limit+' selected.'));
+      }
+      query.input.oninput=drawChoices;drawChoices();
+    }
     form.append(
       chapter.wrap,
       name.wrap,
+      assignments,
       ordering,
       P.button(
         "Save class",
@@ -345,7 +380,7 @@
             if (!name.input.value.trim()) throw Error("Enter a class name.");
             if(!P.me.isAdmin)throw Error('Only administrators can edit the roster.');
             const batch=db.batch();
-            batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim()},{merge:true});
+            batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim(),...selected},{merge:true});
             if(members.length>400)throw Error('This class is too large to save at once.');
             if(members.some((r,i)=>r.id!==original[i]))members.forEach((r,i)=>{
               if(r._new){const {_new,id,...record}=r;batch.set(db.doc('masterRoster/'+r.id),{...record,sortOrder:i});}
@@ -378,6 +413,7 @@
       );
     const d = P.dialog(c ? "Edit class" : "Add class", form);
   }
+  P.openRosterClass=id=>{chapter='';search='';viewMode='classes';expandedClasses.add(id);P.go('roster');render();};
   P.editRosterEntry=(r)=>edit(r);
   function edit(r, defaultClassID) {
     const form = P.el("div"),

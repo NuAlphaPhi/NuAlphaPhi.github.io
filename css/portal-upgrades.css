@@ -514,3 +514,15 @@
 .portal-settings-dialog .settings-nav-group,.portal-settings-dialog .settings-logout{background:transparent;border:0;box-shadow:none;color:var(--text-primary,#eee);text-align:left;cursor:pointer;}
 .portal-settings-dialog .settings-nav-group:hover,.portal-settings-dialog .settings-logout:hover{background:rgba(255,255,255,.05);}
 .portal-settings-dialog .settings-logout{color:#e87c96;}
+
+/* Historical class leadership uses roster identities, not account roles. */
+.p-class-assignments{margin:24px 0;padding:20px;border:1px solid var(--grey-200);border-radius:16px;background:var(--white)}
+.p-class-role-picker{margin-top:20px}.p-class-role-picker h4{margin:0 0 12px}
+.p-class-role-selected{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.p-class-role-chip{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--maroon-soft);border-radius:10px;font-size:13px}
+.p-class-role-chip button{border:0;background:transparent;color:var(--maroon);min-width:28px;min-height:28px;cursor:pointer}
+.p-class-role-results{max-height:240px;overflow:auto;display:grid;gap:6px}
+.p-class-role-results>button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px}
+.p-class-leadership{display:flex;flex-wrap:wrap;gap:24px;padding:16px 24px;border-bottom:1px solid var(--grey-200)}
+.p-class-leadership-names{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}
+.p-class-profile-leadership{margin:20px 24px}.p-class-profile-leadership h3{margin:0 0 16px}.p-class-profile-role+.p-class-profile-role{border-top:1px solid var(--grey-200);margin-top:16px;padding-top:16px}.p-class-profile-role h4{color:var(--grey-400);font-size:13px;margin:0 0 10px}.p-class-profile-role>button{margin:0 8px 8px 0}

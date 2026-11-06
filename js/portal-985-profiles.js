@@ -15,7 +15,32 @@
     const crossing=c&&P.rosterClassCrossing?P.rosterClassCrossing(c,data.tree||[]):null;
     const label=c?.semesterCrossed&&c?.yearCrossed?[c.semesterCrossed,c.yearCrossed].join(' '):crossing?.label||'';
     const [term,year]=label.split(' ');
-    return {...b,chapter:c?.chapter||'',pledgeClass:c?.pledgeClass||'',crossingTerm:term||'',semesterCrossed:term||'',crossingYear:year||'',yearCrossed:year||'',rosterLinked:!!c};
+    return {...b,chapter:c?.chapter||'',pledgeClass:c?.pledgeClass||'',crossingTerm:term||'',semesterCrossed:term||'',crossingYear:year||'',yearCrossed:year||'',rosterID:record?.id,rosterLinked:!!c};
+  };
+  P.classLeadershipCard = function(b) {
+    const data=P.rosterData,box=P.el('section','p-card p-class-profile-leadership');
+    if(!data)return document.createDocumentFragment();
+    const id=b.rosterOnly?b.id:(data.accountLinks?.[b.uid]?.rosterID||b.rosterID);
+    const record=data.people.find(r=>r.id===id);if(!record)return document.createDocumentFragment();
+    const own=data.classes.find(c=>c.id===record.classID);
+    box.append(P.el('h3','','Pledge Class Leadership'));
+    for(const [key,label,role] of [['pledgeMasterIDs','Pledge Masters','Pledge Master'],['pledgeWardenIDs','Pledge Wardens','Pledge Warden']]){
+      const ids=own?.[key]||[];
+      if(ids.length){const section=P.el('div','p-class-profile-role');section.append(P.el('h4','',label));
+        const names=P.el('div','p-class-leadership-names');ids.forEach(personID=>{
+          const r=data.people.find(p=>p.id===personID);if(!r)return;
+          const account=Object.entries(data.accountLinks||{}).find(([,v])=>v.rosterID===personID)?.[0];
+          names.append(P.button((r.pledgeName||'Brother')+' · '+r.fullName,()=>P.profile(account||'roster_'+r.id),'p-btn'));
+        });section.append(names);box.append(section);
+      }
+      const served=data.classes.filter(c=>(c[key]||[]).includes(id));
+      if(served.length){const section=P.el('div','p-class-profile-role');section.append(P.el('h4','','Served as '+role));
+        served.forEach(c=>{const crossing=P.rosterClassCrossing(c,data.tree||[]).label;
+          section.append(P.button(c.chapter+' · '+c.pledgeClass.replace(/ class$/i,'')+' Class'+(crossing?' · '+crossing:''),()=>P.openRosterClass(c.id),'p-btn'));
+        });box.append(section);
+      }
+    }
+    return box.children.length>1?box:document.createDocumentFragment();
   };
   P.profileStatus = function(b, data = P.rosterData) {
     const norm=v=>String(v||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
@@ -433,7 +458,7 @@
       tabs.append(button);
     });
     root.append(tabs);
-    if (profileTab === "about") root.append(dl, lineageCard(b));
+    if (profileTab === "about") root.append(dl, P.classLeadershipCard(b), lineageCard(b));
     else if(profileTab==='brotherhood'){
       const data=P.rosterData||{classes:[],people:[],tree:[],links:{}},norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
       const suggested=data.people.filter(r=>{const c=data.classes.find(c=>c.id===r.classID);return c?.chapter===b.chapter && ((b.pledgeName&&norm(r.pledgeName)===norm(b.pledgeName))||norm(r.fullName)===norm([b.firstName,b.lastName].filter(Boolean).join(' ')));});
@@ -453,7 +478,7 @@
         membership.append(P.el('h3','',c?.pledgeClass+' Class'),(()=>{const names=P.el('div','p-class-members');data.people.filter(p=>p.classID===r.classID).forEach(p=>names.append(P.el('span','',p.pledgeName||p.fullName)));return names;})());
 
       }
-      box.append(lineageCard(b));
+      box.append(P.classLeadershipCard(b),lineageCard(b));
       const leadership=P.el('section','p-card p-leadership-card');leadership.append(P.el('h2','','Leadership'));
       const titles=P.el('div','p-leadership-titles');(b.leadershipTitles||[]).forEach(title=>titles.append(P.el('span','p-chip',title)));
       if(!titles.childNodes.length)titles.append(P.el('span','p-muted','No current appointments'));leadership.append(titles);box.append(leadership);
