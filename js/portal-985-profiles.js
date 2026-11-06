@@ -5,7 +5,7 @@
   P.profileLineage = function (brother, data = P.rosterData) {
     if (!data) return {status:'loading', big:null, littles:[]};
     const tree = data.tree || [], account = data.accountLinks?.[brother.uid];
-    const selected = account && data.links?.[account.rosterID]?.treeID;
+    const selected = data.links?.[brother.rosterOnly ? brother.id : account?.rosterID]?.treeID;
     const norm = value => String(value || '').normalize('NFKC').trim().toLocaleLowerCase().replace(/\s+/g, ' ');
     let node;
     if (selected) node = tree.find(t => t.id === selected);
@@ -47,6 +47,7 @@
     box.append(grid);
     return box;
   }
+  P.profileLineageCard = lineageCard;
   let current;
   let profileTab = "about";
   const slogans = [
@@ -61,6 +62,7 @@
     "INVINCIBLE IOTAS",
     "KARNAGE KAPPAS",
   ];
+  P.chapterSlogan = chapter => slogans[P.chapters.indexOf(chapter)] || "THE BROTHERHOOD";
   const schools = [
       "SUNY Albany",
       "CITY",

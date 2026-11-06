@@ -376,7 +376,7 @@
     num.input.maxLength = 2;
     form.append(full.wrap, pledge.wrap, num.wrap, cls.wrap);
     const details={};
-    for(const [key,label] of [['bio','Bio'],['location','Location'],['occupation','Occupation'],['email','Email'],['phone','Phone']]){const f=P.field(label,key==='email'?'email':'text',r?.[key]||'');f.input.maxLength=key==='bio'?2000:200;details[key]=f.input;form.append(f.wrap);}
+    for(const [key,label] of [['bio','Bio'],['location','Location'],['occupation','Occupation'],['email','Email'],['phone','Phone'],['school', 'School'],['major', 'Major'],['educationStatus', 'Education'],['graduationYear', 'Graduation Year'],['birthday', 'Birthday'],['hometown', 'Hometown'],['instagramProfileURL', 'Instagram URL'],['facebookProfileURL', 'Facebook URL'],['linkedinProfileURL', 'LinkedIn URL'],['twitterProfileURL', 'X / Twitter URL']]){const f=P.field(label,key==='email'?'email':'text',r?.[key]||'');f.input.maxLength=key==='bio'?2000:200;details[key]=f.input;form.append(f.wrap);}
 
     const flags = {};
     for (const [key, label] of [

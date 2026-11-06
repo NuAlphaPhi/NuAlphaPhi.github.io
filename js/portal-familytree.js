@@ -245,6 +245,21 @@
     applyTransform();
   }
 
+  function memberStatus(member) {
+    var data=window.P985 && window.P985.rosterData, roster;
+    if(data){
+      var linked=Object.entries(data.links||{}).filter(function(entry){return entry[1].treeID===member.id;});
+      if(linked.length===1)roster=data.people.find(function(r){return r.id===linked[0][0];});
+      if(!roster){
+        var norm=function(v){return String(v||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');};
+        var matches=data.people.filter(function(r){var c=data.classes.find(function(c){return c.id===r.classID;});return c && norm(c.chapter)===norm(member.chapter) && norm(c.pledgeClass).replace(/ class$/,'')===norm(member.pledgeClass).replace(/ class$/,'') && norm(r.fullName)===norm(member.name) && norm(r.pledgeName)===norm(member.pledgeName);});
+        if(matches.length===1)roster=matches[0];
+      }
+    }
+    return [member.disaffiliated===true || roster?.disaffiliated===true ? 'Delettered' : '',member.fallen===true || roster?.fallen===true ? 'RIP' : ''].filter(Boolean);
+  }
+  document.addEventListener('p985:roster',function(){if(allMembers.length)render();});
+
   /* ---------- Rendering ---------- */
   /* Each node is a bordered card (chapter-colored outline) containing a
      small avatar circle plus the pledge name / real name stacked beside it —
@@ -268,6 +283,10 @@
     if (subLabel) {
       html += '<text class="familytree-node__sublabel" x="' + textX + '" y="13">' + escapeHtml(subLabel) + "</text>";
     }
+    var statusX=-halfW;
+    memberStatus(member).forEach(function(label){var width=label==='RIP'?32:76;
+      html+='<g class="familytree-status"><rect x="'+statusX+'" y="-48" width="'+width+'" height="16" rx="5" fill="'+(label==='RIP'?'#8b233c':'#36363f')+'"></rect><text x="'+(statusX+width/2)+'" y="-36" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">'+label+'</text></g>';statusX+=width+4;
+    });
     html += "</g>";
     return html;
   }
@@ -576,6 +595,7 @@
       })
       .join("");
 
+    gridHtml='<div class="familytree-status-tags">'+memberStatus(member).map(function(label){return '<span class="p-chip">'+label+'</span>';}).join('')+'</div>'+gridHtml;
     if (big) {
       gridHtml +=
         '<div class="profile-modal__field">' +

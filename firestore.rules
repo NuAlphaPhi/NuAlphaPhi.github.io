@@ -309,7 +309,17 @@ match /rosterTreeLinks/{id} {
 match /masterRoster/{id} {
   allow read: if isSocialMember();
   allow create, update: if isSocialAdmin()
-    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber','sortOrder','bio','location','occupation','email','phone'])
+    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber','sortOrder','bio','location','occupation','email','phone','school','major','educationStatus','graduationYear','birthday','hometown','instagramProfileURL','facebookProfileURL','linkedinProfileURL','twitterProfileURL'])
+    && request.resource.data.get('school','') is string && request.resource.data.get('school','').size() <= 200
+    && request.resource.data.get('major','') is string && request.resource.data.get('major','').size() <= 200
+    && request.resource.data.get('educationStatus','') is string && request.resource.data.get('educationStatus','').size() <= 200
+    && request.resource.data.get('graduationYear','') is string && request.resource.data.get('graduationYear','').size() <= 200
+    && request.resource.data.get('birthday','') is string && request.resource.data.get('birthday','').size() <= 200
+    && request.resource.data.get('hometown','') is string && request.resource.data.get('hometown','').size() <= 200
+    && request.resource.data.get('instagramProfileURL','') is string && request.resource.data.get('instagramProfileURL','').size() <= 200
+    && request.resource.data.get('facebookProfileURL','') is string && request.resource.data.get('facebookProfileURL','').size() <= 200
+    && request.resource.data.get('linkedinProfileURL','') is string && request.resource.data.get('linkedinProfileURL','').size() <= 200
+    && request.resource.data.get('twitterProfileURL','') is string && request.resource.data.get('twitterProfileURL','').size() <= 200
     && request.resource.data.get('bio','') is string && request.resource.data.get('bio','').size() <= 2000
     && request.resource.data.get('location','') is string && request.resource.data.get('location','').size() <= 200
     && request.resource.data.get('occupation','') is string && request.resource.data.get('occupation','').size() <= 200
