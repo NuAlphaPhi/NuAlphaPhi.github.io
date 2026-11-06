@@ -488,3 +488,10 @@
 .portal-design .portal-shell__user-row #portalSignOut{margin-left:-4px;}
 .portal-design .portal-shell__user-row #portalSignOut:hover{color:var(--maroon-light,#db9cb3);border-color:currentColor;}
 .portal-design .portal-shell__user-row .portal-icon-button:focus-visible{outline:2px solid var(--maroon-light,#db9cb3);outline-offset:3px;}
+
+/* The sidebar identity is one generous profile target, separate from utilities. */
+.portal-design .portal-shell__profile-link{display:flex;align-items:center;gap:12px;flex:1;min-width:0;align-self:stretch;padding:6px;border:0;border-radius:10px;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit;}
+.portal-design .portal-shell__profile-link:hover,.portal-design .portal-shell__profile-link.is-active{background:var(--portal-card,#202027);}
+.portal-design .portal-shell__profile-link:focus-visible{outline:2px solid var(--maroon-light,#db9cb3);outline-offset:2px;}
+.portal-design .portal-shell__profile-link #portalUserAvatar{display:flex;flex-shrink:0;}
+.portal-design .portal-shell__profile-link .portal-shell__user-name{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}

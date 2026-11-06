@@ -41,6 +41,13 @@
     return btn.getAttribute("data-tab");
   });
 
+  // Own-profile routes remain available without a separate navigation entry.
+  validNavTabs.push("myprofile");
+  var profileShortcut = document.getElementById("portalMyProfileOpen");
+  if (profileShortcut) profileShortcut.addEventListener("click", function () {
+    setTab("myprofile");
+  });
+
   /* navTab lets a sub-page with no nav button of its own (e.g. the form
      builder/responses pages, reached only from within the Forms tab) keep
      that tab highlighted instead of leaving the sidebar with nothing active.
@@ -72,6 +79,16 @@
       var breadcrumb = document.getElementById("portalCurrentSection");
       if (isActive && breadcrumb) breadcrumb.textContent = btn.textContent;
     });
+    if (profileShortcut) {
+      var ownProfile = tab === "myprofile";
+      profileShortcut.classList.toggle("is-active", ownProfile);
+      if (ownProfile) {
+        profileShortcut.setAttribute("aria-current", "page");
+        var profileBreadcrumb = document.getElementById("portalCurrentSection");
+        if (profileBreadcrumb) profileBreadcrumb.textContent = "My Profile";
+        if (navToggleLabelEl) navToggleLabelEl.textContent = "My Profile";
+      } else profileShortcut.removeAttribute("aria-current");
+    }
     panels.forEach(function (panel) {
       panel.hidden = panel.getAttribute("data-panel") !== tab;
     });
