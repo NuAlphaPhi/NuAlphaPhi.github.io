@@ -296,11 +296,23 @@
       ordering.replaceChildren();
       if(!c)return;
       ordering.append(P.el('h3','','Member Order'),P.el('p','p-muted','First is Captain. Last is Co-Captain. Changes apply when you save.'));
+      ordering.append(P.button('+ Add Brother',()=>{
+        const add=P.el('div','p-class-add-brother'),full=P.field('Full Name','text'),pledge=P.field('Pledge Name','text'),num=P.field('Number (optional)','text');
+        full.input.maxLength=200;pledge.input.maxLength=100;num.input.maxLength=2;
+        add.append(full.wrap,pledge.wrap,num.wrap,P.button('Add to Class',()=>P.run(add,async()=>{
+          if(!full.input.value.trim()||!pledge.input.value.trim())throw Error('Enter both names.');
+          if(!/^\d{0,2}$/.test(num.input.value))throw Error('Use up to two digits for the number.');
+          if(members.length>=400)throw Error('This class has reached the editing limit.');
+          members.push({id:crypto.randomUUID(),classID:c.id,fullName:full.input.value.trim(),pledgeName:pledge.input.value.trim(),pledgeNumber:num.input.value,fallen:false,disaffiliated:false,sourcePage:0,_new:true});drawOrder();
+        }),'p-btn primary'),P.button('Cancel',()=>add.remove()));
+        if(!ordering.querySelector('.p-class-add-brother')){ordering.append(add);full.input.focus();add.scrollIntoView({block:'nearest'});}
+      }));
       members.forEach((r,i)=>{
         const row=P.el('div','p-class-order-row'), label=P.el('div');
         label.append(P.el('strong','',r.pledgeName),P.el('small','p-muted',r.fullName));
         const controls=P.el('div','p-class-order-controls');
         [-1,1].forEach(direction=>{const button=P.button(direction<0?'↑':'↓',()=>{[members[i],members[i+direction]]=[members[i+direction],members[i]];drawOrder();});button.disabled=i+direction<0||i+direction>=members.length;button.setAttribute('aria-label','Move '+r.pledgeName+(direction<0?' up':' down'));controls.append(button);});
+        if(r._new){label.append(P.el('small','p-muted','New · saves with class'));controls.append(P.button('Remove',()=>{members.splice(i,1);drawOrder();}));}
         row.append(P.el('span','p-muted',String(i+1)),label,controls);ordering.append(row);
       });
     }
@@ -317,7 +329,11 @@
             if(!P.me.isAdmin)throw Error('Only administrators can edit the roster.');
             const batch=db.batch();
             batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim()},{merge:true});
-            if(members.some((r,i)=>r.id!==original[i]))members.forEach((r,i)=>batch.update(db.doc('masterRoster/'+r.id),{sortOrder:i}));
+            if(members.length>400)throw Error('This class is too large to save at once.');
+            if(members.some((r,i)=>r.id!==original[i]))members.forEach((r,i)=>{
+              if(r._new){const {_new,id,...record}=r;batch.set(db.doc('masterRoster/'+r.id),{...record,sortOrder:i});}
+              else batch.update(db.doc('masterRoster/'+r.id),{sortOrder:i});
+            });
             await batch.commit();
             d.close();
           }),
