@@ -479,3 +479,12 @@
 .portal-settings-body .portal-view-title{font-size:26px;}.portal-settings-body .section-label{display:none;}
 .portal-settings-close{position:absolute;right:14px;top:12px;width:32px;height:32px;border:1px solid var(--portal-border,#34343e);border-radius:50%;background:var(--portal-card,#19191f);color:inherit;font-size:24px;cursor:pointer;z-index:2;}
 @media(max-width:600px){.portal-settings-dialog #panel-settings{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);}.portal-settings-dialog #settingsSubTabs{flex-direction:row;padding:48px 12px 12px;}.portal-settings-body{padding:20px;}}
+
+/* Keep account actions together without a separate sign-out row. */
+.portal-design .portal-shell__user-row > div{min-width:0;flex:1;}
+.portal-design .portal-shell__user-row > #portalUserAvatar{flex-shrink:0;}
+.portal-design .portal-shell__user-row #portalSettingsOpen,
+.portal-design .portal-shell__user-row #portalSignOut{width:32px;height:32px;min-width:32px;padding:0;flex:0 0 32px;margin:0;color:var(--portal-muted,#b7b3c2);}
+.portal-design .portal-shell__user-row #portalSignOut{margin-left:-4px;}
+.portal-design .portal-shell__user-row #portalSignOut:hover{color:var(--maroon-light,#db9cb3);border-color:currentColor;}
+.portal-design .portal-shell__user-row .portal-icon-button:focus-visible{outline:2px solid var(--maroon-light,#db9cb3);outline-offset:3px;}
