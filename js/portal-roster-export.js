@@ -73,13 +73,42 @@ function build(ExcelJS,data){
  CHAPTERS.forEach(ch=>rosterSheet(ch,prepared.rows.filter(r=>r.chapter===ch)));
  return book;
 }
+const COLORS=['E60000','FFD400','008018','3366FF','999999','993366','FF7800','FFD09A','993300','00DBDF'];
+function matrix(data){
+ const prepared=rows(data),groups=new Map(),years=prepared.rows.map(r=>Number(r.values[6])).filter(y=>y>=1994&&y<=2100);
+ const end=Math.max(new Date(data.generatedAt||Date.now()).getFullYear(),...years),terms=prepared.rows.some(r=>r.values[5]==='Winter')?['Winter','Spring','Summer','Fall']:['Spring','Summer','Fall'];
+ const periods=[];for(let year=1994;year<=end;year++)for(const term of terms)periods.push({year,term,key:year+' '+term});
+ for(const r of prepared.rows){const key=r.values[6]&&r.values[5]?r.values[6]+' '+r.values[5]:'review';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}
+ if(groups.has('review'))periods.push({year:'—',term:'Needs review',key:'review'});
+ return {periods:periods.map(p=>({...p,entries:groups.get(p.key)||[],counts:CHAPTERS.map(ch=>(groups.get(p.key)||[]).filter(r=>r.chapter===ch).length)})),totals:CHAPTERS.map(ch=>prepared.rows.filter(r=>r.chapter===ch).length),total:prepared.rows.length,warnings:prepared.warnings};
+}
+function buildView(ExcelJS,data,mode){
+ const m=matrix(data),book=new ExcelJS.Workbook(),stats=mode==='statistics',ws=book.addWorksheet(stats?'Crossing Statistics':'Crossing Timeline',{views:[{state:'frozen',xSplit:stats?3:2,ySplit:stats?2:1,showGridLines:false}]});
+ ws.columns=[{width:10},{width:18},...(stats?[{width:12}]:[]),...CHAPTERS.map(()=>({width:stats?15:36}))];
+ const offset=stats?4:3;
+ function style(cell,bg='FFFFFF',fg='111111',bold=false){cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF'+bg}};cell.font={name:'Arial',size:11,bold,color:{argb:'FF'+fg}};cell.border=border;cell.alignment={vertical:'top',wrapText:true};}
+ ['Year','Semester',...(stats?['Total']:[]),...CHAPTERS.map(c=>c.toUpperCase())].forEach((v,i)=>{const cell=ws.getCell(1,i+1);cell.value=v;style(cell,i+1>=offset?COLORS[i+1-offset]:'20202A',i+1>=offset?'000000':'FFFFFF',true);});ws.getRow(1).height=32;
+ if(stats){ws.getCell('B2').value='Total';ws.getCell('C2').value=m.total;m.totals.forEach((v,i)=>ws.getCell(2,i+offset).value=v);for(let col=1;col<=13;col++)style(ws.getCell(2,col),'8B0000','FFFFFF',true);}
+ m.periods.forEach((p,index)=>{
+  const row=index+(stats?3:2);ws.getCell(row,1).value=p.year;ws.getCell(row,2).value=p.term;style(ws.getCell(row,1));style(ws.getCell(row,2));if(stats){ws.getCell(row,3).value=p.entries.length;style(ws.getCell(row,3),'E8E8EC','111111',true);}
+  let height=24;
+  CHAPTERS.forEach((ch,i)=>{const cell=ws.getCell(row,i+offset),entries=p.entries.filter(e=>e.chapter===ch);
+   if(stats){cell.value=entries.length;style(cell,entries.length?'8B0000':Number(p.year)%2?'FFFFFF':'E8E8EC',entries.length?'FFFFFF':'111111',!!entries.length);return;}
+   if(!entries.length){style(cell,'000000');return;}
+   const runs=[];let cls='';entries.forEach(e=>{if(e.className!==cls){cls=e.className;runs.push({text:(runs.length?'\n':'')+cls.toUpperCase()+' CLASS\n',font:{bold:true}});}runs.push({text:e.values[2]+' – '+[e.values[3],e.values[4]].filter(Boolean).join(' ')+(e.disaffiliated?' · DISAFFILIATED':e.fallen?' · RIP':'')+'\n',font:{color:{argb:e.disaffiliated?'FF777777':e.fallen?'FFB00020':'FF111111'}}});});
+   cell.value={richText:runs};style(cell);height=Math.max(height,Math.min(409,18*(entries.length+new Set(entries.map(e=>e.className)).size+1)));});ws.getRow(row).height=height;
+ });
+ ws.pageSetup={orientation:'landscape',paperSize:3,fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:stats?'1:2':'1:1'};
+ return book;
+}
+
 let loading;
 async function library(){if(window.ExcelJS)return window.ExcelJS;if(!loading)loading=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='/vendor/exceljs/exceljs.min.js?v=4.4.0';script.onload=()=>resolve(window.ExcelJS);script.onerror=()=>{script.remove();reject(Error('Could not load the exporter. Try again.'));};document.head.append(script);}).catch(e=>{loading=null;throw e;});return loading;}
-async function download(){
+async function download(mode){
  const uid=auth.currentUser?.uid;if(!uid)throw Error('Sign in first.');
- const data=await P985.call('rosterExport',{}),ExcelJS=await library(),book=build(ExcelJS,data),buffer=await book.xlsx.writeBuffer();
+ const data=await P985.call('rosterExport',{}),ExcelJS=await library(),book=mode?buildView(ExcelJS,data,mode):build(ExcelJS,data),buffer=await book.xlsx.writeBuffer();
  await P985.call('rosterExport',{authorizeOnly:true});if(auth.currentUser?.uid!==uid)throw Error('Your account changed. Please try again.');
- const url=URL.createObjectURL(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=url;a.download='Nu-Alpha-Phi-Master-Roster-'+data.generatedAt.slice(0,10)+'.xlsx';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+ const url=URL.createObjectURL(new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=url;a.download='Nu-Alpha-Phi-'+(mode||'Master-Roster')+'-'+data.generatedAt.slice(0,10)+'.xlsx';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
-return {CHAPTERS,rows,build,download};
+return {CHAPTERS,COLORS,rows,matrix,build,buildView,download};
 });

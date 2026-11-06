@@ -210,6 +210,7 @@
   window.napOpenProfileModal = (uid) => P.profile(uid);
   function render() {
     if (!current) return;
+    if(current.startsWith("roster_")){P.renderRosterProfile(current,P.root("profile"));return;}
     const b =
         P.person(current) ||
         (current === P.uid ? { uid: P.uid, ...P.me } : null),

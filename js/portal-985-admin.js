@@ -36,7 +36,7 @@
     const can = !slot.startsWith("national-") || P.uid === owner;
     if (can) {
       const actions = P.row(P.button(incumbent ? "Change" : "Assign brother", () =>
-        choose(label, uid => P.call("manageLeadership", {action:"assign", slot, uid, expectedUid:incumbent || ""}), b => !chapter || b.chapter === chapter), "p-btn"));
+        choose(label, uid => P.call("manageLeadership", {action:"assign", slot, uid, expectedUid:incumbent || ""}), b => !chapter || b.chapter === chapter, true), "p-btn"));
       if (incumbent) actions.append(P.button("Remove", () => P.run(c, () => P.call("manageLeadership", {action:"assign", slot, uid:"", expectedUid:incumbent})), "p-btn p-admin-remove"));
       c.append(actions);
     } else c.append(P.el("small", "p-muted", "Only the account owner can change this position because it grants admin access."));
@@ -260,6 +260,7 @@
               prefix === "advisor-"
                 ? (b) => b.membershipStanding !== "active"
                 : () => true,
+              true,
             ),
           ),
         );
@@ -335,7 +336,7 @@
             : "Only the account owner can grant or remove administrator access.",
         ),
       );
-      P.brothers
+      (includeRoster ? P.roleCandidates() : P.brothers)
         .filter((b) => b.isAdmin)
         .forEach((b) => {
           const row = P.row(P.author(b.uid), P.el("small", "", b.chapter));
@@ -411,14 +412,14 @@
     box.append(button);
     const dialog=P.dialog(destructive?"Delete account":action==="deactivate"?"Deactivate account":"Reactivate account",box);
   }
-  function choose(title, save, filter = () => true) {
+  function choose(title, save, filter = () => true, includeRoster = false) {
     const box = P.el("div"),
       search = P.field("Search brothers", "search"),
       list = P.el("div", "p-suggestions");
     box.append(search.wrap, list);
     function draw() {
       list.replaceChildren();
-      P.brothers
+      (includeRoster ? P.roleCandidates() : P.brothers)
         .filter(
           (b) =>
             filter(b) &&
@@ -430,7 +431,7 @@
         .forEach((b) =>
           list.append(
             P.button(
-              P.name(b) + " · " + b.chapter,
+              P.name(b) + " · " + b.chapter + (b.rosterOnly ? " · No portal account" : ""),
               () =>
                 P.run(box, async () => {
                   await save(b.uid);

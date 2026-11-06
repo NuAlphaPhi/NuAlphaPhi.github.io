@@ -33,3 +33,16 @@ test('fallen brothers retain details with red fill',()=>{
  const book=E.build(ExcelJS,{...sample,people:sample.people.map(r=>({...r,fallen:true}))});
  for(const name of ['Roster Check','Founders','Alpha']){const c=book.getWorksheet(name).getCell('D2');assert.equal(c.value,'Lok Man');assert.equal(c.fill.fgColor.argb,'FF8B0000');}
 });
+test('timeline and statistics include empty terms, review dates, and reconcile all members',async()=>{
+ const data={...sample,tree:sample.tree.filter(t=>t.chapter!=='Kappa')},m=E.matrix(data);
+ assert.equal(m.periods.find(p=>p.year===1994&&p.term==='Summer').entries.length,0);
+ assert.equal(m.periods.find(p=>p.key==='review').entries.length,1);
+ assert.equal(m.periods.reduce((n,p)=>n+p.counts.reduce((a,b)=>a+b,0),0),m.total);
+ assert.equal(m.totals.reduce((a,b)=>a+b,0),3);
+ for(const mode of ['timeline','statistics']){
+  const book=E.buildView(ExcelJS,data,mode),saved=new ExcelJS.Workbook();await saved.xlsx.load(await book.xlsx.writeBuffer());assert.equal(saved.worksheets.length,1);
+  const ws=saved.worksheets[0];assert.equal(ws.views[0].state,'frozen');
+  if(mode==='timeline')assert.equal(ws.getCell('D2').fill.fgColor.argb,'FF000000');
+  else assert.equal(ws.getCell('C2').value,3);
+ }
+});

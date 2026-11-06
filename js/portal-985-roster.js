@@ -7,7 +7,7 @@
     links = {}, accountLinks = {},
     chapter = "",
     search = "",
-    issuesOnly = false;
+    issuesOnly = false, viewMode = "classes";
   const expandedClasses = new Set();
   const loadedSources = new Set();
   P.rosterClassRoles = members => {
@@ -148,13 +148,16 @@
     );
     const canExport=P.me.isAdmin === true || [P.grant.role,...(P.grant.roles||[])].some(role=>['nationalBoard','president'].includes(role));
     if(canExport) {
-      const exportButton=P.button('Export Roster',()=>P.run(root,async()=>{
+      const exportLabel=viewMode==='classes'?'Export Roster':viewMode==='timeline'?'Export Timeline':'Export Statistics';
+      const exportButton=P.button(exportLabel,()=>P.run(root,async()=>{
         exportButton.disabled=true;exportButton.textContent='Preparing export…';
-        try {await window.NAPRosterExport.download();P.toast('Workbook downloaded. Open it in Excel or import it into Google Sheets.');}
-        finally {exportButton.disabled=false;exportButton.textContent='Export Roster';}
+        try {await window.NAPRosterExport.download(viewMode==='classes'?undefined:viewMode);P.toast('Workbook downloaded. Open it in Excel or import it into Google Sheets.');}
+        finally {exportButton.disabled=false;exportButton.textContent=exportLabel;}
       }),'p-btn');
       root.firstElementChild.append(exportButton);
     }
+    const modes=P.el('div','p-roster-view-modes');modes.setAttribute('aria-label','Roster view');
+    for(const [key,label] of [['classes','Class List'],['timeline','Crossing Timeline'],['statistics','Statistics']]){const b=P.button(label,()=>{viewMode=key;render();},'p-btn'+(viewMode===key?' active':''));b.setAttribute('aria-pressed',String(viewMode===key));modes.append(b);}root.append(modes);
     const q = P.field("Search name or pledge name", "search", search),
       ch = P.select("Chapter", [["", "All chapters"], ...P.chapters], chapter);
     q.input.oninput = () => {
@@ -192,6 +195,7 @@
     root.append(list);
     function draw() {
       list.replaceChildren();
+      if(viewMode!=='classes'){P.renderRosterMatrix(list,P.rosterData,viewMode,chapter,search);return;}
       const sorted = [...classes].sort(
         (a, b) =>
           P.chapters.indexOf(a.chapter) - P.chapters.indexOf(b.chapter) ||
@@ -245,26 +249,7 @@
                 () =>
                   account.length === 1
                     ? P.profile(account[0].uid)
-                    : P.dialog(
-                        r.pledgeName,
-                        P.el(
-                          "p",
-                          "",
-                          r.fullName +
-                            " · " +
-                            c.chapter +
-                            " · " +
-                            c.pledgeClass +
-                            " Class" +
-                            (crossing.label ? " · " + crossing.label : "") +
-                            (r.fallen
-                              ? " · Fallen Brother. May he rest in peace."
-                              : "") +
-                            (r.disaffiliated
-                              ? " · Disaffiliated · Delettered"
-                              : ""),
-                        ),
-                      ),
+                    : P.profile('roster_'+r.id),
                 "p-name",
               ),
               P.el("p", "p-muted", r.fullName),
@@ -360,6 +345,7 @@
       );
     const d = P.dialog(c ? "Edit class" : "Add class", form);
   }
+  P.editRosterEntry=(r)=>edit(r);
   function edit(r, defaultClassID) {
     const form = P.el("div"),
       full = P.field("Full real name", "text", r?.fullName),
@@ -373,6 +359,9 @@
     num.input.pattern = "[0-9]{0,2}";
     num.input.maxLength = 2;
     form.append(full.wrap, pledge.wrap, num.wrap, cls.wrap);
+    const details={};
+    for(const [key,label] of [['bio','Bio'],['location','Location'],['occupation','Occupation'],['email','Email'],['phone','Phone']]){const f=P.field(label,key==='email'?'email':'text',r?.[key]||'');f.input.maxLength=key==='bio'?2000:200;details[key]=f.input;form.append(f.wrap);}
+
     const flags = {};
     for (const [key, label] of [
       ["fallen", "Fallen Brother"],
@@ -396,6 +385,7 @@
               .collection("masterRoster")
               .doc(r?.id || crypto.randomUUID())
               .set({
+                ...Object.fromEntries(Object.entries(details).map(([key,input])=>[key,input.value.trim()])),
                 fullName: full.input.value.trim(),
                 pledgeName: pledge.input.value.trim(),
                 pledgeNumber: num.input.value,

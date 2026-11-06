@@ -309,7 +309,12 @@ match /rosterTreeLinks/{id} {
 match /masterRoster/{id} {
   allow read: if isSocialMember();
   allow create, update: if isSocialAdmin()
-    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber','sortOrder'])
+    && request.resource.data.keys().hasOnly(['classID','pledgeName','fullName','disaffiliated','sourcePage','fallen','pledgeNumber','sortOrder','bio','location','occupation','email','phone'])
+    && request.resource.data.get('bio','') is string && request.resource.data.get('bio','').size() <= 2000
+    && request.resource.data.get('location','') is string && request.resource.data.get('location','').size() <= 200
+    && request.resource.data.get('occupation','') is string && request.resource.data.get('occupation','').size() <= 200
+    && request.resource.data.get('email','') is string && request.resource.data.get('email','').size() <= 200
+    && request.resource.data.get('phone','') is string && request.resource.data.get('phone','').size() <= 200
     && request.resource.data.classID is string
     && existsAfter(/databases/$(database)/documents/masterRosterClasses/$(request.resource.data.classID))
     && request.resource.data.pledgeName is string && request.resource.data.pledgeName.size() > 0 && request.resource.data.pledgeName.size() <= 100
