@@ -307,7 +307,7 @@
               .set({
                 chapter: chapter.input.value,
                 pledgeClass: name.input.value.trim(),
-              });
+              }, {merge:true});
             d.close();
           }),
         "p-btn primary",
