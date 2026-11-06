@@ -374,6 +374,7 @@
       ["Birthday", b.birthday],
       ["Age", age(b.birthday)],
       ["Phone", window.napPhone.format(b.phone)],
+      ["Email", b.email],
       ["School", b.school],
       ["Major", b.major],
       ["Education", b.educationStatus],
