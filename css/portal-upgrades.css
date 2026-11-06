@@ -458,3 +458,6 @@
   .p-home-layout > :focus-visible {outline:2px solid var(--maroon,#a73e62);outline-offset:2px;}
 }
 .p-feed-more.is-complete {cursor:default;color:var(--grey-400,#aaa);font-size:13px;opacity:1;padding:22px 16px;}
+
+.portal-shell__brand .portal-brand-logo{display:block;width:190px;max-width:100%;height:auto;object-fit:contain;margin:0 auto;}
+.p-activity-list{display:grid;gap:12px;margin-top:20px}.p-activity-entry{padding:20px!important}.p-activity-entry>small{display:block;margin-top:6px}.p-activity-entry>p{margin:10px 0;font-size:14px;overflow-wrap:anywhere}.p-activity-entry summary{cursor:pointer;color:var(--maroon-light,#d79bad);font-size:13px;margin:12px 0}.p-activity-diff{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;margin:16px 0}.p-activity-diff td,.p-activity-diff th{text-align:left;padding:10px;border-bottom:1px solid var(--grey-300,#333);overflow-wrap:anywhere;vertical-align:top}

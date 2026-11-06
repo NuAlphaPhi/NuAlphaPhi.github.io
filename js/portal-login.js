@@ -59,7 +59,7 @@
   }
 
   document.getElementById('forgotPasswordButton').addEventListener('click', function () {
-    document.getElementById('reset-email').value = document.getElementById('portal-signin-email').value.trim();
+    document.getElementById('reset-email').value = document.getElementById('portal-signin-email').value.includes('@') ? document.getElementById('portal-signin-email').value.trim() : '';
     setAuthView('reset');
     document.getElementById('reset-email').focus();
   });
@@ -104,8 +104,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Signing in…";
 
-      auth
-        .signInWithEmailAndPassword(email, password)
+      (email.includes("@") ? auth.signInWithEmailAndPassword(email, password) : callable("phoneSignIn", {phone:email,password}).then(result=>auth.signInWithCustomToken(result.token)))
         .then(async function (credential) {
           const profile=await db.doc('users/'+credential.user.uid).get();
           const value=profile.data();

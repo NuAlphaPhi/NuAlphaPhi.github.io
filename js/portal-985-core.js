@@ -148,7 +148,7 @@
   P.header = (title, subtitle) => {
     const h = P.el("header", "p-header");
     h.append(P.el("h1", "", title));
-    if (subtitle) h.append(P.el("p", "p-muted", subtitle));
+
     return h;
   };
   P.reportContent = (path) => {

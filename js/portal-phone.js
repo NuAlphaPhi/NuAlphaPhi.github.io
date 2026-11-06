@@ -8,9 +8,9 @@
   }
   function us(digits) {
     if (!digits) return '';
-    if (digits.length <= 3) return '(' + digits;
-    if (digits.length <= 6) return '(' + digits.slice(0, 3) + ')' + digits.slice(3);
-    return '(' + digits.slice(0, 3) + ')' + digits.slice(3, 6) + '-' + digits.slice(6);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return digits.slice(0, 3) + '-' + digits.slice(3);
+    return digits.slice(0, 3) + '-' + digits.slice(3, 6) + '-' + digits.slice(6);
   }
   function format(value) {
     const raw = String(value || '').trim();
@@ -31,6 +31,23 @@
     return result;
   }
   window.napPhone = { format, canonical, national, us };
+  document.addEventListener?.('input', function(event) {
+    const field=event.target;
+    if(field?.type!=='tel'||field.id==='portal-signup-phone')return;
+    const raw=field.value;
+    if(/^\+(?!1)/.test(raw))return;
+    const explicit=/^\+1/.test(raw);
+    const digits=explicit?raw.slice(2).replace(/\D/g,''):national(raw);
+    if(digits.length>10)return;
+    const count=Math.max(0,raw.slice(0,field.selectionStart).replace(/\D/g,'').length-(explicit?1:0));
+    field.value=digits?'+1 '+us(digits):'';
+    let pos=3,seen=0;while(pos<field.value.length&&seen<count){if(/\d/.test(field.value[pos]))seen++;pos++;}
+    field.setSelectionRange(Math.min(pos,field.value.length),Math.min(pos,field.value.length));
+  });
+  document.addEventListener?.('blur', function(event) {
+    const field=event.target;
+    if(field?.type==='tel' && field.id!=='portal-signup-phone') field.value=format(field.value);
+  }, true);
   const input = document.getElementById('portal-signup-phone');
   const country = document.getElementById('portal-signup-country');
   if (!input || !country) return;
@@ -52,8 +69,8 @@
   }
   input.addEventListener('input', update);
   country.addEventListener('change', function () {
-    input.placeholder = country.value === '+1' ? '(123)123-1234' : 'Phone number';
+    input.placeholder = country.value === '+1' ? '123-123-1234' : 'Phone number';
     update();
   });
-  input.placeholder = '(123)123-1234';
+  input.placeholder = '123-123-1234';
 })();

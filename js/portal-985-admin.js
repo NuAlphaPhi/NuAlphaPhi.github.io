@@ -378,24 +378,15 @@
         );
     }
     if (section === "Activity") {
-      const filter=P.field('Search audit history','search');content.append(filter.wrap);filter.input.oninput=()=>content.querySelectorAll('.p-card').forEach(r=>{r.hidden=!r.textContent.toLowerCase().includes(filter.input.value.toLowerCase());});
-      audit.forEach((a) => {
-        const row = P.el("div", "p-card");
-        row.append(
-          P.el("strong", "", P.name(P.person(a.actor)) + " · " + a.action),
-          P.el("p", "p-muted", P.when(a.createdAt)),
-          P.el(
-            "p",
-            "",
-            [a.slot, a.uid ? P.name(P.person(a.uid)) : "", a.resource]
-              .filter(Boolean)
-              .join(" · "),
-          ),
-        );
-        if(a.before||a.after){const detail=P.el('details'),summary=P.el('summary','','Before / after');detail.append(summary,P.el('pre','p-text',JSON.stringify({before:a.before||{},after:a.after||{}},null,2)));row.append(detail);}
-        content.append(row);
-      });
-      if (!audit.length) content.append(P.empty("No recent admin activity."));
+      P.renderActivity(content,audit);
+      if(audit.length>=100)content.append(P.button('Load older activity',()=>P.run(content,async()=>{
+        const last=await db.doc('leadershipAudit/'+audit[audit.length-1].id).get();
+        const next=await db.collection('leadershipAudit').orderBy('createdAt','desc').startAfter(last).limit(100).get();
+        const known=new Set(audit.map(a=>a.id));next.docs.forEach(d=>{if(!known.has(d.id))audit.push({...d.data(),id:d.id});});
+        if(next.empty){content.append(P.empty('You have reached the beginning of the activity log.'));return;}
+        render();
+      })));
+
     }
   }
   function accountAction(b, action) {

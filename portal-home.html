@@ -9,7 +9,7 @@
     <meta name="description" content="NAΦ Portal — news and events for Nu Alpha Phi brothers.">
     <meta name="author" content="Nu Alpha Phi National Executive Board">
     <meta name="referrer" content="origin">
-    
+
     <title>NAΦ | Nu Alpha Phi Fraternity Inc. | Portal | NAPhi</title>
     <base href="/">
     <link rel="stylesheet" href="/css/portal-routes.css?v=1">
@@ -31,7 +31,7 @@
     <link href="css/portal-design.css" rel="stylesheet">
 <link href="css/portal-985.css?v=tree-profile-2-selection-2-20261104-paste" rel="stylesheet">
 <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/portal-upgrades.css?v=rail-full-height-1">
+    <link rel="stylesheet" href="css/portal-upgrades.css?v=portal-polish-2">
 <link rel="stylesheet" href="css/linktree-surface.css?v=editor-1">
 <link rel="stylesheet" href="/css/portal-selects.css?v=1">
 <link rel="stylesheet" href="/css/portal-idle.css?v=1">
@@ -45,7 +45,7 @@
     <div class="portal-shell" id="portal-app" hidden>
         <aside class="portal-shell__sidebar">
             <a href="/portal-home/home" class="portal-shell__brand" aria-label="Nu Alpha Phi — Portal Home">
-                <span class="portal-brand-mark" aria-hidden="true">ΝΑΦ</span><span class="portal-brand-copy">Nu Alpha Phi<small>National Portal</small></span>
+                <img class="portal-brand-logo" src="/images/portal-brand.png" alt="Nu Alpha Phi">
             </a>
 
 
@@ -126,7 +126,7 @@
                     <div>
                         <span class="section-label">Brothers</span>
                         <h1 class="portal-view-title">Directory</h1>
-                        <p class="portal-view-intro">Search or filter to find a brother.</p>
+
                     </div>
                 </div>
 
@@ -165,7 +165,7 @@
                     <div>
                         <span class="section-label">Surveys</span>
                         <h1 class="portal-view-title">Forms</h1>
-                        <p class="portal-view-intro">Build a form, share the public link, and see who responds.</p>
+
                     </div>
                     <button class="form-submit form-submit--small" id="newFormBtn" type="button">New Form</button>
                 </div>
@@ -187,7 +187,7 @@
                     <div>
                         <span class="section-label">Surveys</span>
                         <h1 class="portal-view-title" id="formBuilderPageTitle">New Form</h1>
-                        <p class="portal-view-intro">Build your questions, then turn on Accepting Responses to make the public link live.</p>
+
                     </div>
                 </div>
 
@@ -264,7 +264,7 @@
                     <div>
                         <span class="section-label">Brotherhood</span>
                         <h1 class="portal-view-title">Family Tree</h1>
-                        <p class="portal-view-intro">Every brother's lineage. Drag to pan, scroll to zoom, click a name for details.</p>
+
                     </div>
                     <div class="news-card__actions">
                         <button class="news-card__action-btn" type="button" id="familytreeExportBtn" hidden disabled title="Download a chapter-colored Excel tree with notes for every brother">Export Excel ↓</button>
@@ -298,7 +298,7 @@
                     <div>
                         <span class="section-label">Brotherhood</span>
                         <h1 class="portal-view-title">Gallery</h1>
-                        <p class="portal-view-intro">Photo albums from the brotherhood — every bro can start one and add pics.</p>
+
                     </div>
                     <button class="form-submit form-submit--small" id="newAlbumBtn" type="button">New Album</button>
                 </div>
@@ -329,7 +329,7 @@
                     <div>
                         <span class="section-label">Celebrate</span>
                         <h1 class="portal-view-title">Birthdays</h1>
-                        <p class="portal-view-intro">Coming up across the brotherhood.</p>
+
                     </div>
                 </div>
                 <div class="stat-tiles" id="birthdayStats"></div>
@@ -341,7 +341,7 @@
                     <div>
                         <span class="section-label">Your Profile</span>
                         <h1 class="portal-view-title">My Information</h1>
-                        <p class="portal-view-intro">Keep your brother profile up to date so other bros can find and connect with you.</p>
+
                     </div>
                 </div>
 
@@ -476,7 +476,7 @@
                     <div>
                         <span class="section-label">Account</span>
                         <h1 class="portal-view-title">Settings</h1>
-                        <p class="portal-view-intro">Manage your account security and appearance preferences.</p>
+
                     </div>
                 </div>
 
@@ -547,7 +547,7 @@
                     <div>
                         <span class="section-label">Content</span>
                         <h1 class="portal-view-title">Blog</h1>
-                        <p class="portal-view-intro">Published posts show up in the Blog section of the main website.</p>
+
                     </div>
                     <button class="form-submit form-submit--small" id="newBlogPostBtn" type="button">New Post</button>
                 </div>
@@ -559,7 +559,7 @@
                     <div>
                         <span class="section-label">Content</span>
                         <h1 class="portal-view-title">Chapter Links</h1>
-                        <p class="portal-view-intro">Manage the links your chapter shares with the world.</p>
+
                     </div>
                 </div>
                 <div class="linktree-admin-grid" id="linktreeChapterGrid"></div>
@@ -570,10 +570,10 @@
                 <div class="portal-view-header">
                     <div>
                         <span class="section-label" id="linktreeChapterPageLabel"></span>
-                        <h1 class="portal-view-title" id="linktreeChapterPageTitle"></h1>
-                        <p class="portal-view-intro">
+                        <h1 class="portal-view-title" id="linktreeChapterPageTitle"></h1><p class="portal-view-intro">
                             Live at <a id="linktreeChapterPageUrl" href="#" target="_blank" rel="noopener"></a>
                         </p>
+
                     </div>
                 </div>
 
@@ -619,7 +619,7 @@
                     <div class="portal-view-header portal-view-header--spaced">
                         <h2 class="portal-view-title portal-view-title--small">Editors</h2>
                     </div>
-                    <p class="portal-view-intro">Brothers who can edit this chapter's page without needing full admin access.</p>
+
                     <div class="linktree-editors-list" id="linktreeEditorsList"></div>
                     <div class="form-group familytree-big-picker" id="linktreeEditorPicker">
                         <label class="form-label" for="linktree-editor-search">Add an editor</label>
@@ -1147,7 +1147,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script src="js/firebase-config.js"></script>
-    <script src="/js/portal-phone.js?v=1"></script>
+    <script src="/js/portal-phone.js?v=portal-polish-2"></script>
     <script src="js/portal-auth.js?v=profile-routes-1"></script>
     <script src="js/portal-shell.js?v=profile-links-1"></script>
     <script src="js/portal-save-feedback.js?v=portal-upgrade-20261104"></script>
@@ -1171,7 +1171,7 @@
 
     <script src="js/portal-design.js?v=portal-upgrade-20261104"></script>
 <script src="js/portal-985-policy.js?v=sections-polish-3"></script>
-<script src="js/portal-985-core.js?v=profile-routes-1-emoji-popover-1"></script>
+<script src="js/portal-985-core.js?v=portal-polish-2"></script>
 <script src="js/portal-985-attachments.js?v=portal-upgrade-20261104"></script>
 <script src="vendor/qrcode/qrcode.js"></script>
 <script src="js/portal-985-experience.js?v=profile-routes-1"></script>
@@ -1187,7 +1187,8 @@
 <script src="js/portal-roster-profiles.js?v=phone-format-2"></script>
 <script src="js/portal-985-roster.js?v=admin-reviews-1"></script>
 <script src="js/portal-profile-links.js?v=1"></script>
-<script src="js/portal-985-admin.js?v=roster-selection-2"></script>
+<script src="js/portal-activity.js?v=1"></script>
+<script src="js/portal-985-admin.js?v=portal-polish-2"></script>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="js/portal-985-map.js?v=profile-routes-1"></script>
     <script src="js/site.js"></script>
