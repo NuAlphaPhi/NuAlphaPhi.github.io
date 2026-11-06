@@ -8,7 +8,7 @@ body.portal-design {
   --shadow-sm: 0 2px 8px #15121d04; --shadow-md: 0 12px 35px #17121e0c;
   background: var(--grey-50); font-size: 1rem; line-height: 1.6;
 }
-html[data-theme="dark"] body.portal-design {
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) body.portal-design {
   --maroon: #e0a2b6; --maroon-dark: #efbdcd; --maroon-soft: #d28da31a;
   --white: #1b1b22; --black: #f2f1f5; --grey-50: #131318; --grey-100: #23232c;
   --grey-200: #303039; --grey-400: #a1a0af; --grey-600: #b1b0bd;
@@ -216,7 +216,7 @@ html[data-theme="dark"] body.portal-design {
 .portal-design .portal-event-row .overview-card__item-meta { display: block; }
 .portal-design .rsvp-event-card__title-btn { padding: 0; border: 0; color: inherit; background: transparent; font: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
 .portal-design .rsvp-event-card__title-btn:hover { color: var(--maroon); }
-html[data-theme="dark"] { color-scheme: dark; }
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) { color-scheme: dark; }
 .portal-design .portal-shell__sidebar, .portal-design .portal-shell__nav { color-scheme: dark; scrollbar-color: #54495b transparent; }
 .portal-design .notification-bell__btn { background: transparent; border-color: #ffffff14; }
 .portal-design .portal-view-title, .portal-design .bro-card__name { overflow-wrap: anywhere; }

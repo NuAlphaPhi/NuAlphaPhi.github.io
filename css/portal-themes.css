@@ -1,0 +1,67 @@
+/* Shared semantic colors for every portal surface, including portaled menus. */
+body.portal-design {
+  --portal-sidebar: #f0eef2; --grey-400:#696373; --grey-600:#585260;
+  --portal-text:var(--black); --portal-muted:var(--grey-400); --portal-border:var(--grey-200);
+  --p-text:var(--black); --p-muted:var(--grey-400); --p-border:var(--grey-200); --p-card:var(--portal-card);
+  --surface:var(--portal-card); --border:var(--grey-200); --text-primary:var(--black); --maroon-light:var(--maroon);
+  --grey-500:var(--grey-400); --theme-danger:#b12449;
+  color:var(--black);color-scheme:light;
+}
+html:is([data-theme=dark],[data-theme=darker],[data-theme=maroon]) body.portal-design {color-scheme:dark;--portal-sidebar:#17161c;--theme-danger:#ff9db5;}
+html[data-theme=darker] body.portal-design {
+ --grey-50:#08080b;--white:#101014;--portal-card:#101014;--portal-sidebar:#0b0b0e;
+ --grey-100:#19191f;--grey-200:#303039;--grey-400:#a8a6b4;--grey-600:#c1becb;--black:#f5f3f7;
+ --maroon:#e5a4bb;--maroon-dark:#f3c2d3;--maroon-soft:#e5a4bb18;--portal-button:#963c5b;--portal-button-hover:#ac496b;
+}
+html[data-theme=maroon] body.portal-design {
+ --grey-50:#210e17;--white:#301621;--portal-card:#301621;--portal-sidebar:#290f1b;
+ --grey-100:#40202e;--grey-200:#654151;--grey-400:#c9acb9;--grey-600:#dfc9d2;--black:#fff3f7;
+ --maroon:#f3b3ca;--maroon-dark:#ffcfdf;--maroon-soft:#f3b3ca18;--portal-button:#93405f;--portal-button-hover:#ac4d70;
+}
+.portal-design .portal-shell__sidebar{background:var(--portal-sidebar);border-color:var(--grey-200)}
+.portal-design .portal-shell__nav-btn,.portal-design .portal-shell__nav-btn .portal-icon,.portal-design .portal-nav-group__label{color:var(--grey-400)}
+.portal-design .portal-shell__nav-btn:hover{color:var(--black);background:var(--grey-100)}
+.portal-design .portal-shell__nav-btn.is-active{background:var(--portal-button);color:#fff}
+.portal-design .portal-shell__nav-btn.is-active .portal-icon{color:#fff}
+.portal-design .portal-shell__user-name{color:var(--black)}
+.portal-design .portal-shell__user{border-color:var(--grey-200)}
+.portal-design :is(#portalSettingsOpen,#portalSignOutBtn,.notification-bell__btn){color:var(--grey-600);border-color:var(--grey-200)}
+.portal-design :is(.p-album-menu[open],.p-toast,.p-mobile-tabs){background:var(--portal-card);color:var(--black);border:1px solid var(--grey-200)}
+.portal-design :is(.p-mention,.p-shield,.p-notification-mark,.p-unread-divider,.p-lineage-avatar){color:var(--maroon)}
+.portal-design :is(.p-error,.p-btn.danger,.form-error){color:var(--theme-danger)}
+.portal-design .p-btn.primary{background:var(--portal-button);border-color:var(--portal-button);color:#fff}
+.portal-design .p-btn.primary:hover{background:var(--portal-button-hover)}
+.portal-design input::placeholder,.portal-design textarea::placeholder{color:var(--grey-400);opacity:1}
+.portal-design .portal-settings-dialog{background:var(--grey-50);color:var(--black)}
+.portal-design .portal-settings-dialog #settingsSubTabs{background:var(--portal-card);border-color:var(--grey-200);padding-top:24px}
+.portal-design .portal-settings-dialog .settings-content{padding:32px 40px 80px;scrollbar-gutter:stable}
+.portal-design .settings-section{padding:16px 0 40px;margin-bottom:24px;background:transparent;border:0;border-bottom:1px solid var(--grey-200);border-radius:0;box-shadow:none}
+.portal-design .settings-section h2{font-size:23px;letter-spacing:-.025em;margin-bottom:12px}
+.portal-design .settings-section p{max-width:62ch;margin-bottom:20px}
+.portal-design .settings-section .settings-eyebrow{font-size:10px;margin-bottom:10px}
+.portal-design .settings-audiences{padding:18px;border-color:var(--grey-200);background:var(--portal-card);gap:10px;margin:24px 0}
+.portal-design .settings-audiences .p-field{padding:12px;border:1px solid var(--grey-200);border-radius:8px;cursor:pointer;font-size:13px;gap:10px}
+.portal-design .settings-audiences .p-field:has(input:checked){border-color:var(--maroon);background:var(--maroon-soft)}
+.portal-design .settings-audiences input{appearance:none;width:18px;height:18px;padding:0;border:1px solid var(--grey-400);border-radius:5px;background:var(--grey-50);display:grid;place-content:center;cursor:pointer}
+.portal-design .settings-audiences input:checked{background:var(--portal-button);border-color:var(--portal-button)}
+.portal-design .settings-audiences input:checked::after{content:'✓';color:white;font-size:13px;font-weight:700}
+.portal-design .settings-audiences small{font-size:12px;margin-top:4px}
+.portal-design .settings-switch-row{background:var(--portal-card);padding:16px 18px;font-size:13px}
+.portal-design .settings-switch-row input{appearance:none;width:38px;height:22px;padding:2px;border:1px solid var(--grey-400);border-radius:20px;background:var(--grey-100);cursor:pointer;position:relative}
+.portal-design .settings-switch-row input::after{content:'';display:block;width:16px;height:16px;background:var(--grey-600);border-radius:50%;transition:transform .15s}
+.portal-design .settings-switch-row input:checked{background:var(--portal-button);border-color:var(--portal-button)}
+.portal-design .settings-switch-row input:checked::after{transform:translateX(16px);background:#fff}
+.portal-design .settings-themes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:24px}
+.portal-design .settings-theme{font:inherit;text-align:left;border:1px solid var(--grey-200);border-radius:12px;background:var(--portal-card);color:var(--black);padding:12px;cursor:pointer;display:grid;gap:5px}
+.portal-design .settings-theme[aria-pressed=true]{border-color:var(--maroon);box-shadow:0 0 0 1px var(--maroon)}
+.settings-theme strong{font-size:14px}.settings-theme small{font-size:12px;color:var(--grey-400)}
+.settings-theme-preview{height:70px;border-radius:6px;background:#131318;display:grid;grid-template-columns:25% 1fr;gap:6px;padding:8px;margin-bottom:6px}
+.settings-theme-preview i{background:#292832;border-radius:3px}.settings-theme-preview i:first-child{grid-row:span 2;background:#653044}
+[data-theme-choice=darker] .settings-theme-preview{background:#08080b}[data-theme-choice=darker] .settings-theme-preview i:not(:first-child){background:#17171c}
+[data-theme-choice=light] .settings-theme-preview{background:#f5f3f6}[data-theme-choice=light] .settings-theme-preview i:not(:first-child){background:#ddd8e1}
+[data-theme-choice=maroon] .settings-theme-preview{background:#210e17}[data-theme-choice=maroon] .settings-theme-preview i:not(:first-child){background:#603047}
+.portal-design .portal-settings-dialog #settingsSubTabs .settings-logout{color:var(--theme-danger)}
+@media(max-width:600px){.portal-design .portal-settings-dialog .settings-content{padding:48px 16px 80px}.portal-design .settings-themes{grid-template-columns:1fr}.portal-design .settings-audiences{padding:12px}.portal-design .settings-audiences .p-field{padding:10px}}
+@media(prefers-reduced-motion:reduce){.settings-switch-row input::after{transition:none}}
+/* Dialogs inherit the selected palette rather than their legacy dark constants. */
+html body.portal-design .p-dialog{--black:inherit;--grey-400:inherit;--grey-200:inherit;--grey-50:inherit;--grey-100:inherit;--portal-card:inherit;--maroon:inherit}

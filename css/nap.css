@@ -3415,8 +3415,8 @@ dialog.modal-overlay[open] .modal {
   min-width: 200px;
 }
 
-/* Portal — dark theme (scoped to portal pages via html[data-theme="dark"], never applied to marketing pages) */
-html[data-theme="dark"] {
+/* Portal — dark theme (scoped to portal pages via html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]), never applied to marketing pages) */
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) {
   --maroon: #e55d6a;
   --maroon-dark: #da3e4e;
   --maroon-soft: rgba(229, 93, 106, 0.16);
@@ -3431,8 +3431,8 @@ html[data-theme="dark"] {
   --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.5);
 }
 
-html[data-theme="dark"] .event-card__img,
-html[data-theme="dark"] .modal__img {
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) .event-card__img,
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) .modal__img {
   opacity: 0.88;
 }
 

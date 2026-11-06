@@ -506,7 +506,7 @@
   --portal-card: #1b1b22;
   --maroon: #e0a2b6;
 }
-html:not([data-theme="dark"]) .p-dialog {
+html:not(:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"])) .p-dialog {
   --black: #202027;
   --grey-400: #666;
   --grey-200: #ddd;
@@ -1173,10 +1173,10 @@ html:not([data-theme="dark"]) .p-dialog {
 .p-map .leaflet-control-attribution a {
   color: var(--grey-400);
 }
-html[data-theme="dark"] .p-map-layout .p-map {
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) .p-map-layout .p-map {
   background: #17191d;
 }
-html[data-theme="dark"] .p-map .leaflet-tile-pane {
+html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) .p-map .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) saturate(0.25) brightness(0.78)
     contrast(0.9);
 }

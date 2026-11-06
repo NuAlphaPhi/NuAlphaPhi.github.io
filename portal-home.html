@@ -16,9 +16,8 @@
     <script>
       (function () {
         try {
-          if (localStorage.getItem("nap_portal_theme") !== "light") {
-            document.documentElement.setAttribute("data-theme", "dark");
-          }
+          var theme = localStorage.getItem("nap_portal_theme");
+          document.documentElement.setAttribute("data-theme", ["dark", "darker", "light", "maroon"].includes(theme) ? theme : "dark");
         } catch (e) {
           document.documentElement.setAttribute("data-theme", "dark");
         }
@@ -27,14 +26,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
-    <link href="css/nap.css" rel="stylesheet">
-    <link href="css/portal-design.css" rel="stylesheet">
-<link href="css/portal-985.css?v=settings-dialog-1" rel="stylesheet">
+    <link href="css/nap.css?v=four-themes-1" rel="stylesheet">
+    <link href="css/portal-design.css?v=four-themes-1" rel="stylesheet">
+<link href="css/portal-985.css?v=four-themes-1" rel="stylesheet">
 <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
     <link rel="stylesheet" href="css/portal-upgrades.css?v=complete-settings-20261106">
 <link rel="stylesheet" href="css/linktree-surface.css?v=editor-1">
 <link rel="stylesheet" href="/css/portal-selects.css?v=1">
 <link rel="stylesheet" href="/css/portal-idle.css?v=1">
+    <link rel="stylesheet" href="/css/portal-themes.css?v=1">
 <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png?v=portal-icon-1">
 </head>
 <body class="portal-design">
@@ -1174,7 +1174,7 @@
 <script src="js/portal-985-search.js?v=control-polish-2"></script>
 <script src="/js/portal-home-scroll.js?v=1"></script>
 <script src="js/portal-985-feed.js?v=scroll-end-1"></script>
-<script src="js/portal-985-settings.js?v=complete-settings-20261106"></script>
+<script src="js/portal-985-settings.js?v=four-themes-20261106"></script>
 <script src="js/portal-985-profiles.js?v=complete-settings-20261106"></script>
 <script src="js/portal-985-chat.js?v=complete-settings-20261106"></script>
 <script src="js/portal-985-events.js?v=brotherhood-6"></script>
