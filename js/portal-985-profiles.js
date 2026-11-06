@@ -349,6 +349,7 @@
       ["Graduation", b.graduationYear],
       ["Job", b.job || b.occupation],
       ["Hometown", b.hometown],
+      ["Current Location", b.currentLocation || b.location],
     ];
     fields.forEach(([label, value]) => {
       if (value) {
@@ -466,6 +467,9 @@
     const keys = [
       "bio",
       "birthday",
+      "phone",
+      "hometown",
+      "currentLocation",
       "school",
       "major",
       "educationStatus",
@@ -484,18 +488,15 @@
         "pledgeName",
         "pledgeNumber",
       );
-    form.append(P.el("p", "p-muted", "Chapter, pledge class, and crossing date are managed in the master roster."));
+    form.append(P.el("p", "p-muted", "Chapter, pledge class, and crossing date come from the master roster. Big and little relationships come from the family tree."));
     keys.forEach((k) => {
-      const f =
-        k === "chapter"
-          ? P.select("Chapter", P.chapters, b[k])
-          : k === "semesterCrossed"
-            ? P.select("Crossing Term", ["Fall", "Spring", "Summer"], b[k])
-            : P.field(
-                k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()),
-                k === "birthday" ? "date" : k === "bio" ? "textarea" : "text",
-                b[k + "ProfileURL"] || b[k],
-              );
+      const labels = { phone: "Phone Number", job: "Occupation", educationStatus: "Education Status", linkedin: "LinkedIn", twitter: "X / Twitter" };
+      const value = k === "job" ? (b.job || b.occupation || "") : k === "currentLocation" ? (b.currentLocation || b.location || "") : b[k + "ProfileURL"] || b[k];
+      const f = P.field(
+        labels[k] || k.replace(/([A-Z])/g, " $1").replace(/^./, c => c.toUpperCase()),
+        k === "birthday" ? "date" : k === "bio" ? "textarea" : k === "phone" ? "tel" : "text",
+        k === "phone" ? window.napPhone.format(value) : value,
+      );
       fields[k] = f.input;
       form.append(f.wrap);
     });
@@ -563,6 +564,12 @@
             const data = Object.fromEntries(
               Object.entries(fields).map(([k, v]) => [k, v.value.trim()]),
             );
+            if (data.phone) {
+              data.phone = window.napPhone.canonical(data.phone, "+1");
+              if (!data.phone) throw Error("Enter a valid phone number, including the country code for numbers outside the US or Canada.");
+            }
+            // Keep the older directory and settings views consistent with this editor.
+            data.occupation = data.job;
             if (data.pledgeNumber && !/^\d{1,2}$/.test(data.pledgeNumber))
               throw Error("Pledge number must have one or two digits.");
             for (const [key, hosts] of [

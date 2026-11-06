@@ -32,6 +32,7 @@
      rendered dynamically here instead of duplicated in the HTML. */
   var EDIT_FIELD_SPECS = [
     { name: "firstName", label: "First Name", type: "text" },
+    { name: "middleName", label: "Middle Name", type: "text" },
     { name: "lastName", label: "Last Name", type: "text" },
     { name: "pledgeName", label: "Pledge Name", type: "text" },
     { name: "pledgeNumber", label: "Pledge Number", type: "text" },
@@ -42,13 +43,15 @@
     { name: "occupation", label: "Occupation", type: "text" },
     { name: "school", label: "School", type: "text" },
     { name: "major", label: "Major", type: "text" },
+    { name: "educationStatus", label: "Education Status", type: "text" },
+    { name: "twitter", label: "X / Twitter", type: "text" },
     { name: "graduationYear", label: "Graduation Year", type: "number" },
     { name: "instagram", label: "Instagram", type: "text", placeholder: "@handle" },
     { name: "facebook", label: "Facebook", type: "text" },
     { name: "linkedin", label: "LinkedIn", type: "text" },
     { name: "bio", label: "Bio", type: "textarea", full: true, placeholder: "Tell other brothers a bit about yourself" },
   ];
-  var EDIT_NUMBER_FIELDS = ["yearCrossed", "graduationYear"];
+  var EDIT_NUMBER_FIELDS = ["graduationYear"];
 
   window.NAP_CHAPTERS.forEach(function (chapter) {
     var opt = document.createElement("option");
