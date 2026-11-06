@@ -1,8 +1,26 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title>Chapter Operations · Nu Alpha Phi</title><link rel="stylesheet" href="/operations/operations.css?v=dashboard-2"><link rel="stylesheet" href="/css/portal-selects.css?v=1">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title>Chapter Operations · Nu Alpha Phi</title><link rel="stylesheet" href="/operations/operations.css?v=gate-3"><link rel="stylesheet" href="/css/portal-selects.css?v=1">
 <link rel="stylesheet" href="/css/portal-idle.css?v=1">
 </head><body>
-<section id="gate" class="gate"><a class="brand" href="/">ΝΑΦ <span>NU ALPHA PHI</span></a><div class="login-card"><p class="eyebrow">THE WORK BEHIND THE BROTHERHOOD</p><h1>Chapter operations.</h1><p class="muted">One home for your chapter’s plans, people, and progress.</p><p id="authState" role="status">Checking your account…</p><form id="login" hidden><label>Email<input id="email" name="email" type="email" autocomplete="username" required></label><label>Password<input id="password" name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Sign in to your chapter →</button><button id="resetPassword" class="text-button" type="button">Forgot password?</button></form><button id="gateLogout" hidden>Use another account</button><a class="back-link" href="/portal-home.html">Main brotherhood portal ↗</a></div><p class="gate-foot">Your chapter. Your people. Built to move together.</p></section>
+<section id="gate" class="gate" data-mode="loading">
+  <a class="brand gate-brand" href="/">ΝΑΦ <span>NU ALPHA PHI</span></a>
+  <div class="login-card">
+    <div class="gate-emblem" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6M9 9h.01M15 9h.01"/></svg></div>
+    <p class="eyebrow">CHAPTER WORKSPACE</p>
+    <h1 id="gateTitle">Opening your chapter</h1>
+    <p class="gate-intro" id="gateIntro">Your people. Your plans. One place.</p>
+    <div class="gate-status"><span class="gate-spinner" aria-hidden="true"></span><p id="authState" role="status" aria-live="polite">Checking your account…</p></div>
+    <form id="login" hidden>
+      <label>Email<input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="username" required></label>
+      <label>Password<input id="password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Sign in →</button>
+      <button id="resetPassword" class="text-button" type="button">Forgot password?</button>
+    </form>
+    <button id="gateRetry" class="primary" type="button" hidden>Try again</button>
+    <div class="gate-links"><button id="gateLogout" class="text-button" type="button" hidden>Switch account</button><a class="back-link" href="/portal-home.html">Brotherhood portal ↗</a></div>
+  </div>
+  <p class="gate-foot"><span aria-hidden="true">◇</span> One account. Your chapter’s workspace.</p>
+</section>
 <div id="app" class="app" hidden><aside class="sidebar"><a class="brand" href="/">ΝΑΦ <span>OPERATIONS</span></a><div class="chapter-mark"><span id="chapterLetter">Κ</span><div><strong id="chapterName"></strong><small id="roleLabel"></small></div></div><nav id="nav" aria-label="Chapter operations"></nav><a href="/portal-home.html" class="main-link">← Brotherhood portal</a><button id="logout" class="text-button">Sign out</button></aside><div class="workspace"><header class="topbar"><div class="breadcrumb">Chapter workspace <span>/</span> <strong id="currentSection">Overview</strong></div><div class="topbar-controls"><select id="chapterSelect" aria-label="Chapter" hidden></select><select id="semesterSelect" aria-label="Semester"></select><button id="refresh" aria-label="Refresh chapter data">↻</button></div></header><div id="notice" class="notice" role="status" hidden></div><main id="content" tabindex="-1"></main><footer>NU ALPHA PHI <span>CHAPTER OPERATIONS · 985</span></footer></div></div><div id="toast" role="status" hidden></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script><script src="/js/firebase-config.js"></script><script src="/operations/operations.js?v=dashboard-2"></script><script src="/js/portal-selects.js?v=1"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script><script src="/js/firebase-config.js"></script><script src="/operations/operations.js?v=gate-3"></script><script src="/js/portal-selects.js?v=1"></script>
 <script src="/js/portal-idle.js?v=1"></script>
 </body></html>
