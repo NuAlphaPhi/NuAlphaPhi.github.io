@@ -26,7 +26,7 @@ function rows(data){
   else if(matched.length===1&&matched[0].lastName){first=names(matched[0]);last=matched[0].lastName;}
   else {const parts=String(r.fullName||'').trim().split(/\s+/);last=parts.length>1?parts.pop():'';first=parts.join(' ');}
   const [term,year]=classDates.get(c.id);
-  return {chapter:c.chapter,className:clean(c.pledgeClass),values:[c.chapter,clean(c.pledgeClass),String(r.pledgeName||''),first,last,term,year?Number(year):''],index,sortOrder:r.sortOrder};
+  return {chapter:c.chapter,className:clean(c.pledgeClass),values:[c.chapter,clean(c.pledgeClass),String(r.pledgeName||''),first,last,term,year?Number(year):''],index,fallen:r.fallen===true,disaffiliated:r.disaffiliated===true,sortOrder:r.sortOrder};
  });
  output.sort((a,b)=>CHAPTERS.indexOf(a.chapter)-CHAPTERS.indexOf(b.chapter)||order(a.className)-order(b.className)||a.className.localeCompare(b.className)||(a.sortOrder??a.index)-(b.sortOrder??b.index));
  return {rows:output,warnings};
@@ -42,7 +42,7 @@ function build(ExcelJS,data){
  cell(top,4,2,'DATE:',true);cell(top,4,3,date.toLocaleDateString('en-US',{timeZone:'America/New_York'}));
  const e=data.exporter||{};cell(top,5,2,'BROTHER:',true);cell(top,5,3,[e.firstName,e.pledgeName?'“'+e.pledgeName+'”':'',e.lastName].filter(Boolean).join(' '));
  merged(top,8,2,3,'BROTHER COUNTS');
- CHAPTERS.forEach((chapter,i)=>{cell(top,9+i,2,chapter);cell(top,9+i,3,{formula:`COUNTIF('Roster Check'!A:A,B${9+i})`,result:prepared.rows.filter(r=>r.chapter===chapter).length});});
+ CHAPTERS.forEach((chapter,i)=>{cell(top,9+i,2,chapter);cell(top,9+i,3,{formula:`ROWS('${chapter}'!A1:A${prepared.rows.filter(r=>r.chapter===chapter).length+1})-1`,result:prepared.rows.filter(r=>r.chapter===chapter).length});});
  cell(top,19,2,'ΝΑΦ',true,'8B0000').font={name:'Arial',size:12,bold:true,color:{argb:'FFFFFFFF'}};
  cell(top,19,3,{formula:'SUM(C9:C18)',result:prepared.rows.length},true,'8B0000').font={name:'Arial',size:12,bold:true,color:{argb:'FFFFFFFF'}};
  ['', 'Chapter','Class','Pledge Name','First','Last','Contact'].forEach((v,i)=>cell(top,3,5+i,v,true));
@@ -58,7 +58,15 @@ function build(ExcelJS,data){
   const ws=book.addWorksheet(name,{views:[{state:'frozen',ySplit:1,showGridLines:false}],properties:{defaultRowHeight:23}});
   ws.columns=[22,24,28,25,25,20,14].map(width=>({width}));
   ['CHAPTER','CLASS','PLEDGE NAME','FIRST NAME','LAST NAME','SEMESTER','YEAR'].forEach((v,i)=>{const c=cell(ws,1,i+1,v,true);c.alignment={horizontal:'center',vertical:'middle'};});ws.getRow(1).height=28;
-  entries.forEach((r,i)=>r.values.forEach((v,j)=>cell(ws,i+2,j+1,v,j===2)));
+  entries.forEach((r,i)=>r.values.forEach((v,j)=>{
+   const c=cell(ws,i+2,j+1,v,j===2||r.disaffiliated,r.disaffiliated?'000000':r.fallen?'8B0000':undefined);
+   if(r.disaffiliated){c.font={name:'Arial',size:12,bold:true,color:{argb:'FF000000'}};c.alignment={horizontal:'center',vertical:'middle'};}
+   else if(r.fallen)c.font={name:'Arial',size:12,bold:j===2,color:{argb:'FFFFFFFF'}};
+  }));
+  if(entries.some(r=>r.disaffiliated)){
+   ws.getColumn(8).width=24;cell(ws,1,8,'STATUS',true);
+   entries.forEach((r,i)=>{if(r.disaffiliated){const c=cell(ws,i+2,8,'DISAFFILIATED',true,'000000');c.font={name:'Arial',size:12,bold:true,color:{argb:'FFFFFFFF'}};}});
+  }
   ws.autoFilter={from:'A1',to:'G'+Math.max(1,entries.length+1)};ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'1:1'};
  }
  rosterSheet('Roster Check',prepared.rows);rosterSheet('Founders',prepared.rows.filter(r=>norm(r.className)==='alpha'));

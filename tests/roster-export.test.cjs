@@ -18,3 +18,18 @@ test('saved member positions control export order within a class',()=>{
  const data={...sample,people:[{id:'a',classID:'aa',pledgeName:'Last',fullName:'Last Brother',sortOrder:1},{id:'b',classID:'aa',pledgeName:'First',fullName:'First Brother',sortOrder:0}]};
  assert.deepEqual(E.rows(data).rows.map(r=>r.values[2]),['First','Last']);
 });
+test('disaffiliated rows retain identity under black text and display a black labeled row on every roster tab',async()=>{
+ const book=E.build(ExcelJS,{...sample,people:sample.people.map(r=>({...r,disaffiliated:r.id==='1'}))});
+ const saved=new ExcelJS.Workbook();await saved.xlsx.load(await book.xlsx.writeBuffer());
+ for(const name of ['Roster Check','Founders','Alpha']){
+  const ws=saved.getWorksheet(name);assert.equal(ws.getCell('H2').value,'DISAFFILIATED');
+  assert.equal(ws.getCell('D2').value,'Lok Man');assert.equal(ws.getCell('G2').value,1994);assert.equal(ws.getCell('D2').font.color.argb,'FF000000');
+  assert.equal(ws.getCell('C2').fill.fgColor.argb,'FF000000');
+ }
+ assert.equal(saved.getWorksheet('Top Sheet').getCell('C9').value.result,2);
+});
+
+test('fallen brothers retain details with red fill',()=>{
+ const book=E.build(ExcelJS,{...sample,people:sample.people.map(r=>({...r,fallen:true}))});
+ for(const name of ['Roster Check','Founders','Alpha']){const c=book.getWorksheet(name).getCell('D2');assert.equal(c.value,'Lok Man');assert.equal(c.fill.fgColor.argb,'FF8B0000');}
+});
