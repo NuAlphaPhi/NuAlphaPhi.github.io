@@ -87,9 +87,32 @@
     }),'p-btn primary'));
     const d=P.dialog('Class Crossing',form);
   }
+  P.reviewRosterIssues = () => {
+    if (!P.me.isAdmin) return;
+            const box=P.el('div'),duplicates=new Map();
+            people.forEach(r=>{const key=r.classID+':'+norm(r.fullName);duplicates.set(key,[...(duplicates.get(key)||[]),r]);});
+            const rows=people.filter(r=>{const c=classes.find(c=>c.id===r.classID);return !c||issue(r,c)||(duplicates.get(r.classID+':'+norm(r.fullName))||[]).length>1;});
+            box.append(P.el('p','p-muted',rows.length+' entries need review. Review links individually; identities are never merged automatically.'));
+            rows.forEach(r=>{const c=classes.find(c=>c.id===r.classID);const row=P.el('div','p-card');row.append(P.el('strong','',r.fullName+' · '+r.pledgeName),P.el('p','p-muted',!c?'Missing class':issue(r,c)||'Possible duplicate roster entry'));if(c)row.append(P.button('Compare records',()=>compare(r,c)));row.append(P.button('Edit entry',()=>edit(r)));box.append(row);});
+            box.append(P.button('Export review list',()=>P.download('roster-review.csv',P.csv([['Full name','Pledge name','Class','Issue'],...rows.map(r=>{const c=classes.find(c=>c.id===r.classID);return [r.fullName,r.pledgeName,c?.pledgeClass||'',c?issue(r,c)||'Possible duplicate':'Missing class'];})]),'text/csv')));P.dialog('Roster review queue',box);
+  };
+  P.reviewTreeDifferences = () => {
+    if (!P.me.isAdmin) return;
+    const box = P.el('div');
+    const rows = people.filter(r => { const c=classes.find(c=>c.id===r.classID); return c && issue(r,c); });
+    box.append(P.el('p','p-muted',rows.length+' roster entries differ from the family tree.'));
+    rows.forEach(r => {
+      const c=classes.find(c=>c.id===r.classID), row=P.el('section','p-card');
+      row.append(P.el('strong','',r.pledgeName+' · '+r.fullName),P.el('p','p-muted',c.chapter+' · '+c.pledgeClass+' · '+issue(r,c)),P.button('Compare records',()=>compare(r,c)));
+      box.append(row);
+    });
+    if(!rows.length)box.append(P.empty('No tree differences found.'));
+    P.dialog('Review tree differences',box);
+  };
   P.renderRosterDiscrepancies = content => {
     if(!P.me.isAdmin) return;
     if(loadedSources.size < 4) { content.append(P.empty('Loading roster and family-tree records…')); return; }
+    content.append(P.row(P.button('Review roster issues',P.reviewRosterIssues),P.button('Review tree differences',P.reviewTreeDifferences)));
     content.append(P.el('p','p-muted','Review crossing dates and roster-to-tree differences. Dates are shared by the whole chapter pledge class; conflicting records are never chosen automatically.'));
     let count=0;
     classes.forEach(c=>{
@@ -178,21 +201,6 @@
         P.row(
           P.button("Add brother", () => edit()),
           P.button("Add class", () => editClass()),
-          P.button('Review roster issues',()=>{
-            const box=P.el('div'),duplicates=new Map();
-            people.forEach(r=>{const key=r.classID+':'+norm(r.fullName);duplicates.set(key,[...(duplicates.get(key)||[]),r]);});
-            const rows=people.filter(r=>{const c=classes.find(c=>c.id===r.classID);return !c||issue(r,c)||(duplicates.get(r.classID+':'+norm(r.fullName))||[]).length>1;});
-            box.append(P.el('p','p-muted',rows.length+' entries need review. Review links individually; identities are never merged automatically.'));
-            rows.forEach(r=>{const c=classes.find(c=>c.id===r.classID);const row=P.el('div','p-card');row.append(P.el('strong','',r.fullName+' · '+r.pledgeName),P.el('p','p-muted',!c?'Missing class':issue(r,c)||'Possible duplicate roster entry'));if(c)row.append(P.button('Compare records',()=>compare(r,c)));row.append(P.button('Edit entry',()=>edit(r)));box.append(row);});
-            box.append(P.button('Export review list',()=>P.download('roster-review.csv',P.csv([['Full name','Pledge name','Class','Issue'],...rows.map(r=>{const c=classes.find(c=>c.id===r.classID);return [r.fullName,r.pledgeName,c?.pledgeClass||'',c?issue(r,c)||'Possible duplicate':'Missing class'];})]),'text/csv')));P.dialog('Roster review queue',box);
-          }),
-          P.button(
-            issuesOnly ? "Show everyone" : "Review tree differences",
-            () => {
-              issuesOnly = !issuesOnly;
-              render();
-            },
-          ),
         ),
       );
     const list = P.el("div", "p-roster-classes");
