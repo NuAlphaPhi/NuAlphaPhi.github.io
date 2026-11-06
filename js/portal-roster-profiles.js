@@ -30,7 +30,7 @@ P.renderRosterProfile=(uid,root)=>{
  if(b.pledgeName)intro.append(P.el('span','p-profile-handle','@'+b.pledgeName));
  const roles=Object.entries(slots).filter(([,value])=>value===uid).map(([key])=>key==='warden'?'Pledge Warden':key.startsWith('master-')?'Pledge Master':key.startsWith('president-')?'Chapter President':key.startsWith('intern-')?'National Intern':key.startsWith('advisor-')?'Alumni Advisor':key.replace(/^national-/,'National ').replace(/([a-z])([A-Z])/g,'$1 $2'));
  if(/^alpha(?: class)?$/i.test(b.pledgeClass))roles.unshift(b.chapter==='Alpha'?'Founding Father':'Founder');
- if(b.fallen)roles.push('In Memoriam');if(b.disaffiliated)roles.push('Disaffiliated');
+ intro.append(P.profileStatusBadges(b));
  if(roles.length){const titles=P.el('div','p-profile-titles');roles.forEach(role=>titles.append(P.el('span','p-profile-title',role)));intro.append(titles);}
  if(b.bio)intro.append(P.text(b.bio));
  const summary=P.el('div','p-profile-summary');summary.append(P.button(b.chapter+' Chapter',()=>P.chapter(b.chapter),'p-profile-chapter'));

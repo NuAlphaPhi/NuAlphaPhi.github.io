@@ -442,3 +442,9 @@
 .p-roster-profile-panel > .p-info { padding:24px; margin:0; gap:24px; }
 .familytree-status-tags { display:flex; gap:8px; grid-column:1 / -1; }
 .familytree-status-tags:empty { display:none; }
+
+.p-profile-status { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.p-profile-status:empty { display:none; }
+.p-profile-status-badge { display:inline-flex; align-items:center; border:1px solid; border-radius:999px; padding:6px 12px; font-size:.8rem; font-weight:700; line-height:1.4; }
+.p-profile-status-badge.is-delettered { background:#24242c; border-color:#666674; color:#f0f0f5; }
+.p-profile-status-badge.is-rip { background:#491e2b; border-color:#a34c66; color:#ffd9e3; }

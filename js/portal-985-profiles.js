@@ -1,6 +1,24 @@
 (function () {
   "use strict";
   const P = P985;
+  P.profileStatus = function(b, data = P.rosterData) {
+    const norm=v=>String(v||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');
+    const people=data?.people||[], classes=data?.classes||[];
+    const linkedID=b.rosterOnly?b.id:data?.accountLinks?.[b.uid]?.rosterID;
+    let record=linkedID?people.find(r=>r.id===linkedID):null;
+    if(!linkedID){
+      const name=norm(b.fullName||[b.firstName,b.middleName,b.lastName].filter(Boolean).join(' '));
+      const matches=people.filter(r=>{const c=classes.find(c=>c.id===r.classID);return name && norm(b.pledgeName) && norm(b.chapter) && norm(r.fullName)===name && norm(r.pledgeName)===norm(b.pledgeName) && norm(c?.chapter)===norm(b.chapter);});
+      if(matches.length===1)record=matches[0];
+    }
+    return {disaffiliated:record?.disaffiliated===true||b.disaffiliated===true,fallen:record?.fallen===true||b.fallen===true};
+  };
+  P.profileStatusBadges = function(b) {
+    const status=P.profileStatus(b),box=P.el('div','p-profile-status');
+    if(status.disaffiliated)box.append(P.el('span','p-profile-status-badge is-delettered','Delettered'));
+    if(status.fallen)box.append(P.el('span','p-profile-status-badge is-rip','RIP · In Memoriam'));
+    return box;
+  };
   // Relationships come only from familyTree; profile text never supplies lineage.
   P.profileLineage = function (brother, data = P.rosterData) {
     if (!data) return {status:'loading', big:null, littles:[]};
@@ -250,7 +268,7 @@
       shield.setAttribute("aria-label", "Administrator information");
       handle.append(shield);
     }
-    intro.append(actions, identity, handle);
+    intro.append(actions, identity, handle, P.profileStatusBadges(b));
     root.append(top, cover, intro);
     const chips = P.el("div", "p-profile-titles");
     titles(b).forEach((t) =>
