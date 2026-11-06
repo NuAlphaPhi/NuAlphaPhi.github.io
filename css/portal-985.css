@@ -1643,3 +1643,8 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-role-choice-action{color:var(--maroon,#b86c84);font-size:13px;white-space:nowrap}
 .p-role-choice:hover,.p-role-choice:focus-visible{background:#b86c841a}
 .p-role-choice:disabled{opacity:.6;cursor:wait}
+
+.familytree-profile-link{padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:inherit;border-radius:8px}
+.familytree-profile-link:hover{color:var(--maroon,#b86c84)}
+.familytree-profile-link:focus-visible{outline:2px solid #b86c84;outline-offset:5px}
+#familytreePersonAvatar{border-radius:50%;display:inline-flex}

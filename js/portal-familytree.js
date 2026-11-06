@@ -245,7 +245,7 @@
     applyTransform();
   }
 
-  function memberStatus(member) {
+  function memberRoster(member) {
     var data=window.P985 && window.P985.rosterData, roster;
     if(data){
       var linked=Object.entries(data.links||{}).filter(function(entry){return entry[1].treeID===member.id;});
@@ -256,6 +256,10 @@
         if(matches.length===1)roster=matches[0];
       }
     }
+    return roster;
+  }
+  function memberStatus(member) {
+    var roster=memberRoster(member);
     return [member.disaffiliated===true || roster?.disaffiliated===true ? 'Delettered' : '',member.fallen===true || roster?.fallen===true ? 'RIP' : ''].filter(Boolean);
   }
   document.addEventListener('p985:roster',function(){if(allMembers.length)render();});
@@ -563,6 +567,30 @@
     );
   }
 
+  function memberProfileTarget(member) {
+    var P=window.P985, roster=memberRoster(member);
+    if(!P)return null;
+    if(roster){
+      var links=Object.entries(P.rosterData.accountLinks||{}).filter(function(entry){return entry[1].rosterID===roster.id;});
+      if(links.length===1)return links[0][1].uid||links[0][0];
+    }
+    var norm=function(v){return String(v||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,' ');};
+    var accounts=P.brothers.filter(function(b){return norm(b.chapter)===norm(member.chapter)&&norm(b.pledgeName)===norm(member.pledgeName)&&norm([b.firstName,b.middleName,b.lastName].filter(Boolean).join(' '))===norm(member.name);});
+    if(accounts.length===1)return accounts[0].uid;
+    return roster?'roster_'+roster.id:null;
+  }
+  function viewPersonProfile() {
+    var member=findMember(openPersonId),P=window.P985;
+    if(!member||!P)return;
+    var target=memberProfileTarget(member);
+    personModal.close();
+    if(target)P.profile(target);
+    else window.napSetTab('profile',undefined,{profilePath:'/portal-home/profile/'+encodeURIComponent(P.profileSlug(member.pledgeName||member.name))});
+  }
+  [personAvatarEl,personNameEl,personPledgeNameEl].forEach(function(el){
+    el.addEventListener('click',viewPersonProfile);
+  });
+
   function renderPersonModal(member) {
     if (!member) {
       personModal.close();
@@ -570,6 +598,7 @@
     }
 
     personAvatarEl.innerHTML = avatarCircleHtml(member, "xl");
+    personAvatarEl.setAttribute("aria-label", "View " + displayNameFor(member) + " profile");
     personNameEl.textContent = displayNameFor(member);
     personPledgeNameEl.textContent = member.pledgeName && member.name ? member.name : "";
 
@@ -626,11 +655,11 @@
     }
     personLittlesEl.innerHTML = littlesHtml;
 
-    personAdminActionsEl.innerHTML = isAdmin()
+    personAdminActionsEl.innerHTML = '<button class="news-card__action-btn" type="button" data-view-profile>View Profile →</button>' + (isAdmin()
       ? '<button class="news-card__action-btn" type="button" data-add-little>Add Little</button>' +
         '<button class="news-card__action-btn" type="button" data-edit-person>Edit</button>' +
         '<button class="news-card__action-btn news-card__action-btn--danger" type="button" data-delete-person>Delete</button>'
-      : "";
+      : "");
   }
 
   function openPersonModal(member) {
@@ -658,6 +687,7 @@
   });
 
   personAdminActionsEl.addEventListener("click", function (e) {
+    if(e.target.closest("[data-view-profile]")){viewPersonProfile();return;}
     if (e.target.closest("[data-add-little]")) {
       openPersonForm(null, openPersonId);
       return;
