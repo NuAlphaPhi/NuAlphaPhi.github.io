@@ -133,7 +133,7 @@
         await auth.signOut(); location.assign("/portal"); return;
       }
       if(auth.currentUser?.uid !== user.uid) return;
-      if ((tab === "admin" || tab === "blog") && profile.isAdmin !== true) tab = navTab = "home";
+      if ((tab === "blog") && profile.isAdmin !== true) tab = navTab = "home";
       loading("Opening your workspace…");
       showTab(tab, navTab, opts);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));

@@ -1,6 +1,7 @@
 (function () {
   "use strict";
   const P = P985;
+  document.addEventListener("p985:roster",()=>{ if(section === "Roster discrepancies" && P.me.isAdmin) render(); });
   let accounts = [];
   let reports = [];
   let announcementRequests = [];
@@ -72,12 +73,13 @@
             "Alumni advisors",
             "Admins",
             "Activity",
+            "Roster discrepancies",
           ]
         : ["Actives & alumni"];
     if (!options.includes(section)) section = options[0];
     const pendingCounts={'Applications':apps.filter(a=>['pending','hold'].includes(a.status)).length,'Content reports':reports.filter(r=>r.status==='open').length,'Events':(P.events||[]).filter(e=>e.status==='pending').length,'Announcements':announcementRequests.filter(r=>r.status==='pending').length};
     tabs.setAttribute('aria-label','Administration sections');
-    for(const [label,sections] of [['Review',['Applications','Content reports','Events','Announcements']],['People',['Accounts','Leadership','Pledging','Actives & alumni','Alumni advisors','Admins']],['Records',['Activity']]]){
+    for(const [label,sections] of [['Review',['Applications','Content reports','Events','Announcements']],['People',['Accounts','Leadership','Pledging','Actives & alumni','Alumni advisors','Admins']],['Records',['Roster discrepancies','Activity']]]){
       const available=sections.filter(t=>options.includes(t));if(!available.length)continue;
       const group=P.el('div','p-admin-nav-group');group.append(P.el('h2','',label));
       available.forEach(t=>{const button=P.button('',()=>{section=t;render();},'p-admin-nav-item');button.append(P.el('span','',t));if(pendingCounts[t])button.append(P.el('span','p-admin-nav-count',pendingCounts[t]));if(section===t)button.setAttribute('aria-current','page');group.append(button);});tabs.append(group);
@@ -96,6 +98,10 @@
     const title=P.el('header','p-admin-content-heading');title.append(P.el('h2','',section));
     if(pendingCounts[section])title.append(P.el('span','p-admin-nav-count',pendingCounts[section]+' to review'));
     content.append(title);
+    if (section === "Roster discrepancies") {
+      if(P.renderRosterDiscrepancies) P.renderRosterDiscrepancies(content);
+      else content.append(P.empty("Loading roster records…"));
+    }
     if (section === "Accounts") {
       const search = P.field("Search accounts", "search"), list = P.el("div", "p-admin-account-list");
       content.append(P.el("p", "p-muted", "Deactivation immediately blocks portal access. Reactivation restores sign-in. Deletion permanently removes the account and its associated personal data."), search.wrap, list);

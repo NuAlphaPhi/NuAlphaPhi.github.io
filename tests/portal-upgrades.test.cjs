@@ -179,3 +179,18 @@ test('every portal navigation section has a direct static entry',()=>{
  for(const [,tab] of html.matchAll(/data-tab="([^"]+)"/g)) assert.ok(fs.existsSync(`portal-home/${tab}/index.html`),tab);
  assert.ok(fs.existsSync('portal-home/index.html'));
 });
+
+test('class crossing dates derive only from the same chapter and class',()=>{
+ const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-roster.js','utf8'),c);
+ const cls={chapter:'Alpha',pledgeClass:'Alpha'};
+ const tree=[{chapter:'Alpha',pledgeClass:'Alpha Class',term:'fall',year:1994},{chapter:'Alpha',pledgeClass:'Alpha',term:'Fall',year:'1994'},{chapter:'Kappa',pledgeClass:'Alpha',term:'Spring',year:2026}];
+ const r=c.P985.rosterClassCrossing(cls,tree);assert.equal(r.label,'Fall 1994');assert.equal(r.conflict,false);assert.equal(r.nodes.length,2);
+});
+test('conflicting class crossing dates never silently select a semester',()=>{
+ const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-roster.js','utf8'),c);
+ const cls={chapter:'Alpha',pledgeClass:'Alpha'},base={chapter:'Alpha',pledgeClass:'Alpha'};
+ const r=c.P985.rosterClassCrossing(cls,[{...base,term:'Fall',year:1994},{...base,term:'Spring',year:1995}]);
+ assert.equal(r.label,'');assert.equal(r.conflict,true);
+ const missing=c.P985.rosterClassCrossing(cls,[{...base,term:'Fall'}]);assert.equal(missing.label,'');assert.equal(missing.missing.length,1);
+ const saved=c.P985.rosterClassCrossing({...cls,semesterCrossed:'Summer',yearCrossed:1995},[{...base,term:'Fall',year:1994}]);assert.equal(saved.conflict,true);
+});

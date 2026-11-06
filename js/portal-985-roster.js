@@ -9,6 +9,7 @@
     search = "",
     issuesOnly = false;
   const expandedClasses = new Set();
+  const loadedSources = new Set();
   P.rosterClassRoles = members => {
     const roles = new Map();
     if (members.length) roles.set(members[0].id, 'Captain');
@@ -50,6 +51,70 @@
       .toLowerCase()
       .split(" ")
       .reduce((a, w) => a * 24 + greek.indexOf(w) + 1, 0);
+  const classKey = value => norm(String(value || '').replace(/\s*class\s*$/i, ''));
+  P.rosterClassCrossing = (c, records = tree) => {
+    const nodes = records.filter(t => norm(t.chapter) === norm(c.chapter) && classKey(t.pledgeClass) === classKey(c.pledgeClass));
+    const clean = (term, year) => {
+      term = String(term || '').trim().toLowerCase();
+      if (!['spring','summer','fall','winter'].includes(term) || !/^\d{4}$/.test(String(year || ''))) return '';
+      return term[0].toUpperCase()+term.slice(1)+' '+year;
+    };
+    const dates = [...new Set(nodes.map(n=>clean(n.term,n.year)).filter(Boolean))];
+    const saved = clean(c.semesterCrossed,c.yearCrossed);
+    if(saved && !dates.includes(saved)) dates.push(saved);
+    return {nodes, dates, missing:nodes.filter(n=>!clean(n.term,n.year)), label:dates.length===1?dates[0]:'', conflict:dates.length>1};
+  };
+  function setClassCrossing(c) {
+    const form=P.el('div'), report=P.rosterClassCrossing(c);
+    const term=P.select('Crossing Semester',['Spring','Summer','Fall','Winter'],report.label.split(' ')[0]||'Fall');
+    const year=P.field('Crossing Year','number',report.label.split(' ')[1]||'');
+    form.append(P.el('p','p-muted','Applies to every family-tree record in '+c.chapter+' · '+c.pledgeClass+' Class, and the master roster class.'),term.wrap,year.wrap);
+    form.append(P.button('Save Class Crossing',()=>P.run(form,async()=>{
+      if(!/^\d{4}$/.test(year.input.value)||Number(year.input.value)<1994||Number(year.input.value)>new Date().getFullYear()+1)throw Error('Enter a valid four-digit crossing year.');
+      if(report.nodes.length>400)throw Error('This class is too large to update at once.');
+      await db.runTransaction(async tx=>{
+        const refs=report.nodes.map(n=>db.doc('familyTree/'+n.id));
+        const snapshots=await Promise.all(refs.map(ref=>tx.get(ref)));
+        const classRef=db.doc('masterRosterClasses/'+c.id), classSnap=await tx.get(classRef);
+        if(!classSnap.exists || classSnap.data().semesterCrossed!==c.semesterCrossed || classSnap.data().yearCrossed!==c.yearCrossed || norm(classSnap.data().chapter)!==norm(c.chapter) || classKey(classSnap.data().pledgeClass)!==classKey(c.pledgeClass))throw Error('The class changed. Reopen this editor.');
+        snapshots.forEach((snap,i)=>{
+          const old=report.nodes[i],now=snap.data();
+          if(!snap.exists || now.term!==old.term || now.year!==old.year || norm(now.chapter)!==norm(c.chapter) || classKey(now.pledgeClass)!==classKey(c.pledgeClass))throw Error('A tree record changed. Reopen this editor before saving.');
+        });
+        refs.forEach(ref=>tx.update(ref,{term:term.input.value,year:Number(year.input.value)}));
+        tx.update(classRef,{semesterCrossed:term.input.value,yearCrossed:Number(year.input.value)});
+      });d.close();
+    }),'p-btn primary'));
+    const d=P.dialog('Class Crossing',form);
+  }
+  P.renderRosterDiscrepancies = content => {
+    if(!P.me.isAdmin) return;
+    if(loadedSources.size < 4) { content.append(P.empty('Loading roster and family-tree records…')); return; }
+    content.append(P.el('p','p-muted','Review crossing dates and roster-to-tree differences. Dates are shared by the whole chapter pledge class; conflicting records are never chosen automatically.'));
+    let count=0;
+    classes.forEach(c=>{
+      const report=P.rosterClassCrossing(c);
+      if(!report.conflict && report.label && !report.missing.length) return;
+      count++;
+      const card=P.el('section','p-card p-crossing-review');
+      card.append(P.el('h3','',c.chapter+' · '+c.pledgeClass+' Class'),P.el('p','p-muted',report.conflict?'Conflicting dates: '+report.dates.join(' / '):!report.label?'Crossing date not recorded':report.missing.length+' tree records missing a complete crossing date'));
+      report.nodes.forEach(n=>card.append(P.el('p','p-crossing-record',(n.pledgeName||n.name||'Brother')+' · '+(n.name||'')+' — '+([n.term,n.year].filter(Boolean).join(' ')||'Not recorded'))));
+      card.append(P.button('Set Class Crossing',()=>setClassCrossing(c)));content.append(card);
+    });
+    tree.filter(t=>!classes.some(c=>norm(c.chapter)===norm(t.chapter)&&classKey(c.pledgeClass)===classKey(t.pledgeClass))).forEach(t=>{
+      count++;const card=P.el('div','p-card p-crossing-review');
+      card.append(P.el('strong','',t.pledgeName||t.name||'Tree record'),P.el('p','p-muted','No matching roster class: '+(t.chapter||'Missing chapter')+' / '+(t.pledgeClass||'Missing class')),P.button('Review Tree Record',()=>window.napFocusFamilyMember(t.id)));content.append(card);
+    });
+    people.forEach(r=>{
+      const c=classes.find(c=>c.id===r.classID), problem=c?issue(r,c):'Missing roster class';
+      const duplicate=people.some(other=>other.id!==r.id && other.classID===r.classID && norm(other.fullName) && norm(other.fullName)===norm(r.fullName));
+      if(!problem&&!duplicate) return;
+      count++;const card=P.el('div','p-card p-crossing-review');
+      card.append(P.el('strong','',(r.pledgeName||r.fullName)+' · '+(c?c.chapter+' / '+c.pledgeClass:'Unassigned')),P.el('p','p-muted',[problem,duplicate?'Duplicate roster identity':''].filter(Boolean).join(' · ')));
+      card.append(P.button(c?'Compare Records':'Edit Entry',()=>c?compare(r,c):edit(r)));content.append(card);
+    });
+    if(!count)content.append(P.empty('No roster or crossing-date discrepancies found.'));
+  };
   function candidates(r) {
     return tree.filter(
       (t) =>
@@ -127,6 +192,7 @@
         .filter((c) => !chapter || c.chapter === chapter)
         .forEach((c) => {
           const roles = P.rosterClassRoles(people.filter(r => r.classID === c.id));
+          const crossing = P.rosterClassCrossing(c);
           const members = people.filter(
             (r) =>
               r.classID === c.id &&
@@ -142,6 +208,7 @@
           group.open=!!search || expandedClasses.has(c.id);
           group.addEventListener("toggle",()=>{if(search)return;if(group.open)expandedClasses.add(c.id);else expandedClasses.delete(c.id);});
           const label=P.el("span","p-roster-class-label");label.append(P.el("small","",c.chapter+" Chapter"),P.el("strong","",c.pledgeClass+" Class"));
+          label.append(P.el("small","p-roster-crossing",crossing.conflict?"Crossing date under review":crossing.label||"Crossing date not recorded"));
           h.append(label,P.el("span","p-roster-count",members.length+(members.length===1?" brother":" brothers")),P.el("span","p-roster-chevron","⌄"));
           if (P.me.isAdmin)
             group.append(P.button("Edit class", () => editClass(c), "p-btn p-roster-edit-class"));
@@ -177,6 +244,7 @@
                             " · " +
                             c.pledgeClass +
                             " Class" +
+                            (crossing.label ? " · " + crossing.label : "") +
                             (r.fallen
                               ? " · Fallen Brother. May he rest in peace."
                               : "") +
@@ -189,6 +257,7 @@
               ),
               P.el("p", "p-muted", r.fullName),
             );
+            if(crossing.label) info.append(P.el("small","p-roster-crossing","Crossed "+crossing.label));
             if (roles.has(r.id)) {
               const badge=P.el('span','p-roster-role',roles.get(r.id));
               badge.title=roles.get(r.id)+' of the pledge class';
@@ -244,6 +313,7 @@
         "p-btn primary",
       ),
     );
+    if(c) form.append(P.button("Set Class Crossing",()=>setClassCrossing(c)));
     if (c)
       form.append(
         P.button(
@@ -435,11 +505,11 @@
   }
   P.ready(() => {
     P.watch(db.collection('rosterAccountLinks'),rows=>{accountLinks=Object.fromEntries(rows.map(r=>[r.id,r]));render();},P.root('roster'));
-    P.watch(db.collection("rosterTreeLinks"), rows => { links = Object.fromEntries(rows.map(r => [r.id,r])); render(); }, P.root("roster"));
+    P.watch(db.collection("rosterTreeLinks"), rows => { loadedSources.add("links"); links = Object.fromEntries(rows.map(r => [r.id,r])); render(); }, P.root("roster"));
     P.watch(
       db.collection("masterRosterClasses"),
       (r) => {
-        classes = r;
+        loadedSources.add("classes"); classes = r;
         render();
       },
       P.root("roster"),
@@ -447,7 +517,7 @@
     P.watch(
       db.collection("masterRoster"),
       (r) => {
-        people = r;
+        loadedSources.add("people"); people = r;
         render();
       },
       P.root("roster"),
@@ -455,7 +525,7 @@
     P.watch(
       db.collection("familyTree"),
       (r) => {
-        tree = r;
+        loadedSources.add("tree"); tree = r;
         render();
       },
       P.root("roster"),

@@ -20,15 +20,31 @@
   };
   function lineageCard(b) {
     const family=P.profileLineage(b),box=P.el('section','p-card p-profile-lineage');
-    box.append(P.el('h3','','Family tree'),P.el('p','p-muted','Big and little relationships are synced from the family tree.'));
+    const header=P.el('div','p-lineage-header');
+    const heading=P.el('div');heading.append(P.el('h3','','Family Tree'),P.el('span','p-muted','Your brotherhood connections'));
+    header.append(heading);
+    if(family.status==='linked') header.append(P.button('View tree ↗',()=>window.napFocusFamilyMember(family.node.id),'p-lineage-link'));
+    box.append(header);
     if(family.status!=='linked') {
-      box.append(P.el('p','p-muted',family.status==='loading'?'Loading family tree…':'No unique family-tree match yet. Ask an administrator to link the correct tree record.'));
+      box.append(P.el('p','p-lineage-empty',family.status==='loading'?'Loading connections…':'Your family-tree connection hasn’t been linked yet. An administrator can help.'));
       return box;
     }
-    const row=(label,nodes,empty)=>{const group=P.el('div','p-lineage-group');group.append(P.el('strong','',label));if(!nodes.length)group.append(P.el('span','p-muted',empty));nodes.forEach(n=>{const name=[n.pledgeName,n.name].filter(Boolean).join(' · ');group.append(P.button(name||'View brother',()=>window.napFocusFamilyMember(n.id),'p-btn p-lineage-person'));});box.append(group);};
-    row('Big',family.big?[family.big]:[],family.node.bigId?'Big’s tree record is unavailable':'No big recorded');
-    row(family.littles.length===1?'Little':'Littles',family.littles,'No littles recorded');
-    box.append(P.button('View family tree',()=>window.napFocusFamilyMember(family.node.id),'p-btn'));
+    const grid=P.el('div','p-lineage-grid');
+    const row=(label,nodes,empty)=>{
+      const group=P.el('div','p-lineage-group');group.append(P.el('strong','p-lineage-label',label));
+      if(!nodes.length)group.append(P.el('span','p-lineage-empty',empty));
+      nodes.forEach(n=>{
+        const button=P.button('',()=>window.napFocusFamilyMember(n.id),'p-lineage-person');
+        const monogram=P.el('span','p-lineage-avatar',(n.pledgeName||n.name||'?').slice(0,2).toUpperCase());
+        monogram.setAttribute('aria-hidden','true');
+        const text=P.el('span','p-lineage-identity');text.append(P.el('strong','',n.pledgeName||n.name||'Brother'));
+        if(n.name)text.append(P.el('small','',n.name));
+        button.append(monogram,text,P.el('span','p-lineage-arrow','›'));group.append(button);
+      });grid.append(group);
+    };
+    row('Big',family.big?[family.big]:[],family.node.bigId?'Record unavailable':'Not recorded');
+    row(family.littles.length===1?'Little':'Littles',family.littles,'No littles yet');
+    box.append(grid);
     return box;
   }
   let current;
