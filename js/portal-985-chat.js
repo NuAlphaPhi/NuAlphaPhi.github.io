@@ -772,13 +772,23 @@
         !mutes.has(i.roomID) &&
         (notificationFilter==='all'||notificationFilter==='unread'&&!i.read||notificationFilter==='mentions'&&i.kind==='mentions'||notificationFilter==='events'&&i.eventID),
     );
-    bell.hidden = !visible.some((i) => !i.read);
+    bell.hidden = !items.some(i => !i.read && !P.blocks.has(i.actor) && !mutes.has(i.roomID));
     list.replaceChildren();
-    const filter=P.select('Notifications',[['all','All'],['unread','Unread'],['mentions','Mentions'],['events','Events']],notificationFilter);filter.input.onchange=()=>{notificationFilter=filter.input.value;notifications();};
-    list.append(filter.wrap,P.button('Mark all read',()=>P.run(list,async()=>{const pending=items.filter(i=>!i.read);for(let n=0;n<pending.length;n+=400){const batch=db.batch();pending.slice(n,n+400).forEach(i=>batch.update(db.doc('activity/'+P.uid+'/items/'+i.id),{read:true}));await batch.commit();}})));
+    const toolbar=P.el('div','p-notification-toolbar'),filters=P.el('div','p-notification-filters');
+    filters.setAttribute('aria-label','Filter notifications');
+    for(const [value,label] of [['all','All'],['unread','Unread'],['mentions','Mentions'],['events','Events']]) {
+      const button=P.button(label,()=>{notificationFilter=value;notifications();},'p-notification-filter');
+      button.setAttribute('aria-pressed',String(notificationFilter===value));filters.append(button);
+    }
+    const mark=P.button('Mark all read',()=>P.run(list,async()=>{
+      mark.disabled=true;
+      try { const pending=items.filter(i=>!i.read);for(let n=0;n<pending.length;n+=400){const batch=db.batch();pending.slice(n,n+400).forEach(i=>batch.update(db.doc('activity/'+P.uid+'/items/'+i.id),{read:true}));await batch.commit();} }
+      finally {mark.disabled=false;}
+    }),'p-notification-mark');
+    mark.disabled=!items.some(i=>!i.read);toolbar.append(filters,mark);list.append(toolbar);
     visible.forEach((i) => {
       const b = P.button(
-        (i.read ? "" : "● ") + (i.title || "985") + " — " + (i.body || ""),
+        "",
         () =>
           P.run(list, async () => {
             await db
@@ -797,21 +807,44 @@
                 conversations.find((r) => r.id === i.roomID);
               if (r) open(r);
             } else if (i.kind === "applications") P.go("admin");
-            document.getElementById("notificationDropdown").hidden = true;
+            closeNotifications();
           }),
-        "p-choice",
+        "p-notification-item" + (i.read ? "" : " is-unread"),
       );
-      list.append(b);
+      const copy=P.el('span','p-notification-copy');
+      copy.append(P.el('strong','',i.title||'985'));
+      if(i.body)copy.append(P.el('span','p-notification-body',i.body));
+      if(i.createdAt)copy.append(P.el('time','p-notification-time',P.when(i.createdAt)));
+      const dot=P.el('span','p-notification-dot');dot.setAttribute('aria-hidden','true');
+      b.append(dot,copy);list.append(b);
     });
     if (!visible.length) list.append(P.empty("You’re all caught up."));
   }
-  document.getElementById("notificationBellBtn").onclick = () => {
-    const d = document.getElementById("notificationDropdown");
-    d.hidden = !d.hidden;
-    document
-      .getElementById("notificationBellBtn")
-      .setAttribute("aria-expanded", String(!d.hidden));
+  function closeNotifications(restoreFocus=false) {
+    document.getElementById('notificationDropdown').hidden=true;
+    const bell=document.getElementById('notificationBellBtn');bell.setAttribute('aria-expanded','false');
+    if(restoreFocus)bell.focus();
+  }
+  const notificationPanel=document.getElementById('notificationDropdown');
+  const notificationBell=document.getElementById('notificationBellBtn');
+  notificationBell.setAttribute('aria-controls','notificationDropdown');
+  notificationPanel.setAttribute('aria-label','Notifications');
+  notificationPanel.setAttribute('role','region');
+  notificationBell.onclick=()=>{
+    const opening=notificationPanel.hidden;
+    notificationPanel.hidden=!opening;notificationBell.setAttribute('aria-expanded',String(opening));
+    if(opening)notifications();
   };
+  document.addEventListener('pointerdown',event=>{
+    if(!notificationPanel.hidden && !notificationPanel.contains(event.target) && !notificationBell.contains(event.target))closeNotifications();
+  },true);
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!notificationPanel.hidden){event.preventDefault();closeNotifications(true);}
+  });
+  document.addEventListener('focusin',event=>{
+    if(!notificationPanel.hidden && !notificationPanel.contains(event.target) && !notificationBell.contains(event.target))closeNotifications();
+  });
+  document.addEventListener('nap:tab-changed',()=>closeNotifications());
   document.addEventListener("p985:access", ()=>{lists();restoreChannel();});
   document.addEventListener("p985:blocks", () => {
     lists();

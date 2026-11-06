@@ -397,3 +397,25 @@
 @media(max-width:540px) { .p-lineage-grid { grid-template-columns:1fr;gap:18px; }.p985 .p-profile-lineage { padding:18px; } }
 .p-roster-crossing { display:block;font-size:12px;color:var(--grey-400);margin-top:5px; }
 .p-crossing-review { margin-bottom:14px; }.p-crossing-review h3 { font-size:15px;margin:0 0 8px; }.p-crossing-record { font-size:13px;margin:7px 0;color:var(--grey-400); }
+/* Compact notification inbox. */
+.portal-design #notificationDropdown { padding:0; width:min(380px,calc(100vw - 32px)); background:var(--portal-card); overflow:auto; border-radius:16px; }
+#notificationDropdown .notification-dropdown__header { padding:18px 18px 12px;margin:0; }
+#notificationDropdown .notification-dropdown__title { text-transform:none;letter-spacing:-.02em;font-size:17px;color:var(--black); }
+#notificationList { display:block; }
+.p-notification-toolbar { padding:0 14px 12px; border-bottom:1px solid var(--grey-200); }
+.p-notification-filters { display:flex;gap:4px;padding:3px;border-radius:9px;background:#8881; }
+.p-notification-filter { flex:1;border:0;border-radius:7px;padding:7px 5px;background:transparent;color:var(--grey-400);font-weight:500;line-height:1.4;font-family:inherit;font-size:12px;cursor:pointer; }
+.p-notification-filter[aria-pressed=true] { background:#a75d7822;color:var(--black); }
+.p-notification-mark { display:block;margin:10px 0 0 auto;border:0;background:none;color:#c889a0;font:inherit;font-size:11px;cursor:pointer;padding:3px 0; }
+.p-notification-mark:disabled { opacity:.45;cursor:default; }
+.p-notification-item { display:flex;align-items:flex-start;gap:10px; width:100%;padding:15px 18px;border:0;border-bottom:1px solid var(--grey-200);background:transparent;color:var(--black);font:inherit;text-align:left;cursor:pointer; }
+.p-notification-item:last-child { border-bottom:0; }
+.p-notification-item:hover { background:#8881; }.p-notification-item.is-unread { background:#a75d7808; }
+.p-notification-copy { display:grid;gap:5px;min-width:0;overflow-wrap:anywhere; }
+.p-notification-copy strong { font-size:13px;line-height:1.4;font-weight:600; }
+.p-notification-body { font-size:12px;line-height:1.55;color:var(--grey-400); }
+.p-notification-time { font-size:10px;color:var(--grey-400);margin-top:2px; }
+.p-notification-dot { width:6px;height:6px;flex-shrink:0;margin-top:6px;border-radius:50%;background:transparent; }
+.is-unread .p-notification-dot { background:#c889a0; }
+#notificationDropdown button:focus-visible { outline:2px solid #c889a0;outline-offset:-2px; }
+#notificationDropdown .p-empty { padding:30px 18px;font-size:13px;color:var(--grey-400); }

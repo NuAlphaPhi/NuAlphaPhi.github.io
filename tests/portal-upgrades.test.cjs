@@ -194,3 +194,13 @@ test('conflicting class crossing dates never silently select a semester',()=>{
  const missing=c.P985.rosterClassCrossing(cls,[{...base,term:'Fall'}]);assert.equal(missing.label,'');assert.equal(missing.missing.length,1);
  const saved=c.P985.rosterClassCrossing({...cls,semesterCrossed:'Summer',yearCrossed:1995},[{...base,term:'Fall',year:1994}]);assert.equal(saved.conflict,true);
 });
+
+test('notification inbox closes outside, stays open inside, and keeps bell state in sync',()=>{
+ const c=setup();vm.runInContext(fs.readFileSync('js/portal-985-chat.js','utf8'),c);
+ const bell=c.document.getElementById('notificationBellBtn'),panel=c.document.getElementById('notificationDropdown');
+ bell.click();assert.equal(panel.hidden,false);assert.equal(bell.getAttribute('aria-expanded'),'true');
+ panel.dispatchEvent(new c.Event('pointerdown',{bubbles:true}));assert.equal(panel.hidden,false);
+ const unread=panel.querySelectorAll('.p-notification-filter')[1];unread.click();assert.equal(panel.hidden,false);
+ c.document.body.dispatchEvent(new c.Event('pointerdown',{bubbles:true}));assert.equal(panel.hidden,true);assert.equal(bell.getAttribute('aria-expanded'),'false');
+ bell.click();assert.equal(panel.hidden,false);bell.click();assert.equal(panel.hidden,true);
+});
