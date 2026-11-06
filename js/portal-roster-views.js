@@ -15,6 +15,6 @@ P.renderRosterMatrix=(container,data,mode,chapter,query)=>{
  chapters.forEach(ch=>{const td=P.el('td'),entries=p.entries?.filter(e=>e.chapter===ch)||[],count=total?model.totals[E.CHAPTERS.indexOf(ch)]:entries.length;
  if(stats){td.textContent=String(count);td.className=count?'p-matrix-count has-crossings':'p-matrix-zero';}
  else if(!entries.length){td.className='p-matrix-empty';td.setAttribute('aria-label','No recorded crossing');}
- else{let cls='';entries.forEach(e=>{if(cls!==e.className){cls=e.className;td.append(P.el('strong','p-matrix-class',cls+' Class'));}const person=P.el('div',e.disaffiliated?'p-matrix-disaffiliated':e.fallen?'p-matrix-fallen':'');person.textContent=e.disaffiliated?'Disaffiliated':e.values[2]+' · '+[e.values[3],e.values[4]].filter(Boolean).join(' ')+(e.fallen?' · RIP':'');td.append(person);});}tr.append(td);});body.append(tr);}
+ else{let cls='';entries.forEach(e=>{if(cls!==e.className){cls=e.className;td.append(P.el('strong','p-matrix-class',cls+' Class'));}const person=P.el('div',e.disaffiliated?'p-matrix-disaffiliated':e.fallen?'p-matrix-fallen':'');person.textContent=e.values[2]+' · '+[e.values[3],e.values[4]].filter(Boolean).join(' ')+(e.fallen?' · RIP':'');if(e.disaffiliated)person.append(P.el('span','p-matrix-status','Disaffiliated'));td.append(person);});}tr.append(td);});body.append(tr);}
  if(stats)row({},true);model.periods.forEach(p=>row(p));table.append(head,body);scroll.append(table);container.append(intro,scroll);
 };})();
