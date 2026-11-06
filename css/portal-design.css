@@ -221,3 +221,9 @@ html:is([data-theme="dark"],[data-theme="darker"],[data-theme="maroon"]) { color
 .portal-design .notification-bell__btn { background: transparent; border-color: #ffffff14; }
 .portal-design .portal-view-title, .portal-design .bro-card__name { overflow-wrap: anywhere; }
 .portal-design .form-group, .portal-design .form-grid > *, .portal-design .portal-panel-content { min-width: 0; }
+
+/* Compact donation action shared by every portal page. */
+.portal-donate-link { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--grey-200); border-radius: 9px; color: var(--grey-600); background: transparent; font-size: .8125rem; font-weight: 600; line-height: 1.2; white-space: nowrap; text-decoration: none; transition: background .15s, color .15s, border-color .15s; }
+.portal-donate-link span { color: var(--maroon); font-size: 1rem; }
+.portal-donate-link:hover { background: var(--grey-100); color: var(--black); border-color: var(--maroon); text-decoration: none; }
+.portal-donate-link:focus-visible { outline: 2px solid var(--maroon); outline-offset: 3px; }

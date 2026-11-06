@@ -1,12 +1,6 @@
 /* Presentation helpers only; account and data actions remain in their existing modules. */
 (function () {
   "use strict";
-  var today = document.getElementById("portalToday");
-  if (today) {
-    var now = new Date();
-    today.dateTime = now.toISOString().slice(0, 10);
-    today.textContent = now.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  }
   document.addEventListener("click", function (event) {
     var shortcut = event.target.closest("[data-portal-go]");
     if (shortcut && window.napSetTab) window.napSetTab(shortcut.getAttribute("data-portal-go"));
