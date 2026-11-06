@@ -136,7 +136,10 @@
       if(auth.currentUser?.uid !== user.uid) return;
       if ((tab === "blog") && profile.isAdmin !== true) tab = navTab = "home";
       loading("Opening your workspace…");
-      showTab(tab, navTab, opts);
+      if (tab === "settings" && window.napOpenSettings) {
+        if (!document.querySelector('.portal-shell__main > .portal-tab-panel:not([hidden])')) showTab("home", "home", {replace:true});
+        window.napOpenSettings();
+      } else showTab(tab, navTab, opts);
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       if(ticket === navigationId) loader.hidden = true;
     } catch(error) {

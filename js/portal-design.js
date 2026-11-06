@@ -29,3 +29,37 @@
     syncThemeLabel();
   }
 })();
+
+/* Settings stays in a dialog so opening it preserves the current workspace. */
+(function () {
+  const panel = document.getElementById('panel-settings');
+  const trigger = document.getElementById('portalSettingsOpen');
+  if (!panel || !trigger) return;
+  const dialog = document.createElement('dialog');
+  dialog.className = 'portal-settings-dialog';
+  dialog.setAttribute('aria-label', 'Settings');
+  const close = document.createElement('button');
+  close.className = 'portal-settings-close';
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close settings');
+  close.textContent = '×';
+  const navigation = panel.querySelector('#settingsSubTabs');
+  const body = document.createElement('div');
+  body.className = 'portal-settings-body';
+  Array.from(panel.children).forEach(child => { if (child !== navigation) body.append(child); });
+  panel.append(navigation, body);
+  dialog.append(close, panel);
+  document.body.append(dialog);
+  function open() {
+    panel.hidden = false;
+    if (!dialog.open) dialog.showModal();
+  }
+  trigger.onclick = open;
+  close.onclick = () => dialog.close();
+  dialog.addEventListener('click', event => { if (event.target === dialog) {
+    const r = dialog.getBoundingClientRect();
+    if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.close();
+  }});
+  dialog.addEventListener('close', () => trigger.focus());
+  window.napOpenSettings = open;
+})();

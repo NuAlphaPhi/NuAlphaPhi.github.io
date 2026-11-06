@@ -461,3 +461,21 @@
 
 .portal-shell__brand .portal-brand-logo{display:block;width:175px;max-width:none;height:auto;flex:0 0 175px;object-fit:contain;margin:0 auto;}
 .p-activity-list{display:grid;gap:12px;margin-top:20px}.p-activity-entry{padding:20px!important}.p-activity-entry>small{display:block;margin-top:6px}.p-activity-entry>p{margin:10px 0;font-size:14px;overflow-wrap:anywhere}.p-activity-entry summary{cursor:pointer;color:var(--maroon-light,#d79bad);font-size:13px;margin:12px 0}.p-activity-diff{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;margin:16px 0}.p-activity-diff td,.p-activity-diff th{text-align:left;padding:10px;border-bottom:1px solid var(--grey-300,#333);overflow-wrap:anywhere;vertical-align:top}
+/* Keep shared chrome identical on every route. */
+.portal-design .portal-shell__brand{flex-shrink:0;}
+.portal-design .portal-shell__brand .portal-brand-logo{width:175px!important;height:61px!important;min-width:175px;min-height:61px;max-width:175px;max-height:61px;flex:0 0 175px;object-fit:contain;}
+.portal-design .portal-shell__user-row{display:flex;align-items:center;}
+.portal-design .portal-shell__user-name{margin:0;display:block;}
+#portalSettingsOpen{margin-left:auto;flex-shrink:0;color:#b7b3c2;}
+.portal-workbar__actions .notification-bell{margin:0;position:relative;}
+.portal-design .portal-workbar #notificationDropdown{position:absolute;top:calc(100% + 14px);right:0;left:auto;bottom:auto;max-height:70dvh;}
+.portal-settings-dialog{width:min(1000px,calc(100vw - 32px));height:min(760px,calc(100dvh - 40px));max-width:none;max-height:none;padding:0;border:1px solid var(--portal-border,#34343e);border-radius:18px;background:var(--portal-bg,#121217);color:var(--black,#f5f5f7);box-shadow:0 30px 100px #0006;overflow:hidden;}
+.portal-settings-dialog::backdrop{background:#0009;backdrop-filter:blur(4px);}
+.portal-settings-dialog #panel-settings{display:grid;grid-template-columns:220px minmax(0,1fr);height:100%;padding:0;margin:0;}
+.portal-settings-dialog #settingsSubTabs{display:flex;flex-direction:column;align-items:stretch;gap:6px;background:var(--portal-card,#19191f);border:0;padding:64px 16px 24px;margin:0;overflow:auto;}
+.portal-settings-dialog #settingsSubTabs .sub-tabs__btn{text-align:left;border:0;border-radius:8px;padding:12px;font-size:14px;white-space:normal;}
+.portal-settings-dialog #settingsSubTabs .is-active{background:#a84a6826;color:var(--maroon-light,#db9cb3);}
+.portal-settings-body{overflow-y:auto;min-width:0;padding:36px 36px 60px;}
+.portal-settings-body .portal-view-title{font-size:26px;}.portal-settings-body .section-label{display:none;}
+.portal-settings-close{position:absolute;right:14px;top:12px;width:32px;height:32px;border:1px solid var(--portal-border,#34343e);border-radius:50%;background:var(--portal-card,#19191f);color:inherit;font-size:24px;cursor:pointer;z-index:2;}
+@media(max-width:600px){.portal-settings-dialog #panel-settings{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);}.portal-settings-dialog #settingsSubTabs{flex-direction:row;padding:48px 12px 12px;}.portal-settings-body{padding:20px;}}

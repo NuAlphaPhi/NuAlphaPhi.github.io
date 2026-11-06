@@ -1018,7 +1018,7 @@ html:not([data-theme="dark"]) .p-dialog {
 }
 @media (min-width: 1100px) {
   .portal-design:has(#panel-home:not([hidden])) .portal-shell__sidebar {
-    width: 230px;
+    width: 256px;
   }
 }
 @media (max-width: 1100px) {

@@ -29,9 +29,9 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <link href="css/nap.css" rel="stylesheet">
     <link href="css/portal-design.css" rel="stylesheet">
-<link href="css/portal-985.css?v=tree-profile-2-selection-2-20261104-paste" rel="stylesheet">
+<link href="css/portal-985.css?v=settings-dialog-1" rel="stylesheet">
 <link href="vendor/leaflet/leaflet.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/portal-upgrades.css?v=portal-logo-fixed-1">
+    <link rel="stylesheet" href="css/portal-upgrades.css?v=settings-dialog-1">
 <link rel="stylesheet" href="css/linktree-surface.css?v=editor-1">
 <link rel="stylesheet" href="/css/portal-selects.css?v=1">
 <link rel="stylesheet" href="/css/portal-idle.css?v=1">
@@ -76,7 +76,6 @@
                 </div>
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Account</p>
                     <button class="portal-shell__nav-btn" type="button" data-tab="myprofile"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>My Profile</span></button>
-                    <button class="portal-shell__nav-btn" type="button" data-tab="settings"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 3-1 3-3 1-3 3 2 2-1 3 3 3 3-1 2 4 3-2 1-3 3-1 2-3-2-2V6l-4-1-2-3z"/><circle cx="12" cy="12" r="3"/></svg><span>Settings</span></button>
                 </div>
                 <div class="portal-nav-group"><p class="portal-nav-group__label">Management</p>
                     <button class="portal-shell__nav-btn" type="button" data-tab="blog" id="blogNavBtn" hidden><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-12 12H4v-5zM14 5l5 5"/></svg><span>Blog</span></button>
@@ -89,10 +88,19 @@
                 <div class="portal-shell__user-row">
                     <span id="portalUserAvatar"></span>
                     <div>
-                        <p class="portal-shell__user-label">Brother account</p>
+
                         <p class="portal-shell__user-name" id="portalPledgeName"></p>
                     </div>
-                    <div class="notification-bell">
+<button class="portal-icon-button" id="portalSettingsOpen" type="button" aria-label="Open settings"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m10 3-1 3-3 1-3 3 2 2-1 3 3 3 3-1 2 4 3-2 1-3 3-1 2-3-2-2V6l-4-1-2-3z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                </div>
+            </div>
+            <button class="portal-shell__signout" id="portalSignOut" type="button"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H3v16h6m6-13 5 5-5 5M8 12h12"/></svg>Sign Out</button>
+        </aside>
+
+        <main id="main" class="portal-shell__main">
+            <header class="portal-workbar">
+                <p class="portal-breadcrumb">National Portal <span>/</span> <strong id="portalCurrentSection">Home</strong></p>
+                <div class="portal-workbar__actions"><time id="portalToday"></time>                    <div class="notification-bell">
                         <button class="notification-bell__btn" id="notificationBellBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
                             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -107,16 +115,7 @@
                             </div>
                             <div class="notification-dropdown__list" id="notificationList"></div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <button class="portal-shell__signout" id="portalSignOut" type="button"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4H3v16h6m6-13 5 5-5 5M8 12h12"/></svg>Sign Out</button>
-        </aside>
-
-        <main id="main" class="portal-shell__main">
-            <header class="portal-workbar">
-                <p class="portal-breadcrumb">National Portal <span>/</span> <strong id="portalCurrentSection">Home</strong></p>
-                <div class="portal-workbar__actions"><time id="portalToday"></time><button class="portal-icon-button" id="portalQuickTheme" type="button" aria-label="Switch to light mode"><svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1 1m12 12 1 1M5 19l1-1M18 6l1-1"/></svg></button><a href="/operations/" class="portal-site-link">Chapter Operations <svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
+                    </div><a href="/operations/" class="portal-site-link">Chapter Operations <svg class="portal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
             </header>
 
 
@@ -1149,7 +1148,7 @@
     <script src="js/firebase-config.js"></script>
     <script src="/js/portal-phone.js?v=portal-polish-2"></script>
     <script src="js/portal-auth.js?v=profile-routes-1"></script>
-    <script src="js/portal-shell.js?v=profile-links-1"></script>
+    <script src="js/portal-shell.js?v=settings-dialog-1"></script>
     <script src="js/portal-save-feedback.js?v=portal-upgrade-20261104"></script>
     <script src="js/portal-confirm.js?v=portal-upgrade-20261104"></script>
     <script src="js/portal-settings.js?v=phone-format-2"></script>
@@ -1169,7 +1168,7 @@
     <script src="js/portal-birthdays.js?v=content-polish-4"></script>
 
 
-    <script src="js/portal-design.js?v=portal-upgrade-20261104"></script>
+    <script src="js/portal-design.js?v=settings-dialog-1"></script>
 <script src="js/portal-985-policy.js?v=sections-polish-3"></script>
 <script src="js/portal-985-core.js?v=portal-polish-2"></script>
 <script src="js/portal-985-attachments.js?v=portal-upgrade-20261104"></script>
