@@ -522,6 +522,10 @@
         "pledgeNumber",
       );
     form.append(P.el("p", "p-muted", "Chapter, pledge class, and crossing date come from the master roster. Big and little relationships come from the family tree."));
+    const roster=P.rosterData;
+    const ownRecord=roster?.people.find(r=>r.id===(roster.accountLinks?.[b.uid]?.rosterID||b.rosterID));
+    const ownClass=roster?.classes.find(c=>c.id===ownRecord?.classID);
+    if(b.uid===P.uid && ownClass && (!(ownClass.pledgeMasterIDs||[]).length || !(ownClass.pledgeWardenIDs||[]).length)) form.append(P.classRequestForm(ownClass,true));
     keys.forEach((k) => {
       const labels = { phone: "Phone Number", job: "Occupation", educationStatus: "Education Status", linkedin: "LinkedIn", twitter: "X / Twitter" };
       const value = k === "job" ? (b.job || b.occupation || "") : k === "currentLocation" ? (b.currentLocation || b.location || "") : b[k + "ProfileURL"] || b[k];

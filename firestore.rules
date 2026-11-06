@@ -293,6 +293,27 @@ function rosterClassValid(d) {
     && d.chapter in ['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa']
     && d.pledgeClass is string && d.pledgeClass.size() > 0 && d.pledgeClass.size() <= 80;
 }
+match /classLeadershipRequests/{id} {
+ allow read: if isSocialAdmin() || (isSocialMember() && resource.data.requestedBy == request.auth.uid);
+ allow create: if isSocialMember()
+  && request.resource.data.keys().hasOnly(['classID','requestedBy','status','changes','createdAt'])
+  && request.resource.data.requestedBy == request.auth.uid
+  && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time
+  && request.resource.data.classID is string
+  && exists(/databases/$(database)/documents/masterRosterClasses/$(request.resource.data.classID))
+  && request.resource.data.changes is map
+  && request.resource.data.changes.keys().hasOnly(['pledgeMasterIDs','pledgeWardenIDs'])
+  && request.resource.data.changes.keys().size() > 0
+  && request.resource.data.changes.get('pledgeMasterIDs',[]) is list
+  && request.resource.data.changes.get('pledgeMasterIDs',[]).size() <= 4
+  && request.resource.data.changes.get('pledgeWardenIDs',[]) is list
+  && request.resource.data.changes.get('pledgeWardenIDs',[]).size() <= 20;
+ allow update: if isSocialAdmin() && resource.data.status == 'pending'
+  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','reviewedBy','reviewedAt'])
+  && request.resource.data.status in ['approved','rejected']
+  && request.resource.data.reviewedBy == request.auth.uid && request.resource.data.reviewedAt == request.time;
+ allow delete: if false;
+}
 match /masterRosterClasses/{id} {
   allow read: if isSocialMember();
   allow create, update: if isSocialAdmin() && rosterClassValid(request.resource.data);

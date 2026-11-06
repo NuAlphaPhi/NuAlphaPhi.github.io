@@ -526,3 +526,4 @@
 .p-class-leadership{display:flex;flex-wrap:wrap;gap:24px;padding:16px 24px;border-bottom:1px solid var(--grey-200)}
 .p-class-leadership-names{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}
 .p-class-profile-leadership{margin:20px 24px}.p-class-profile-leadership h3{margin:0 0 16px}.p-class-profile-role+.p-class-profile-role{border-top:1px solid var(--grey-200);margin-top:16px;padding-top:16px}.p-class-profile-role h4{color:var(--grey-400);font-size:13px;margin:0 0 10px}.p-class-profile-role>button{margin:0 8px 8px 0}
+.p-leadership-section{margin-top:32px}.p-leadership-section>h2{font-size:1.15rem;margin-bottom:16px}.p-leadership-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.p-leadership-seat{padding:22px;min-width:0}.p-leadership-seat h3{font-size:.85rem;color:var(--grey-400);margin:0 0 16px}.p-leadership-seat .p-name{white-space:normal;text-align:left}

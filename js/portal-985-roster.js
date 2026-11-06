@@ -244,6 +244,9 @@
             actions.append(P.button("Edit Class",()=>editClass(c)),P.button("Add Brother",()=>edit(null,c.id)));
             group.append(actions);
           }
+          const suggest=P.el('div','p-roster-class-actions');
+          suggest.append(P.button('Suggest PMs / PWs',()=>P.suggestClassLeadership(c)));
+          group.append(suggest);
           group.prepend(h);
           const leadership=P.el('div','p-class-leadership');
           for(const [key,title] of [['pledgeMasterIDs','Pledge Masters'],['pledgeWardenIDs','Pledge Wardens']]){
