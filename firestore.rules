@@ -365,6 +365,16 @@ match /masterRoster/{id} {
 }
 
 match /organization/{document} { allow read: if isSocialMember(); allow write: if false; }
+match /leadershipPortraits/{id} {
+  allow read: if isSocialMember();
+  allow create, update: if isAdmin()
+    && request.resource.data.keys().hasOnly(['path','updatedBy','updatedAt'])
+    && request.resource.data.path is string
+    && request.resource.data.path.matches('leadershipPortraits/' + id + '/[^/]+[.]jpg')
+    && request.resource.data.updatedBy == request.auth.uid
+    && request.resource.data.updatedAt == request.time;
+  allow delete: if isAdmin();
+}
 match /leadershipAudit/{id} { allow read: if isAdmin(); allow write: if false; }
 match /membershipApplications/{uid} {
   allow read: if request.auth != null && (request.auth.uid == uid || isSocialAdmin());

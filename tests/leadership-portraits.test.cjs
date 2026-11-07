@@ -1,0 +1,19 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const {parseHTML}=require('linkedom');
+const vm=require('node:vm');
+const fs=require('node:fs');
+test('leadership portraits override only directory avatars and admin controls',()=>{
+ const {document}=parseHTML('<html><body><div id="panel-leadership"></div></body></html>');
+ const callbacks={}; const person={pledgeName:'VIRO',avatarPath:'social.jpg'};
+ const P={uid:'viewer',me:{isAdmin:true},chapters:[],rosterData:{people:[]},ready:fn=>fn(),watch:(q,fn)=>callbacks[q]=fn,person:()=>person,name:b=>b.pledgeName,profile:()=>{},el:(tag,cls='',text='')=>{const e=document.createElement(tag);e.className=cls;e.textContent=text;return e;},button:(text,fn,cls)=>{const e=P.el('button',cls,text);e.onclick=fn;return e;},avatar:b=>{const e=P.el('img');e.src=b.avatarPath;return e;}};
+ vm.runInNewContext(fs.readFileSync('js/portal-leadership.js','utf8'),{P985:P,document,db:{doc:x=>x,collection:x=>x}});
+ callbacks['organization/leadership']({slots:{'national-president':'viro'}});
+ callbacks.leadershipPortraits([{id:'viro',path:'professional.jpg'}]);
+ assert.equal(document.querySelector('img').src,'professional.jpg');
+ assert.equal(person.avatarPath,'social.jpg');
+ assert.match(document.body.textContent,/Change portrait/);
+ P.me.isAdmin=false;callbacks.leadershipPortraits([]);
+ assert.equal(document.querySelector('img').src,'social.jpg');
+ assert.equal(document.querySelector('.p-leadership-photo-button'),null);
+});

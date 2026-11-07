@@ -122,6 +122,14 @@ function socialChannel(room) {
       allow read: if isActiveMember() && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
       allow write: if false;
     }
+    match /leadershipPortraits/{uid}/{file} {
+      allow read: if isActiveMember();
+      allow create: if isActiveMember()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true
+        && jpegUnderLimit();
+      allow delete: if isActiveMember()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
     match /profilePhotos/{uid}/{file} {
       allow read: if isActiveMember();
       allow create: if isActiveMember() && request.auth.uid == uid && jpegUnderLimit();
