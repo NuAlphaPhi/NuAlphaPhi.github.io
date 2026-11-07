@@ -3,20 +3,21 @@
   P.toast=(message,undo)=>{document.querySelector('.p-toast')?.remove();const e=P.el('div','p-toast',message);e.setAttribute('role','status');if(undo)e.append(P.button('Undo',()=>P.run(e,async()=>{await undo();e.remove();})));document.body.append(e);setTimeout(()=>e.remove(),undo?10000:4000);};
   P.download=(name,body,type='text/plain')=>{const url=URL.createObjectURL(new Blob([body],{type})),a=P.el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
   P.csv=rows=>rows.map(row=>row.map(value=>'"'+String(value??'').replace(/^[=+@-]/,"'$&").replace(/"/g,'""')+'"').join(',')).join('\r\n');
-  P.calendarFile=e=>{
-    const escape=v=>String(v||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
+  P.googleCalendarURL=e=>{
     const date=v=>P.date(v).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
-    const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Nu Alpha Phi//985//EN','BEGIN:VEVENT','UID:'+e.id+'@nualphaphi.com','DTSTAMP:'+date(Date.now()),'DTSTART:'+date(e.start),'DTEND:'+date(e.end||P.date(e.start).getTime()+3600000),'SUMMARY:'+escape(e.title),'DESCRIPTION:'+escape(e.description),'LOCATION:'+escape(e.locationTBD?'Location TBD':e.location),'BEGIN:VALARM','TRIGGER:-PT1H','ACTION:DISPLAY','DESCRIPTION:Event reminder','END:VALARM','END:VEVENT','END:VCALENDAR'];
-    P.download('985-event.ics',lines.join('\r\n')+'\r\n','text/calendar');
+    const start=P.date(e.start),end=e.end?P.date(e.end):new Date(start.getTime()+3600000);
+    const params=new URLSearchParams({action:'TEMPLATE',text:e.title||'Brotherhood event',dates:date(start)+'/'+date(end),details:(e.description||'')+'\n\nhttps://nualphaphi.com/event/'+encodeURIComponent(e.id),location:e.locationTBD?'Location to be announced':e.location||'',ctz:e.timeZone||'America/New_York'});
+    return 'https://calendar.google.com/calendar/render?'+params;
   };
+  P.eventAction=(label,icon,handler)=>{const b=P.button('',handler,'p-btn p-event-icon-action');b.title=label;b.setAttribute('aria-label',label);b.append(P.icon(icon),P.el('span','',label));return b;};
   P.eventTools=(e,root)=>{
-    const row=P.row(P.button('Add to calendar',()=>P.calendarFile(e)),P.button('My ticket',()=>P.run(root,async()=>{
+    const row=P.row(P.eventAction('Calendar','calendar',()=>window.open(P.googleCalendarURL(e),'_blank','noopener,noreferrer')),P.eventAction('My ticket','ticket',()=>P.run(root,async()=>{
       const t=await P.call('eventTicket',{action:'issue',eventID:e.id}),box=P.el('div');
       const qr=qrcode(0,'M');qr.addData(t.code);qr.make();const image=P.el('img');image.alt='Your event admission QR ticket';image.src=qr.createDataURL(6,24);image.style.maxWidth='100%';box.append(image);
       box.append(P.el('h3','',t.title),P.el('p','',t.checkedInAt?'Already checked in':'Confirmed · party of '+(1+t.plusOneCount)),P.el('p','p-muted','Present this ticket code to the check-in team.'),P.el('code','p-text',t.code),P.button('Copy ticket',async()=>{await navigator.clipboard.writeText(t.code);P.toast('Ticket copied');}));P.dialog('Your ticket',box);
     })));
-    root.append(row);
-    P.call('eventTicket',{action:'capabilities',eventID:e.id}).then(cap=>{if(cap.canScan)row.append(P.button('Check-in desk',()=>P.checkin(e)));}).catch(err=>P.error(root,err));
+    row.classList.add("p-event-quick-actions");root.append(row);
+    P.call('eventTicket',{action:'capabilities',eventID:e.id}).then(cap=>{if(cap.canScan)row.append(P.eventAction('Check-in','scan',()=>P.checkin(e)));}).catch(err=>P.error(root,err));
     const remaining=P.date(e.deadline)-Date.now();
     root.append(P.el('p','p-muted',remaining>0?'RSVP closes in '+(remaining>=86400000?Math.ceil(remaining/86400000)+' days':Math.ceil(remaining/3600000)+' hours'):'RSVP deadline has passed'));
   };

@@ -415,21 +415,21 @@
           ),
         );
       const management=P.el('details','p-event-management'),managementMenu=P.el('div','p-event-management-menu');
-      management.append(P.el('summary','','Manage event'),managementMenu);
+      const manageLabel=P.el('summary','','');manageLabel.title='Manage event';manageLabel.setAttribute('aria-label','Manage event');manageLabel.append(P.icon('settings'),P.el('span','','Manage'));management.append(manageLabel,managementMenu);
       while(actions.firstChild)managementMenu.append(actions.firstChild);
       if(managementMenu.childElementCount)actions.append(management);
       if (e.status === "published") {
         actions.append(
-          P.button("Copy event link", () =>
+          P.eventAction("Copy link", "link", () =>
             P.run(box, async () => {
               await navigator.clipboard.writeText(
                 "https://nualphaphi.com/event/" + id,
               );
-              actions.append(P.el("small", "", "Link copied"));
+              P.toast("Link copied");
             }),
           ),
         );
-        const a = P.el("a", "p-btn", "Public event page");
+        const a = P.el("a", "p-btn p-event-icon-action");a.title="Public event page";a.setAttribute("aria-label","Public event page");a.append(P.icon("external"),P.el("span","","Public page"));
         a.href = "/event/" + encodeURIComponent(id);
         a.target = "_blank";
         a.rel = "noopener";
@@ -438,7 +438,7 @@
       if(organizer && e.hostUid!==P.uid && !P.me.isAdmin) managementMenu.querySelector('.danger')?.remove();
       box.append(actions);
       if(e.status==='published'){
-        const tools=P.el('div','p-event-tools');box.append(tools);P.eventTools(e,tools);
+        const tools=P.el('div','p-event-tools');box.append(tools);P.eventTools(e,tools);const quick=tools.querySelector('.p-event-quick-actions');if(quick)actions.prepend(quick);
         if(organizer||P.me.isAdmin)managementMenu.append(P.button('Send attendee announcement',()=>{
           const content=P.el('div'),field=P.field('Announcement','textarea');field.input.maxLength=1500;
           content.append(field.wrap,P.button('Send to attendees',()=>P.run(content,async()=>{await P.event('announce',id,{body:field.input.value});d.close();P.toast('Announcement sent');})));const d=P.dialog('Event announcement',content);

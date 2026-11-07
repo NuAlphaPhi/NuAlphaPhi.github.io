@@ -36,6 +36,12 @@
   };
   P.icon = (name) => {
     const paths = {
+      calendar: "M4 5h16v16H4zM4 10h16M8 3v4M16 3v4",
+      ticket: "M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 6v12",
+      external: "M14 3h7v7M21 3 10 14M10 3H3v18h18v-7",
+      link: "M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2",
+      scan: "M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M7 12h10",
+      settings: "M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6",
       shield: "M12 2 21 6v6c0 5-9 10-9 10S3 17 3 12V6zM8 12l3 3 5-6",
       plus: "M12 4v16M4 12h16",
       send: "M22 2 9 15M22 2l-7 20-6-7-7-6z",
