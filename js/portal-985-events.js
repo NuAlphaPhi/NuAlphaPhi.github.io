@@ -185,7 +185,50 @@
       "file",
     );
     file.input.accept = "image/*";
-    form.append(file.wrap);
+    const crop = P.el("div", "p-event-crop");
+    crop.hidden = true;
+    const canvas = P.el("canvas");
+    canvas.width = canvas.height = 1200;
+    canvas.tabIndex = 0;
+    canvas.setAttribute("aria-label", "Event cover crop. Drag or use arrow keys to reposition.");
+    const zoom = P.el("input");
+    zoom.type = "range"; zoom.min = 1; zoom.max = 4; zoom.step = .01; zoom.value = 1;
+    zoom.setAttribute("aria-label", "Zoom event cover");
+    let coverBitmap = null, rotation = 0, offsetX = 0, offsetY = 0, drag = null, loadingCover = false, coverRevision = 0, closed = false;
+    function drawCover() {
+      if (!coverBitmap) return;
+      const swapped = rotation % 180 !== 0;
+      const width = swapped ? coverBitmap.height : coverBitmap.width;
+      const height = swapped ? coverBitmap.width : coverBitmap.height;
+      const scale = Math.max(1200 / width, 1200 / height) * Number(zoom.value);
+      offsetX = Math.max(-(width * scale - 1200) / 2, Math.min((width * scale - 1200) / 2, offsetX));
+      offsetY = Math.max(-(height * scale - 1200) / 2, Math.min((height * scale - 1200) / 2, offsetY));
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 1200, 1200); ctx.save();
+      ctx.translate(600 + offsetX, 600 + offsetY); ctx.rotate(rotation * Math.PI / 180);
+      ctx.drawImage(coverBitmap, -coverBitmap.width * scale / 2, -coverBitmap.height * scale / 2, coverBitmap.width * scale, coverBitmap.height * scale);
+      ctx.restore();
+    }
+    function resetCover() { rotation = offsetX = offsetY = 0; zoom.value = 1; drawCover(); }
+    zoom.oninput = drawCover;
+    canvas.onpointerdown = e => { drag = { x: e.clientX, y: e.clientY, ox: offsetX, oy: offsetY }; canvas.setPointerCapture(e.pointerId); };
+    canvas.onpointermove = e => { if (!drag) return; const scale = 1200 / canvas.getBoundingClientRect().width; offsetX = drag.ox + (e.clientX - drag.x) * scale; offsetY = drag.oy + (e.clientY - drag.y) * scale; drawCover(); };
+    canvas.onpointerup = canvas.onpointercancel = () => { drag = null; };
+    canvas.onkeydown = e => { const move = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, -20], ArrowDown: [0, 20] }[e.key]; if (move) { e.preventDefault(); offsetX += move[0]; offsetY += move[1]; drawCover(); } };
+    crop.append(canvas, P.el("small", "p-muted", "Drag to reposition · Zoom to frame your cover"), zoom,
+      P.row(P.button("Rotate", () => { rotation = (rotation + 90) % 360; offsetX = offsetY = 0; drawCover(); }), P.button("Reset crop", resetCover)));
+    file.input.onchange = () => P.run(form, async () => {
+      const chosen = file.input.files?.[0]; if (!chosen) return;
+      const revision = ++coverRevision; loadingCover = true; send.disabled = true;
+      try {
+        if (!chosen.type.startsWith("image/") || chosen.size > 20 * 1024 * 1024) throw Error("Choose an image under 20 MB.");
+        const bitmap = await createImageBitmap(chosen);
+        if (closed || revision !== coverRevision) { bitmap.close(); return; }
+        coverBitmap?.close(); coverBitmap = bitmap; resetCover(); crop.hidden = false;
+      } catch (error) { file.input.value = ""; throw error; }
+      finally { if (revision === coverRevision) { loadingCover = false; send.disabled = false; } }
+    });
+    form.append(file.wrap, crop);
     const selected = new Set([
         ...(event?.collaboratorIds || []),
         ...(event?.invitedIds || []),
@@ -242,19 +285,25 @@
     form.classList.add("p-event-editor");
     const d = P.dialog(event ? "Edit event" : "New event", form);
     d.classList.add("p-event-editor-dialog");
+    d.cleanup = () => { closed = true; coverRevision++; coverBitmap?.close(); };
     form.onsubmit = (e) => {
       e.preventDefault();
       P.run(form, async () => {
         send.disabled = true;
+        file.input.disabled = true;
+        crop.inert = true;
         try {
           let coverPath = event?.coverPath || "";
-          if (file.input.files[0])
+          if (loadingCover) throw Error("Wait for the photo to finish loading.");
+          if (coverBitmap) {
+            const cropped = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .92));
+            if (!cropped) throw Error("Could not prepare this photo. Please choose it again.");
             coverPath = await P.upload(
-              file.input.files[0],
+              cropped,
               "eventCovers/" + P.uid + "/" + crypto.randomUUID() + ".jpg",
               status,
-              true,
             );
+          }
           if (!coverPath) throw Error("Add a cover photo.");
           const payload = Object.fromEntries(
             ["title", "description", "location"].map((k) => [
@@ -290,6 +339,8 @@
           P.openEvent(id);
         } finally {
           send.disabled = false;
+          file.input.disabled = false;
+          crop.inert = false;
         }
       });
     };
