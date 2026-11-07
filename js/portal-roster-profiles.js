@@ -36,13 +36,14 @@ P.renderRosterProfile=(uid,root)=>{
  const summary=P.el('div','p-profile-summary');summary.append(P.button(b.chapter+' Chapter',()=>P.chapter(b.chapter),'p-profile-chapter'));
  if(b.school)summary.append(P.el('span','',b.school));if(crossing.label)summary.append(P.el('span','','Crossed '+crossing.label));intro.append(summary);
  const socials=P.el('div','p-profile-socials');
+ P.appendDiscordSocial?.(socials,uid);
  for(const [key,label,host] of [['instagram','Instagram','instagram.com'],['facebook','Facebook','facebook.com'],['linkedin','LinkedIn','linkedin.com'],['twitter','X / Twitter','x.com']]){
   const raw=b[key+'ProfileURL'];if(!raw)continue;
   try{const url=new URL(raw);if(url.protocol!=='https:'||![host,'www.'+host,...(key==='twitter'?['twitter.com','www.twitter.com']:[])].includes(url.hostname))continue;
    const link=P.el('a','p-profile-social',label);link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';socials.append(link);
   }catch{}
  }
- if(socials.childElementCount)intro.append(socials);
+ intro.append(socials);
  const tabs=P.el('div','p-profile-tabs'),panel=P.el('div','p-roster-profile-panel');tabs.setAttribute('role','tablist');
  const facts=()=>{const dl=P.el('dl','p-info');for(const [label,value] of [['Chapter',b.chapter],['Class',b.pledgeClass],['Pledge Number',b.pledgeNumber],['Crossed',crossing.label],['Birthday',b.birthday],['Phone',window.napPhone.format(b.phone)],['Email',b.email],['School',b.school],['Major',b.major],['Education',b.educationStatus],['Graduation',b.graduationYear],['Job',b.occupation],['Hometown',b.hometown],['Location',b.location]])if(value){const item=P.el('div');item.append(P.el('dt','',label),P.el('dd','',String(value)));dl.append(item);}return dl;};
  const show=tab=>{panel.replaceChildren();[...tabs.children].forEach(button=>{const active=button.textContent===tab;button.classList.toggle('is-selected',active);button.setAttribute('aria-selected',String(active));});

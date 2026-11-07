@@ -427,7 +427,8 @@
         links.append(a);
       } catch {}
     }
-    if (links.childElementCount) intro.append(links);
+    intro.append(links);
+    P.appendDiscordSocial?.(links,b.uid);
     if (b.uid === P.uid || P.me.isAdmin)
       controls.append(P.button("Edit profile", () => edit(b)));
     if (b.uid !== P.uid)
