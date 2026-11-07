@@ -1,8 +1,8 @@
 (function () {
   "use strict";
   const P = P985;
-  document.addEventListener("p985:roster",()=>{ if(section === "Roster discrepancies" && P.me.isAdmin) render(); });
-  let accounts = [];
+  document.addEventListener("p985:roster",()=>{ if(["Roster discrepancies","Statistics"].includes(section) && P.me.isAdmin) render(); });
+  let accounts = [], sessions = [], presenceError = false;
   let reports = [];
   let announcementRequests = [];
   let apps = [],
@@ -74,13 +74,14 @@
             "Alumni advisors",
             "Admins",
             "Activity",
+            "Statistics",
             "Roster discrepancies",
           ]
         : ["Actives & alumni"];
     if (!options.includes(section)) section = options[0];
     const pendingCounts={'Applications':apps.filter(a=>['pending','hold'].includes(a.status)).length,'Content reports':reports.filter(r=>r.status==='open').length,'Events':(P.events||[]).filter(e=>e.status==='pending').length,'Announcements':announcementRequests.filter(r=>r.status==='pending').length};
     tabs.setAttribute('aria-label','Administration sections');
-    for(const [label,sections] of [['Review',['Class leadership requests','Applications','Content reports','Events','Announcements']],['People',['Accounts','Leadership','Pledging','Actives & alumni','Alumni advisors','Admins']],['Records',['Roster discrepancies','Activity']]]){
+    for(const [label,sections] of [['Review',['Class leadership requests','Applications','Content reports','Events','Announcements']],['People',['Accounts','Leadership','Pledging','Actives & alumni','Alumni advisors','Admins']],['Records',['Statistics','Roster discrepancies','Activity']]]){
       const available=sections.filter(t=>options.includes(t));if(!available.length)continue;
       const group=P.el('div','p-admin-nav-group');group.append(P.el('h2','',label));
       available.forEach(t=>{const button=P.button('',()=>{section=t;render();},'p-admin-nav-item');button.append(P.el('span','',t));if(pendingCounts[t])button.append(P.el('span','p-admin-nav-count',pendingCounts[t]));if(section===t)button.setAttribute('aria-current','page');group.append(button);});tabs.append(group);
@@ -99,6 +100,7 @@
     const title=P.el('header','p-admin-content-heading');title.append(P.el('h2','',section));
     if(pendingCounts[section])title.append(P.el('span','p-admin-nav-count',pendingCounts[section]+' to review'));
     content.append(title);
+    if (section === "Statistics") P.renderAdminStatistics(content,accounts,sessions,presenceError);
     if (section === "Roster discrepancies") {
       if(P.renderRosterDiscrepancies) P.renderRosterDiscrepancies(content);
       else content.append(P.empty("Loading roster records…"));
@@ -457,6 +459,7 @@
     offs.forEach((f) => f());
     offs = [];
     if (P.me.isAdmin) {
+      offs.push(db.collection("portalSessions").onSnapshot(snapshot=>{sessions=snapshot.docs.map(d=>d.data());presenceError=false;if(section==="Statistics")render();},()=>{sessions=[];presenceError=true;if(section==="Statistics")render();}));
       offs.push(
         P.watch(db.collection("users"), rows => {accounts = rows; render();}, P.root("admin")),
         P.watch(db.collection("contentReports"), rows => {reports = rows; render();}, P.root("admin")),
@@ -482,7 +485,7 @@
         ),
       );
     } else {
-      accounts = [];
+      accounts = []; sessions = [];
       reports = [];
       announcementRequests = [];
       apps = [];
@@ -491,6 +494,7 @@
     render();
   }
   P.ready(() => {
+    const clock=setInterval(()=>{if(P.me.isAdmin&&section==="Statistics")render();},30000);P.listeners.push(()=>clearInterval(clock));
     P.watch(
       db.doc("organization/leadership"),
       (d) => {

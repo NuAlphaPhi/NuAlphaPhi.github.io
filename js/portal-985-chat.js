@@ -14,6 +14,29 @@
     reads = {},
     items = [];
   const panes = {};
+  const channelStreams = new Map(), channelUnread = {};
+  function syncChannelUnread() {
+    const rooms = P.uid && P.accessReady ? channels() : [];
+    for (const [id, stream] of channelStreams) if (!rooms.some(r=>r.id===id)) { stream.off(); channelStreams.delete(id); delete channelUnread[id]; }
+    rooms.forEach(r=>{
+      const since = reads["channel-"+r.id]?.readAt || P.me.createdAt || new Date(0);
+      const key = P.date(since).getTime();
+      if(channelStreams.get(r.id)?.key===key)return;
+      channelStreams.get(r.id)?.off();
+      const stream={key,off:()=>{}};channelStreams.set(r.id,stream);
+      stream.off=db.collection("socialChannels/"+r.id+"/messages").where("createdAt",">",since).orderBy("createdAt","desc").onSnapshot(snapshot=>{
+        if(channelStreams.get(r.id)!==stream)return;
+        channelUnread[r.id]=snapshot.docs.map(d=>({id:d.id,...d.data()}));lists();
+      },()=>{if(channelStreams.get(r.id)!==stream)return;delete channelUnread[r.id];lists();});
+
+    });
+  }
+  function channelStatus(r) {
+    const since = reads["channel-"+r.id]?.readAt || P.me.createdAt || new Date(0);
+    const rows=(channelUnread[r.id]||[]).filter(m=>m.senderUid!==P.uid&&!P.blocks.has(m.senderUid)&&P.date(m.createdAt)>P.date(since));
+    const mentions=rows.filter(m=>(m.mentionIds||[]).includes(P.uid)||(m.mentionChapters||[]).some(c=>String(c).toLowerCase()===String(P.grant?.chapter||P.me.chapter||"").toLowerCase())).length;
+    return {unread:rows.length>0,mentions:mutes.has(r.id)||channelPreferences[r.id]==="none"?0:mentions};
+  }
   const previews = {}, previewListeners = new Map();
   let conversationSearch = "";
   let dismissMenu=()=>{};
@@ -69,6 +92,7 @@
     return P.name(P.person(r.memberIds.find((x) => x !== P.uid)));
   }
   function unread(r) {
+    if(r.channel)return channelStatus(r).unread && !mutes.has(r.id);
     const key = (r.channel ? "channel-" : "chat-") + r.id;
     const latest = previews[r.id];
     if(!r.channel && latest?.lastSenderUid !== P.uid && !P.blocks.has(latest?.lastSenderUid) && latest?.lastMessageAt && P.date(latest.lastMessageAt)>P.date(reads[key]?.readAt))return true;
@@ -81,6 +105,14 @@
     );
   }
   function lists() {
+    const channelNav=document.querySelector('[data-tab="channels"]');
+    const unreadChannels=channels().filter(r=>unread(r)).length;
+    const pings=channels().reduce((sum,r)=>sum+channelStatus(r).mentions,0);
+    if(channelNav){
+      channelNav.querySelector(".p-channel-indicator")?.remove();
+      if(unreadChannels||pings){const badge=P.el("span",pings?"p-channel-indicator p-channel-pings":"p-channel-indicator p-channel-dot",pings?(pings>99?"99+":String(pings)):"");badge.setAttribute("aria-hidden","true");channelNav.append(badge);}
+      channelNav.setAttribute("aria-label",`Channels${unreadChannels?`, ${unreadChannels} unread channels`:""}${pings?`, ${pings} mentions`:""}`);
+    }
     const count=conversations.filter(r=>(r.kind!=="direct" || !r.memberIds.some(id=>P.blocks.has(id))) && unread(r)).length;
     const nav=document.querySelector('[data-tab="messages"]');
     if(nav){let badge=nav.querySelector('.p-messages-badge');if(!badge){badge=P.el('span','p-messages-badge');nav.append(badge);}badge.hidden=!count;badge.dataset.count=count>99?'99+':String(count);badge.textContent='';nav.setAttribute('aria-label',count?`Messages, ${count} unread conversations`:'Messages');}
@@ -99,7 +131,11 @@
       if (!el) continue;
       el.replaceChildren();
       const roomButton = (r) => {
-        const b = P.button((unread(r) ? "● " : "# ") + roomTitle(r), () => open(r));
+        const b = P.button("", () => open(r));
+        b.append(P.el("span","p-channel-label","# "+roomTitle(r)));
+        b.classList.toggle("is-unread",unread(r));
+        const status=channelStatus(r);
+        if(status.mentions || unread(r)){const badge=P.el("span",status.mentions?"p-channel-indicator p-channel-pings":"p-channel-indicator p-channel-dot",status.mentions?(status.mentions>99?"99+":String(status.mentions)):"");badge.setAttribute("aria-label",status.mentions?`${status.mentions} unread mentions`:"Unread messages");b.append(badge);}
         if (active?.id === r.id) b.classList.add("selected");
         b.classList.toggle('is-muted',mutes.has(r.id));b.setAttribute('aria-haspopup','menu');
         b.oncontextmenu=e=>{e.preventDefault();channelMenu(r,b,e.clientX,e.clientY);};
@@ -739,13 +775,14 @@
         lists();
       },
     );
-    P.watch(db.collection('channelNotificationSettings').where('uid','==',P.uid),rows=>{channelPreferences=Object.fromEntries(rows.map(r=>[r.roomID,r.mode]));},P.root('channels'));
+    P.watch(db.collection('channelNotificationSettings').where('uid','==',P.uid),rows=>{channelPreferences=Object.fromEntries(rows.map(r=>[r.roomID,r.mode]));lists();},P.root('channels'));
     P.watch(db.collection("channelMutes/" + P.uid + "/rooms"), (rows) => {
       mutes = new Set(rows.map((r) => r.id));
       lists();
     });
     P.watch(db.collection("roomReads/" + P.uid + "/rooms"), (rows) => {
       reads = Object.fromEntries(rows.map((r) => [r.id, r]));
+      syncChannelUnread();
       lists();
     });
     P.watch(
@@ -760,7 +797,8 @@
         notifications();
       },
     );
-    lists();restoreChannel();
+    P.listeners.push(()=>{for(const stream of channelStreams.values())stream.off();channelStreams.clear();for(const id of Object.keys(channelUnread))delete channelUnread[id];});
+    syncChannelUnread();lists();restoreChannel();
   });
   document.addEventListener("p985:inbox-preferences",()=>notifications());
   let notificationFilter="all";
@@ -846,7 +884,7 @@
     if(!notificationPanel.hidden && !notificationPanel.contains(event.target) && !notificationBell.contains(event.target))closeNotifications();
   });
   document.addEventListener('nap:tab-changed',()=>closeNotifications());
-  document.addEventListener("p985:access", ()=>{lists();restoreChannel();});
+  document.addEventListener("p985:access", ()=>{syncChannelUnread();lists();restoreChannel();});
   document.addEventListener("p985:blocks", () => {
     lists();
     if (active) open(active);

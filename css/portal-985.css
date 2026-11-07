@@ -1648,3 +1648,21 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .familytree-profile-link:hover{color:var(--maroon)}
 .familytree-profile-link:focus-visible{outline:2px solid var(--maroon);outline-offset:5px}
 #familytreePersonAvatar{border-radius:50%;display:inline-flex}
+
+/* Channel activity indicators share the portal's selected accent. */
+.p-channel-group-rooms > button {display:flex;align-items:center;gap:10px;width:100%;}
+.p-channel-label {flex:1;min-width:0;text-align:left;}
+.p-channel-group-rooms > button.is-unread {color:var(--p-text);font-weight:650;}
+.p-channel-indicator {flex-shrink:0;margin-left:auto;}
+.p-channel-dot {width:7px;height:7px;border-radius:50%;background:currentColor;}
+.p-channel-pings {display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;padding:0 6px;border-radius:10px;background:var(--portal-button,#963450);color:#fff;font-size:11px;font-weight:750;line-height:1;}
+.p-channel-group-rooms > button.is-muted {opacity:.55;}
+
+.p-stat-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.p-stat-card,.p-stat-section {border:1px solid var(--p-border);border-radius:16px;background:var(--p-card);padding:22px}
+.p-stat-card {display:flex;flex-direction:column;gap:12px}.p-stat-card strong{font-size:30px;line-height:1.2}
+.p-stat-section{margin-top:24px}.p-stat-section h3{margin:0 0 18px}
+.p-stat-person{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--p-border)}
+.p-stat-person:last-child{border-bottom:0}.p-stat-growth{display:grid;grid-template-columns:90px 1fr 30px;gap:14px;align-items:center;margin:14px 0;font-size:13px}
+.p-stat-track{height:8px;background:var(--p-border);border-radius:4px;overflow:hidden}.p-stat-track>div{height:100%;background:var(--portal-button,#963450);border-radius:4px}
+@media(max-width:700px){.p-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.p-stat-person{align-items:flex-start;flex-direction:column;gap:6px}}
