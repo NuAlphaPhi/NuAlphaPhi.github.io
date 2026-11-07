@@ -11,7 +11,12 @@ function render(){const root=document.getElementById('panel-leadership');if(!P.u
  names.append(P.el('strong','',person.pledgeName||P.name(person)));
  if(person.fullName)names.append(P.el('small','p-muted',person.fullName));
  identity.append(avatar,names);card.append(identity);
- if(P.me?.isAdmin)card.append(P.button(portrait?'Change portrait':'Add portrait',()=>editPortrait(uid),'p-leadership-photo-button'));
+ if(P.me?.isAdmin){
+ const edit=P.button('',()=>editPortrait(uid),'p-leadership-photo-button');
+ edit.title=portrait?'Change leadership portrait':'Add leadership portrait';
+ edit.setAttribute('aria-label',edit.title);
+ edit.append(P.icon('photo'));card.append(edit);
+ }
  }else card.append(P.el('p','p-muted','Not assigned'));grid.append(card);});if(!entries.length)grid.append(P.el('p','p-muted','No national interns assigned.'));root.append(section);};
  group('National Board',seats);group('National Interns',Object.keys(slots).filter(k=>k.startsWith('intern-')&&slots[k]).map(k=>[k,'National Intern']));group('Chapter Presidents',P.chapters.map(c=>['president-'+c,c+' Chapter']));
 }
