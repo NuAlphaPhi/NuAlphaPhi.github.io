@@ -1683,8 +1683,8 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 #panel-leadership .p-leadership-seat{padding:22px;display:flex;flex-direction:column;gap:20px;min-width:0}
 .p-leadership-seat__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 #panel-leadership .p-leadership-seat h3{padding:0;margin:0;font-size:14px;line-height:1.5;color:var(--grey-400)}
-.p-leadership-controls{display:flex;gap:4px;flex-shrink:0}
-#panel-leadership .p-leadership-controls button{position:static;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:6px;border:0;border-radius:8px;background:transparent;color:var(--grey-400);cursor:pointer}
+.p-leadership-controls{display:flex;align-items:center;gap:4px;flex-shrink:0}
+#panel-leadership .p-leadership-controls button{position:static;margin:0;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:6px;border:0;border-radius:8px;background:transparent;color:var(--grey-400);cursor:pointer}
 #panel-leadership .p-leadership-controls button:hover{background:var(--accent-soft);color:var(--accent)}
 .p-leadership-controls svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
 .p-leadership-controls button:focus-visible,.p-leadership-tab:focus-visible,.p-leadership-year:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
