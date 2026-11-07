@@ -128,7 +128,10 @@
     if (!Array.prototype.some.call(panels, p => p.getAttribute("data-panel") === tab)) return;
     if(window.napBeforeTabChange && window.napBeforeTabChange(tab)===false)return;
     var ticket = ++navigationId;
-    loading("Verifying your account…");
+    if (loader) loader.hidden = true;
+    var loadingTimer = setTimeout(function () {
+      if (ticket === navigationId) loading("Loading your workspace…");
+    }, 250);
     try {
       if (!window.NAP_AUTH_READY_DETAIL) await new Promise((resolve, reject) => {
         var timer = setTimeout(() => { document.removeEventListener("nap:auth-ready", ready); reject(Error("Your account is taking longer to load.")); }, 15000);
@@ -137,32 +140,30 @@
       });
       var user = auth.currentUser;
       if (!user) { location.assign("/portal?next=" + encodeURIComponent(tab === "profile" ? location.pathname : "/portal-home/" + (navTab || tab))); return; }
-      var timeout;
-      var snap;
-      try {
-        snap = await Promise.race([
-          db.collection("users").doc(user.uid).get({source:"server"}),
-          new Promise((resolve, reject) => { timeout = setTimeout(() => reject(Error("Verification timed out")), 12000); })
-        ]);
-      } finally { clearTimeout(timeout); }
       if(ticket !== navigationId) return;
-      var profile = snap.exists ? snap.data() : null;
+      // Auth owns a live account subscription; reuse its verified session.
+      // Panels remain mounted so returning to a page preserves loaded data.
+      var session = window.NAP_AUTH_READY_DETAIL;
+      if (!session || session.uid !== user.uid) throw Error("Account changed");
+      var profile = session.profile;
       if (!profile || profile.disabled || (profile.membershipStatus && profile.membershipStatus !== "approved")) {
         await auth.signOut(); location.assign("/portal"); return;
       }
       if(auth.currentUser?.uid !== user.uid) return;
       if ((tab === "blog") && profile.isAdmin !== true) tab = navTab = "home";
-      loading("Opening your workspace…");
+
       if (tab === "settings" && window.napOpenSettings) {
         if (!document.querySelector('.portal-shell__main > .portal-tab-panel:not([hidden])')) showTab("home", "home", {replace:true});
         window.napOpenSettings();
       } else showTab(tab, navTab, opts);
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
       if(ticket === navigationId) loader.hidden = true;
     } catch(error) {
       if(ticket !== navigationId) return;
       loading("We couldn’t verify your account. Check your connection and try again.", true);
       loader.querySelector("button").onclick = () => setTab(tab, navTab, opts);
+    } finally {
+      clearTimeout(loadingTimer);
     }
   }
   window.napSetTab = setTab;

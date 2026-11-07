@@ -329,7 +329,11 @@
     });
   };
 
+  var accountSubscription = null;
   auth.onAuthStateChanged(function (user) {
+    if (accountSubscription) accountSubscription();
+    accountSubscription = null;
+    window.NAP_AUTH_READY_DETAIL = null;
     if (!user) {
       window.location.href = "/portal?next=" + encodeURIComponent(location.pathname + location.search + location.hash);
       return;
@@ -338,6 +342,7 @@
     window.NAP_CURRENT_UID = user.uid;
 
     db.collection("users").doc(user.uid).get().then(function (snap) {
+      if (auth.currentUser?.uid !== user.uid) return;
       var profile = snap.exists ? snap.data() : {};
 
       /* Admin-removed account: sign them straight back out. Their Firebase
@@ -366,6 +371,26 @@
       var blogNavBtn = document.getElementById("blogNavBtn");
       if (blogNavBtn) blogNavBtn.hidden = profile.isAdmin !== true;
 
+      // Keep authorization fresh without a network round trip on every route.
+      accountSubscription = db.collection("users").doc(user.uid).onSnapshot(function (current) {
+        if (auth.currentUser?.uid !== user.uid) return;
+        var updated = current.exists ? current.data() : null;
+        if (!updated || updated.disabled === true || (updated.membershipStatus && updated.membershipStatus !== "approved")) {
+          window.NAP_AUTH_READY_DETAIL = null;
+          if (portalApp) portalApp.hidden = true;
+          auth.signOut();
+          return;
+        }
+        window.NAP_CURRENT_PROFILE = updated;
+        window.NAP_AUTH_READY_DETAIL = { uid: user.uid, profile: updated };
+        if (adminNavBtn) adminNavBtn.hidden = updated.isAdmin !== true;
+        if (blogNavBtn) blogNavBtn.hidden = updated.isAdmin !== true;
+      }, function () {
+        // Fail closed when the account subscription loses authorization.
+        window.NAP_AUTH_READY_DETAIL = null;
+        if (portalApp) portalApp.hidden = true;
+        auth.signOut();
+      });
       window.NAP_AUTH_READY_DETAIL = { uid: user.uid, profile: profile };
       document.dispatchEvent(
         new CustomEvent("nap:auth-ready", { detail: window.NAP_AUTH_READY_DETAIL })
