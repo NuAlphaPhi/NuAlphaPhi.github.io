@@ -365,6 +365,7 @@ match /masterRoster/{id} {
 }
 
 match /organization/{document} { allow read: if isSocialMember(); allow write: if false; }
+match /leadershipTerms/{id} { allow read: if isSocialMember(); allow write: if false; }
 match /leadershipPortraits/{id} {
   allow read: if isSocialMember();
   allow create, update: if isAdmin()

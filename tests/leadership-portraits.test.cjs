@@ -16,7 +16,12 @@ test('leadership portraits override only directory avatars and admin controls',(
  assert.equal(document.querySelector('.p-leadership-person__names small').textContent,'Aiden Yue');
  assert.equal(document.querySelector('.p-leadership-photo-button').getAttribute('aria-label'),'Change leadership portrait');
  assert.equal(document.querySelector('.p-leadership-photo-button').textContent,'');
+ callbacks.leadershipTerms([{id:'current',uid:'viro',slot:'national-president',startDate:'2026-01-01',endDate:''},{id:'past',uid:'viro',slot:'national-secretary',startDate:'2024-01-01',endDate:'2025-01-01'}]);
+ assert.match(document.querySelector('.p-leadership-dates').textContent,/2026-01-01 — Present/);
+ assert.match(document.getElementById('panel-leadership').textContent,/Leadership History.*2024-01-01 — 2025-01-01/s);
+ assert.ok([...document.querySelectorAll('button')].some(b=>b.textContent==='Edit term'));
  P.me.isAdmin=false;callbacks.leadershipPortraits([]);
+ assert.equal([...document.querySelectorAll('button')].some(b=>b.textContent==='Edit term'||b.textContent==='Add leadership term'),false);
  assert.equal(document.querySelector('img').src,'social.jpg');
  assert.equal(document.querySelector('.p-leadership-photo-button'),null);
 });

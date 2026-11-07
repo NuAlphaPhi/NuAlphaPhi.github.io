@@ -1,10 +1,11 @@
 (function(){
-'use strict';const P=P985;let slots={},portraits={};
+'use strict';const P=P985;let slots={},portraits={},terms=[];
 const seats=[['national-president','National President'],['national-vicePresident','National Vice President'],['national-secretary','National Secretary'],['national-treasurer','National Treasurer'],['national-brandDirector','National Brand Director'],['national-eventCoordinator','National Event Coordinator'],['national-brotherhood','National Brotherhood']];
 function render(){const root=document.getElementById('panel-leadership');if(!P.uid||!root)return;root.replaceChildren(P.el('h1','','Leadership'));
  const group=(title,entries)=>{const section=P.el('section','p-leadership-section'),grid=P.el('div','p-leadership-grid');section.append(P.el('h2','',title),grid);entries.forEach(([id,label])=>{const card=P.el('article','p-card p-leadership-seat');card.append(P.el('h3','',label));const uid=slots[id];if(uid){
  const roster=uid.startsWith('roster_')?P.rosterData?.people.find(p=>p.id===uid.slice(7)):null;
  const person=roster||P.person(uid)||{},portrait=portraits[uid];
+ const term=terms.find(t=>t.slot===id&&t.uid===uid&&!t.endDate);
  const identity=P.button('',()=>P.profile(uid),'p-leadership-person');
  const avatar=P.avatar({...person,...(portrait?{avatarPath:portrait,photoDataUrl:''}:{})});
  const names=P.el('span','p-leadership-person__names');
@@ -12,6 +13,8 @@ function render(){const root=document.getElementById('panel-leadership');if(!P.u
  const fullName=[person.firstName,person.middleName,person.lastName].filter(Boolean).join(' ').trim()||person.fullName;
  if(fullName)names.append(P.el('small','p-muted',fullName));
  identity.append(avatar,names);card.append(identity);
+ card.append(P.el('small','p-leadership-dates',term?.startDate?term.startDate+' — Present':'Current · Start date not set'));
+ if(P.me?.isAdmin)card.append(P.button('Edit term',()=>editTerm(term||{slot:id,uid}),'p-btn p-leadership-term-edit'));
  if(P.me?.isAdmin){
  const edit=P.button('',()=>editPortrait(uid),'p-leadership-photo-button');
  edit.title=portrait?'Change leadership portrait':'Add leadership portrait';
@@ -19,8 +22,51 @@ function render(){const root=document.getElementById('panel-leadership');if(!P.u
  edit.append(P.icon('photo'));card.append(edit);
  }
  }else card.append(P.el('p','p-muted','Not assigned'));grid.append(card);});if(!entries.length)grid.append(P.el('p','p-muted','No national interns assigned.'));root.append(section);};
+ if(P.me?.isAdmin)root.append(P.button('Add leadership term',()=>editTerm(),'p-btn'));
  group('National Board',seats);group('National Interns',Object.keys(slots).filter(k=>k.startsWith('intern-')&&slots[k]).map(k=>[k,'National Intern']));group('Chapter Presidents',P.chapters.map(c=>['president-'+c,c+' Chapter']));
+ const history=P.el('section','p-leadership-section');history.append(P.el('h2','','Leadership History'));
+ const past=terms.filter(t=>t.endDate&&(seats.some(s=>s[0]===t.slot)||t.slot.startsWith('intern-')||t.slot.startsWith('president-'))).sort((a,b)=>b.endDate.localeCompare(a.endDate));
+ if(!past.length)history.append(P.el('p','p-muted','No past terms recorded yet.'));
+ const grid=P.el('div','p-leadership-grid');
+ past.forEach(t=>{const person=personFor(t.uid),card=P.el('article','p-card p-leadership-seat');
+ card.append(P.el('h3','',roleName(t.slot)),P.button((person.pledgeName||P.name(person))+' · '+fullName(person),()=>P.profile(t.uid),'p-name'),P.el('p','p-leadership-dates',(t.startDate||'Start date not recorded')+' — '+t.endDate));
+ if(P.me?.isAdmin)card.append(P.button('Edit term',()=>editTerm(t),'p-btn'));grid.append(card);});history.append(grid);root.append(history);
 }
+function personFor(uid){return uid.startsWith('roster_')?P.rosterPerson?.(uid)||P.rosterData?.people.find(p=>p.id===uid.slice(7))||{}:P.person(uid)||{};}
+function fullName(p){return [p.firstName,p.middleName,p.lastName].filter(Boolean).join(' ')||p.fullName||'';}
+function roleName(slot){return seats.find(s=>s[0]===slot)?.[1]||(slot.startsWith('intern-')?'National Intern':slot.startsWith('president-')?slot.slice(10)+' Chapter President':slot);}
+function editTerm(term){
+ if(!P.me?.isAdmin)return;
+ const box=P.el('form','p-leadership-editor'),role=P.el('select'),search=P.el('input'),results=P.el('div','p-term-results');
+ let selected=term?.uid||'';
+ [...seats,['intern','National Intern'],...P.chapters.map(c=>['president-'+c,c+' Chapter President'])].forEach(([id,name])=>{const o=P.el('option','',name);o.value=id;role.append(o);});
+ role.value=term?.slot?.startsWith('intern-')?'intern':term?.slot||seats[0][0];role.disabled=!!term;
+ const field=(label,input)=>{const wrap=P.el('label','p-term-field');wrap.append(P.el('span','',label),input);return wrap;};
+ search.type='search';search.placeholder='Search name or pledge name';search.value=term?(personFor(selected).pledgeName||fullName(personFor(selected))):'';search.disabled=!!term;
+ search.oninput=()=>{selected='';results.replaceChildren();const query=search.value.toLowerCase().trim();if(!query)return;[...(P.roleCandidates?.()||P.brothers),...(P.rosterData?.people||[]).filter(p=>p.disaffiliated||p.fallen).map(p=>P.rosterPerson(p.id))].filter(p=>(P.name(p)+' '+fullName(p)+' '+p.chapter).toLowerCase().includes(query)).slice(0,12).forEach(p=>results.append(P.button(P.name(p)+' · '+fullName(p)+' · '+p.chapter,()=>{selected=p.uid;search.value=P.name(p)+' · '+fullName(p);results.replaceChildren();},'p-name')));};
+ const start=P.el('input'),end=P.el('input');start.type=end.type='date';start.required=true;start.value=term?.startDate||'';end.value=term?.endDate||'';
+ const dates=P.el('div','p-term-dates');dates.append(field('Start date',start),field('End date',end));
+ const save=P.el('button','p-portrait-save','Save term');save.type='submit';
+ box.append(field('Role',role),field('Brother',search),results,dates,P.el('small','p-muted','Leave the end date empty for the current leader. Past terms need an end date.'),save);
+ const dialog=P.dialog(term?'Edit leadership term':'Add leadership term',box);dialog.classList.add('p-term-dialog');
+ box.onsubmit=e=>{e.preventDefault();P.run(box,async()=>{
+ if(!selected)throw Error('Select a brother from the results.');
+ if(!start.value||end.value&&end.value<start.value)throw Error('Choose a start date and an end date on or after it.');
+ const slot=term?.slot||(role.value==='intern'?'intern-'+selected:role.value),current=slots[slot]||'';
+ save.disabled=true;
+ try{
+ if(!end.value&&current!==selected){
+ if(current&&!confirm('Replace '+(personFor(current).pledgeName||'the current leader')+'? Their term will end on '+start.value+'.'))return;
+ await P.call('manageLeadership',{action:'assign',slot,uid:selected,expectedUid:current,startDate:start.value});
+ }else if(end.value&&term&&!term.endDate&&current===selected){
+ if(!confirm('End this leadership appointment on '+end.value+'? Role access will be removed and the term saved in history.'))return;
+ await P.call('manageLeadership',{action:'assign',slot,uid:'',expectedUid:current,startDate:start.value,endDate:end.value});
+ }else await P.call('manageLeadership',{action:'term',slot,uid:selected,startDate:start.value,endDate:end.value,...(term?.id?{termID:term.id}:{})});
+ dialog.close();
+ }finally{save.disabled=false;}
+ });};
+}
+
 function editPortrait(uid){
  if(!P.me?.isAdmin)return;
  const box=P.el('div','p-leadership-editor'),input=P.el('input'),status=P.el('p','p-muted');
@@ -75,6 +121,7 @@ function editPortrait(uid){
  const dialog=P.dialog('Leadership portrait',box);dialog.classList.add('p-portrait-dialog');
  dialog.cleanup=()=>{closed=true;revision++;bitmap?.close();};
 }
+P.ready(()=>P.watch(db.collection('leadershipTerms'),rows=>{terms=rows||[];render();},document.getElementById('panel-leadership')));
 P.ready(()=>P.watch(db.collection('leadershipPortraits'),rows=>{portraits=Object.fromEntries((rows||[]).map(r=>[r.id,r.path]));render();},document.getElementById('panel-leadership')));
 P.ready(()=>P.watch(db.doc('organization/leadership'),d=>{slots=d?.slots||{};render();},document.getElementById('panel-leadership')));document.addEventListener('p985:roster',render);
 })();
