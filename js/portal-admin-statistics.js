@@ -32,8 +32,27 @@
     const list=P.el('section','p-stat-section');list.append(P.el('h3','','Disaffiliated Brothers'));
     if(!people)list.append(P.el('p','p-muted','Loading roster…'));
     else if(!disaffiliated.length)list.append(P.el('p','p-muted','No disaffiliated records.'));
-    disaffiliated.forEach(r=>{const b=P.rosterPerson?.(r.id)||r,row=P.el('div','p-stat-person');row.append(P.el('strong','',b.pledgeName||b.fullName),P.el('span','p-muted',[b.fullName,b.chapter,b.pledgeClass].filter(Boolean).join(' · ')));list.append(row);});root.append(list);
+    disaffiliated.forEach(r=>{const b=P.rosterPerson?.(r.id)||r,row=P.el('div','p-stat-person');row.append(P.el('strong','',b.pledgeName||b.fullName),P.el('span','p-muted',[b.fullName,b.chapter,b.pledgeClass].filter(Boolean).join(' · ')));const noteButton=P.button('Admin note',()=>editPrivateNote(r.id,b),'p-btn');row.append(noteButton);list.append(row);});root.append(list);
   };
+  async function editPrivateNote(id, brother) {
+    if (!P.me?.isAdmin) return;
+    const box=P.el('form','p-private-note'),label=P.el('label'),input=P.el('textarea'),status=P.el('p','p-muted','Loading private note…');
+    input.rows=5;input.maxLength=5000;input.placeholder='Add a reason or internal note';input.disabled=true;
+    label.append(P.el('span','','Reason / Note'),input);
+    const save=P.el('button','p-btn p-primary','Save note');save.type='submit';save.disabled=true;
+    box.append(P.el('p','p-muted','Only administrators can view or edit this note.'),label,status,save);
+    const dialog=P.dialog('Admin note · '+(brother.pledgeName||brother.fullName),box);
+    const ref=db.collection('disaffiliationNotes').doc(id);
+    try {
+      const snapshot=await ref.get();input.value=snapshot.exists?snapshot.data().note||'':'';
+      status.textContent='';input.disabled=false;save.disabled=false;
+    } catch (_) {status.textContent='Could not load the note. Close and try again.';return;}
+    box.onsubmit=e=>{e.preventDefault();P.run(box,async()=>{
+      save.disabled=true;
+      try {await ref.set({note:input.value.trim(),updatedBy:P.uid,updatedAt:P.stamp()});dialog.close();}
+      finally {save.disabled=false;}
+    });};
+  }
   P.ready(()=>{
     const uid=P.uid,ref=db.collection('portalSessions').doc(),start=Date.now();let lastAction=start,lastSent=0,stopped=false;
     const activity=()=>{lastAction=Date.now();};
