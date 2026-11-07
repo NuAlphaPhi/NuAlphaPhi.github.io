@@ -9,7 +9,8 @@ function render(){const root=document.getElementById('panel-leadership');if(!P.u
  const avatar=P.avatar({...person,...(portrait?{avatarPath:portrait,photoDataUrl:''}:{})});
  const names=P.el('span','p-leadership-person__names');
  names.append(P.el('strong','',person.pledgeName||P.name(person)));
- if(person.fullName)names.append(P.el('small','p-muted',person.fullName));
+ const fullName=[person.firstName,person.middleName,person.lastName].filter(Boolean).join(' ').trim()||person.fullName;
+ if(fullName)names.append(P.el('small','p-muted',fullName));
  identity.append(avatar,names);card.append(identity);
  if(P.me?.isAdmin){
  const edit=P.button('',()=>editPortrait(uid),'p-leadership-photo-button');
@@ -23,20 +24,56 @@ function render(){const root=document.getElementById('panel-leadership');if(!P.u
 function editPortrait(uid){
  if(!P.me?.isAdmin)return;
  const box=P.el('div','p-leadership-editor'),input=P.el('input'),status=P.el('p','p-muted');
- input.type='file';input.accept='image/*';input.setAttribute('aria-label','Leadership portrait');
- box.append(P.el('p','p-muted','Only used in Leadership. Your regular profile picture stays the same.'),input);
- const save=P.button('Upload portrait',()=>P.run(box,async()=>{
- if(!input.files?.[0])throw Error('Choose a photo first.');
- save.disabled=true;
+ input.type='file';input.accept='image/*';input.hidden=true;
+ const preview=P.el('div','p-portrait-preview'),canvas=P.el('canvas');
+ canvas.width=canvas.height=800;canvas.hidden=true;canvas.tabIndex=0;
+ canvas.setAttribute('aria-label','Portrait crop. Drag or use arrow keys to reposition.');
+ const placeholder=P.el('div','p-portrait-placeholder');
+ placeholder.append(P.icon('photo'),P.el('strong','','Choose a leadership photo'),P.el('small','','JPG, PNG or WebP · Up to 20 MB'));
+ preview.append(placeholder,canvas);
+ const choose=P.button('Choose photo',()=>input.click(),'p-portrait-choose');
+ const controls=P.el('div','p-portrait-controls');controls.hidden=true;
+ const zoom=P.el('input');zoom.type='range';zoom.min=1;zoom.max=4;zoom.step=.01;zoom.value=1;zoom.setAttribute('aria-label','Zoom photo');
+ let bitmap=null,rotation=0,x=0,y=0,drag=null,revision=0,closed=false;
+ function draw(){
+ if(!bitmap)return;
+ const swapped=rotation%180!==0,w0=swapped?bitmap.height:bitmap.width,h0=swapped?bitmap.width:bitmap.height;
+ const scale=Math.max(800/w0,800/h0)*Number(zoom.value),w=w0*scale,h=h0*scale;
+ x=Math.max(-(w-800)/2,Math.min((w-800)/2,x));y=Math.max(-(h-800)/2,Math.min((h-800)/2,y));
+ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,800,800);ctx.save();ctx.fillStyle='#ffffff';ctx.fillRect(0,0,800,800);
+ ctx.translate(400+x,400+y);ctx.rotate(rotation*Math.PI/180);ctx.drawImage(bitmap,-bitmap.width*scale/2,-bitmap.height*scale/2,bitmap.width*scale,bitmap.height*scale);ctx.restore();
+ }
+ function reset(){x=y=rotation=0;zoom.value=1;draw();}
+ const rotate=delta=>{rotation=(rotation+delta+360)%360;x=y=0;draw();};
+ controls.append(P.el('span','','Zoom'),zoom,P.row(P.button('↶ Rotate left',()=>rotate(-90)),P.button('↷ Rotate right',()=>rotate(90)),P.button('Reset',reset)));
+ zoom.oninput=draw;
+ canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY,ox:x,oy:y};canvas.setPointerCapture(e.pointerId);};
+ canvas.onpointermove=e=>{if(!drag)return;const scale=800/canvas.getBoundingClientRect().width;x=drag.ox+(e.clientX-drag.x)*scale;y=drag.oy+(e.clientY-drag.y)*scale;draw();};
+ canvas.onpointerup=canvas.onpointercancel=()=>{drag=null;};
+ canvas.onkeydown=e=>{const move={ArrowLeft:[-15,0],ArrowRight:[15,0],ArrowUp:[0,-15],ArrowDown:[0,15]}[e.key];if(move){e.preventDefault();x+=move[0];y+=move[1];draw();}};
+ input.onchange=()=>P.run(box,async()=>{
+ const file=input.files?.[0];if(!file)return;const current=++revision;save.disabled=true;
+ if(!file.type.startsWith('image/')||file.size>20*1024*1024){save.disabled=!bitmap;throw Error('Choose an image under 20 MB.');}
+ try{const next=await createImageBitmap(file);if(closed||current!==revision){next.close();return;}bitmap?.close();bitmap=next;reset();placeholder.hidden=true;canvas.hidden=false;controls.hidden=false;choose.textContent='Choose another photo';}
+ finally{if(current===revision)save.disabled=!bitmap;}
+ });
+ const save=P.button('Save portrait',()=>P.run(box,async()=>{
+ if(!bitmap||!P.me?.isAdmin)return;
+ save.disabled=true;input.disabled=true;controls.inert=true;
  try{
- const path=await P.upload(input.files[0],'leadershipPortraits/'+uid+'/'+crypto.randomUUID()+'.jpg',status,true);
+ const cropped=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.92));
+ if(!cropped)throw Error('Could not prepare this photo. Choose another image.');
+ const path=await P.upload(cropped,'leadershipPortraits/'+uid+'/'+crypto.randomUUID()+'.jpg',status);
  await db.doc('leadershipPortraits/'+uid).set({path,updatedBy:P.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
  dialog.close();
- }finally{save.disabled=false;}
- }),'p-primary');
- box.append(status,save);
- if(portraits[uid])box.append(P.button('Remove portrait',()=>P.run(box,async()=>{await db.doc('leadershipPortraits/'+uid).delete();dialog.close();})));
- const dialog=P.dialog('Leadership portrait',box);
+ }finally{save.disabled=false;input.disabled=false;controls.inert=false;}
+ }),'p-portrait-save');save.disabled=true;
+ const footer=P.el('div','p-portrait-footer');
+ if(portraits[uid])footer.append(P.button('Remove portrait',()=>P.run(box,async()=>{await db.doc('leadershipPortraits/'+uid).delete();dialog.close();}),'p-portrait-remove'));
+ footer.append(save);
+ box.append(P.el('p','p-muted','A professional photo for Leadership only.'),preview,choose,input,P.el('small','p-muted','Drag to frame your photo. The circle shows how it will appear.'),controls,status,footer);
+ const dialog=P.dialog('Leadership portrait',box);dialog.classList.add('p-portrait-dialog');
+ dialog.cleanup=()=>{closed=true;revision++;bitmap?.close();};
 }
 P.ready(()=>P.watch(db.collection('leadershipPortraits'),rows=>{portraits=Object.fromEntries((rows||[]).map(r=>[r.id,r.path]));render();},document.getElementById('panel-leadership')));
 P.ready(()=>P.watch(db.doc('organization/leadership'),d=>{slots=d?.slots||{};render();},document.getElementById('panel-leadership')));document.addEventListener('p985:roster',render);
