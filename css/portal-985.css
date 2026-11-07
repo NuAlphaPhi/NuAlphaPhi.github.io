@@ -123,6 +123,9 @@
 .p-action.selected {
   color: #dc6286;
 }
+.p-action[data-action="like"].selected svg {
+  fill: currentColor;
+}
 .p-avatar {
   width: 42px;
   height: 42px;

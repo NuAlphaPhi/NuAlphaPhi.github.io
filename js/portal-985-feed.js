@@ -42,6 +42,7 @@
   };
   function action(type, label, fn) {
     const b = P.button("", fn, "p-action");
+    b.dataset.action = type;
     b.setAttribute("aria-label", label);
     b.title = label;
     const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -212,7 +213,10 @@
         document.querySelector(".p-thread-input textarea")?.focus();
       else P.openPost(post.id);
     });
-    reply.append(P.el("span", "", stats[post.id]?.replyCount || ""));
+    const replyCount = Math.max(0, Number(stats[post.id]?.replyCount) || 0);
+    reply.dataset.commentPost = post.id;
+    reply.append(P.el("span", "p-comment-count", String(replyCount)));
+    reply.setAttribute("aria-label", `View comments (${replyCount})`);
     const share = action("share", "Share post", () => {
       const box = P.el("div");
       box.append(
@@ -673,6 +677,11 @@
     P.watch(db.collection("postStatistics"), (rows) => {
       stats = Object.fromEntries(rows.map((r) => [r.id, r]));
       render();
+      document.querySelectorAll("[data-comment-post]").forEach(button => {
+        const total = Math.max(0, Number(stats[button.dataset.commentPost]?.replyCount) || 0);
+        button.querySelector(".p-comment-count").textContent = String(total);
+        button.setAttribute("aria-label", `View comments (${total})`);
+      });
     });
     subscribe();
     const id = new URLSearchParams(location.search).get("post");
