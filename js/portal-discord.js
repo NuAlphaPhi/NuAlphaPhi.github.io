@@ -14,7 +14,14 @@
      },'p-btn');results.append(button);}if(!choices.length)results.append(P.empty('No matching brothers.'));
    }
    function confirm(preview,dialog){const p=preview.person;box.replaceChildren(P.el('h3','',p.pledgeName+' · '+p.name),P.el('p','',p.chapter+' Chapter · '+p.pledgeClass+' Class'),P.el('p','p-muted','Crossed '+[p.term,p.year].filter(Boolean).join(' ')),P.el('p','','Big: '+(p.big||'Not recorded')),P.el('p','','Littles: '+(p.littles.join(', ')||'None recorded')),P.el('p','','Discord: @'+preview.username+(preview.nickname?' · '+preview.nickname:'')));
-    const confirmButton=P.button('Confirm link',async()=>{confirmButton.disabled=true;try{const result=await P.call('discordPortal',{action:'confirm',requestID:preview.requestID});dialog.close();cache=null;data=await P.call('discordPortal',{action:'list'});cache=data;draw();if(result.warning)P.dialog('Link saved · server updates need attention',P.el('p','',result.warning));}catch(e){P.error(box,e);}finally{confirmButton.disabled=false;}},'p-btn p-primary');box.append(confirmButton);
+    let acknowledge=null;
+    if(preview.requiresAdditionalConfirmation){
+     const warning=P.el('div','p-discord-link-warning');warning.setAttribute('role','note');
+     warning.append(P.el('strong','','This brother already has a linked Discord account.'),P.el('p','','Are you sure you want to link another account to this brother? Existing accounts will stay linked.'));
+     for(const account of preview.existingAccounts||[])warning.append(P.el('p','p-muted',(account.username?'@'+account.username:'Discord ID '+account.id)+(account.nickname?' · '+account.nickname:'')));
+     const label=P.el('label','p-discord-link-ack');acknowledge=document.createElement('input');acknowledge.type='checkbox';label.append(acknowledge,P.el('span','','Yes, this is another Discord account belonging to the same brother.'));warning.append(label);box.append(warning);
+    }
+    const confirmButton=P.button(preview.requiresAdditionalConfirmation?'Link additional account':'Confirm link',async()=>{confirmButton.disabled=true;try{const result=await P.call('discordPortal',{action:'confirm',requestID:preview.requestID,confirmAdditionalAccount:acknowledge?.checked===true});dialog.close();cache=null;data=await P.call('discordPortal',{action:'list'});cache=data;draw();if(result.warning)P.dialog('Link saved · server updates need attention',P.el('p','',result.warning));}catch(e){P.error(box,e);}finally{confirmButton.disabled=!!acknowledge&&!acknowledge.checked;}},'p-btn p-primary');if(acknowledge){confirmButton.disabled=true;acknowledge.onchange=()=>{confirmButton.disabled=!acknowledge.checked;};}box.append(confirmButton);
    }
    field.input.oninput=drawChoices;drawChoices();field.input.focus();
   }
@@ -37,5 +44,5 @@
   }
   search.input.oninput=()=>{page=0;draw();};filter.input.onchange=()=>{page=0;draw();};if(data)draw();else refresh.click();
  };
- P.appendDiscordSocial=(container,profileID)=>{P.call('discordPortal',{action:'profile',profileID}).then(({discord})=>{if(!discord)return;const a=P.el('a','p-profile-social','Discord · @'+discord.username);a.href='https://discord.com/users/'+discord.id;a.target='_blank';a.rel='noopener noreferrer';container.append(a);}).catch(()=>{});};
+ P.appendDiscordSocial=(container,profileID)=>{P.call('discordPortal',{action:'profile',profileID}).then(({discord,discords})=>{for(const account of discords||(discord?[discord]:[])){const a=P.el('a','p-profile-social','Discord · @'+account.username);a.href='https://discord.com/users/'+account.id;a.target='_blank';a.rel='noopener noreferrer';container.append(a);}}).catch(()=>{});};
 })();
