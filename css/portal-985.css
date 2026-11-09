@@ -1694,3 +1694,15 @@ button.p-chapter-person:hover { background:var(--grey-50); }
 .p-leadership-dates{color:var(--grey-400);font-size:13px;margin-top:auto}
 .p-leadership-empty{padding:40px 24px;border:1px dashed var(--grey-700);border-radius:14px;color:var(--grey-400)}
 @media(max-width:600px){#panel-leadership .p-leadership-header{align-items:flex-start;flex-direction:column}.p-leadership-grid{grid-template-columns:1fr}}
+
+/* Align semester controls with the inputs, below their labels. */
+.p-crossing-toolbar {align-items:flex-end;gap:12px;margin:14px 0 24px}
+.p-crossing-toolbar > .p-field {margin:0;min-width:0;flex:0 1 180px}
+.p-crossing-toolbar > .p-field input,
+.p-crossing-toolbar > .p-field select,
+.p-crossing-toolbar > .p-btn {box-sizing:border-box;height:46px;min-height:46px;font-size:1rem;line-height:1.25}
+.p-crossing-toolbar > .p-btn {margin:0;white-space:nowrap}
+@media(max-width:520px){
+ .p-crossing-toolbar > .p-field {flex:1 1 calc(50% - 6px)}
+ .p-crossing-toolbar > .p-btn {width:100%}
+}

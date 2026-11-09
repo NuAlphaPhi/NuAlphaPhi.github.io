@@ -8,6 +8,9 @@
     chapter = "",
     search = "",
     issuesOnly = false, viewMode = "classes";
+  // The roster listener establishes the canonical order, including legacy rows
+  // without sortOrder. Filtering a class must preserve that order.
+  P.rosterClassMembers = (classID, rows = people) => rows.filter(r => r.classID === classID);
   const expandedClasses = new Set();
   const loadedSources = new Set();
   P.rosterClassRoles = members => {
@@ -296,8 +299,8 @@
     const form = P.el("div", "p-class-editor"),
       chapter = P.select("Chapter", P.chapters, c?.chapter || "Alpha"),
       name = P.field("Class", "text", c?.pledgeClass);
-    const members=c?people.filter(r=>r.classID===c.id):[];
-    const original=members.map(r=>r.id), ordering=P.el('div','p-class-order');
+    const members=c?P.rosterClassMembers(c.id):[];
+    const ordering=P.el('div','p-class-order');
     function drawOrder(){
       ordering.replaceChildren();
       if(!c)return;
@@ -362,7 +365,7 @@
             const batch=db.batch();
             batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim(),...selected},{merge:true});
             if(members.length>400)throw Error('This class is too large to save at once.');
-            if(members.some((r,i)=>r.id!==original[i]))members.forEach((r,i)=>{
+            members.forEach((r,i)=>{
               if(r._new){const {_new,id,...record}=r;batch.set(db.doc('masterRoster/'+r.id),{...record,sortOrder:i});}
               else batch.update(db.doc('masterRoster/'+r.id),{sortOrder:i});
             });

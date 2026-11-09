@@ -10,3 +10,8 @@ test('semester filter honors saved class dates and does not guess conflicting fa
  assert.equal(P.classesForCrossing('Kappa',{term:'Summer',year:2026},data).length,0);
  Object.assign(data.classes[0],{semesterCrossed:'Summer',yearCrossed:2026});assert.equal(P.classesForCrossing('Kappa',{term:'Summer',year:2026},data).length,1);assert.equal(P.classesForCrossing('Kappa',{term:'Fall',year:2026},data).length,0);
 });
+test('class display keeps canonical editor order when legacy rows have no saved position',()=>{
+ const P=setup(),rows=[{id:'mp7',classID:'c',sortOrder:2},{id:'other',classID:'other',sortOrder:3},{id:'opulent',classID:'c',_initialOrder:40},{id:'excision',classID:'c',_initialOrder:41}];
+ assert.deepEqual(Array.from(P.rosterClassMembers('c',rows),r=>r.id),['mp7','opulent','excision']);
+ const roles=P.rosterClassRoles(P.rosterClassMembers('c',rows));assert.equal(roles.get('mp7'),'Captain');assert.equal(roles.get('excision'),'Co-Captain');
+});

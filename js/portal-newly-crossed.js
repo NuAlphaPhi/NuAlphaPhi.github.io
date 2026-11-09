@@ -26,7 +26,7 @@ P.renderNewlyCrossed=async root=>{
  const data=P.rosterData;
  if(!data){root.append(P.empty('The roster is still loading. Reopen Newly Crossed in a moment.'));return;}
  root.append(P.el('p','p-muted','View crossed classes, plan class leadership early, and record new crossings. Saving PM plans does not add pledges to the roster or family tree.'));
- const term=P.select('Crossing semester',['Spring','Summer','Fall'],period.term),year=P.field('Crossing year','number',period.year),toolbar=P.row();
+ const term=P.select('Crossing semester',['Spring','Summer','Fall'],period.term),year=P.field('Crossing year','number',period.year),toolbar=P.row();toolbar.classList.add('p-crossing-toolbar');
  const area=P.el('div');toolbar.append(term.wrap,year.wrap,P.button('Load semester',()=>P.run(root,async()=>{const value=Number(year.input.value);if(!Number.isInteger(value)||value<1994||value>2100)throw Error('Enter a crossing year from 1994 to 2100.');period={term:term.input.value,year:value};root.replaceChildren();P.renderNewlyCrossed(root);})));root.append(toolbar,area);
  let plans={};
  const current={...period},storageKey='985-crossed:'+P.uid+':'+current.year+':'+current.term;
@@ -62,7 +62,7 @@ P.renderNewlyCrossed=async root=>{
  const classes=P.classesForCrossing(chapter,current,live);
  summary.replaceChildren(P.el('strong','',chapter+' Chapter'),P.el('span','p-muted',classes.length?' · Crossed: '+classes.map(c=>c.pledgeClass).join(', '):' · No class recorded for this crossing semester'));
  for(const c of classes){
- const card=P.el('section','p-card'),members=live.people.filter(r=>r.classID===c.id).map((r,i)=>({...r,_order:i})).sort((a,b)=>(a.sortOrder??a._order)-(b.sortOrder??b._order));
+ const card=P.el('section','p-card'),members=P.rosterClassMembers(c.id,live.people);
  card.append(P.el('h3','',c.pledgeClass+' Class · '+members.length+' brothers'),P.el('p','p-muted','Crossed '+current.term+' '+current.year));
  for(const [key,label] of [['pledgeMasterIDs','Pledge masters'],['pledgeWardenIDs','Pledge wardens']])card.append(P.el('p','',label+': '+((c[key]||[]).map(id=>{const r=live.people.find(r=>r.id===id);return r?r.pledgeName+' · '+r.fullName:'Unavailable record';}).join('; ')||'Not assigned')));
  members.forEach((r,i)=>{
