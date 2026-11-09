@@ -82,7 +82,6 @@
       const email=document.getElementById('reset-email').value.trim();
       try { await auth.sendPasswordResetEmail(email); }
       catch (error) { if (error.code !== 'auth/user-not-found') throw error; }
-      await callable('emailAliasPasswordReset',{email});
       feedback.textContent = 'If an account uses this email, a reset link is on its way. Check your inbox and spam folder.';
       feedback.className = 'form-feedback form-feedback--success';
     } catch (error) {

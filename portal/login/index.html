@@ -75,11 +75,11 @@
 
                 <div class="portal-auth__panel" id="authPanelReset" hidden>
                     <h2>Reset your password</h2>
-                    <p class="portal-panel__text">Enter your account email and we’ll send you a password reset link.</p>
+                    <p class="portal-panel__text">Enter your primary account email and we’ll send you a password reset link. Extra sign-in emails cannot receive password resets.</p>
                     <form class="portal-panel__form" id="passwordResetForm">
                         <div class="form-group">
                             <label class="form-label" for="reset-email">Email</label>
-                            <input class="form-input" id="reset-email" type="email" autocomplete="email" required placeholder="Your account email">
+                            <input class="form-input" id="reset-email" type="email" autocomplete="email" required placeholder="Your primary email">
                         </div>
                         <button class="form-submit" type="submit">Send reset link</button>
                         <p id="reset-feedback" role="status" aria-live="polite" hidden></p>
@@ -122,7 +122,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="/js/portal-phone.js?v=portal-polish-2"></script>
-    <script src="js/portal-login.js?v=sign-in-emails-1"></script>
+    <script src="js/portal-login.js?v=sign-in-emails-2"></script>
 <script src="/js/portal-selects.js?v=signup-native-2"></script>
 </body>
 </html>

@@ -150,7 +150,7 @@
       .then(function () {
         form.reset();
         if (feedbackEl) {
-          feedbackEl.textContent = "Password updated for this account. All verified sign-in emails now use this same new password.";
+          feedbackEl.textContent = "Password updated for this account. All sign-in emails now use this same new password.";
           feedbackEl.className = "form-feedback form-feedback--success";
           feedbackEl.hidden = false;
         }
