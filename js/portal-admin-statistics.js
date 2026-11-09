@@ -11,9 +11,9 @@
       if (!old || time(s.lastActiveAt)>time(old.lastActiveAt)) online.set(s.uid,s);
     });
     const active=[...online.values()].filter(s=>now-time(s.lastActiveAt)<300000);
-    const people=P.rosterData?.people, disaffiliated=(people||[]).filter(p=>p.disaffiliated===true);
+    const people=P.rosterData?.people, disaffiliated=(people||[]).filter(p=>p.disaffiliated===true), fallen=(people||[]).filter(p=>p.fallen===true).sort((a,b)=>(a.fullName||a.pledgeName||'').localeCompare(b.fullName||b.pledgeName||''));
     const grid=P.el('div','p-stat-grid');
-    for(const [label,value] of [['Portal accounts',accounts.length],['Online now',error?'—':online.size],['Active now',error?'—':active.length],['Disaffiliated',people?disaffiliated.length:'—']]) {
+    for(const [label,value] of [['Portal accounts',accounts.length],['Online now',error?'—':online.size],['Active now',error?'—':active.length],['Disaffiliated',people?disaffiliated.length:'—'],['Fallen Brothers (RIP)',people?fallen.length:'—']]) {
       const card=P.el('div','p-stat-card');card.append(P.el('span','p-muted',label),P.el('strong','',String(value)));grid.append(card);
     }
     root.append(grid,P.el('p','p-muted','Online: checked in within 2 minutes. Active: interacted within 5 minutes. Multiple tabs count as one brother.'));
@@ -22,6 +22,18 @@
     for(const [uid,session] of online){const person=accounts.find(a=>a.id===uid)||P.person(uid),row=P.el('div','p-stat-person');row.append(P.author(uid),P.el('span','p-muted',now-time(session.lastActiveAt)<300000?'Active now':'Idle'));live.append(row);}
     if(!online.size)live.append(P.el('p','p-muted',error?'Presence could not be loaded.':'No recent portal check-ins.'));
     root.append(live);
+    const memorial=P.el('section','p-stat-section');
+    memorial.append(P.el('h3','','Fallen Brothers · Rest in Peace'));
+    if(!people)memorial.append(P.el('p','p-muted','Loading roster…'));
+    else if(!fallen.length)memorial.append(P.el('p','p-muted','No fallen brothers are marked in the roster.'));
+    else memorial.append(P.el('p','p-muted',`${fallen.length} fallen brother${fallen.length===1?'':'s'} remembered in our master roster.`));
+    fallen.forEach(r=>{
+      const b=P.rosterPerson?.(r.id)||r,c=P.rosterData?.classes?.find(c=>c.id===r.classID),row=P.el('div','p-stat-person');
+      const name=b.fullName||r.fullName||'Brother',pledge=b.pledgeName||r.pledgeName;
+      row.append(P.button(pledge?`${name} “${pledge}”`:name,()=>P.profile('roster_'+r.id),'p-name'),P.el('span','p-muted',[b.chapter||c?.chapter,b.pledgeClass||c?.pledgeClass,'RIP'].filter(Boolean).join(' · ')));
+      memorial.append(row);
+    });
+    root.append(memorial);
     const growth=P.el('section','p-stat-section');growth.append(P.el('h3','','Portal Growth'),P.el('p','p-muted','New accounts by month · Last 12 months'));
     const months=Array.from({length:12},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-11+i);return {key:d.getFullYear()+'-'+d.getMonth(),label:d.toLocaleDateString(undefined,{month:'short',year:'numeric'}),count:0};});
     let undated=0;
