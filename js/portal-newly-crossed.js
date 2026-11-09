@@ -3,7 +3,25 @@
 const P=P985;
 let period={term:'Fall',year:new Date().getFullYear()};
 const normalize=s=>String(s||'').toLocaleLowerCase().trim();
+const greek='Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho Sigma Tau Upsilon Phi Chi Psi Omega'.split(' ');
+P.nextCrossingClass=(chapter,data=P.rosterData)=>{
+ let latest=0;
+ for(const c of [...(data?.classes||[]),...(data?.tree||[])]){
+  if(normalize(c.chapter)!==normalize(chapter))continue;
+  const words=normalize(c.pledgeClass).replace(/\s+class$/,'').split(/\s+/),digits=words.map(w=>greek.findIndex(g=>g.toLowerCase()===w)+1);
+  if(digits.some(d=>d===0))continue;
+  latest=Math.max(latest,digits.reduce((rank,d)=>rank*24+d,0));
+ }
+ let next=latest+1;const words=[];
+ while(next>0){words.unshift(greek[(next-1)%24]);next=Math.floor((next-1)/24);}
+ return words.join(' ');
+};
+P.classesForCrossing=(chapter,current,data=P.rosterData)=>{
+ const label=normalize(current.term+' '+current.year);
+ return (data?.classes||[]).filter(c=>normalize(c.chapter)===normalize(chapter)&&normalize(P.rosterClassCrossing(c,data.tree||[]).label)===label);
+};
 P.renderNewlyCrossed=async root=>{
+
  if(!P.me.isAdmin)return;
  const data=P.rosterData;
  if(!data){root.append(P.empty('The roster is still loading. Reopen Newly Crossed in a moment.'));return;}
@@ -35,13 +53,14 @@ P.renderNewlyCrossed=async root=>{
  const chapters=P.el('div');area.append(chapters);
  P.chapters.forEach(chapter=>{
  const section=P.el('details','p-card'),summary=P.el('summary');
- const crossed=data.classes.filter(c=>c.chapter===chapter&&normalize(c.semesterCrossed)===normalize(current.term)&&Number(c.yearCrossed)===current.year);
+ const crossed=P.classesForCrossing(chapter,current,data);
  summary.append(P.el('strong','',chapter+' Chapter'),P.el('span','p-muted',crossed.length?' · Crossed: '+crossed.map(c=>c.pledgeClass).join(', '):' · No class recorded for this crossing semester'));
  section.append(summary);chapters.append(section);
  const existing=P.el('div');section.append(existing);
  function showExisting(){
  const live=P.rosterData||data;existing.replaceChildren();
- const classes=live.classes.filter(c=>c.chapter===chapter&&normalize(c.semesterCrossed)===normalize(current.term)&&Number(c.yearCrossed)===current.year);
+ const classes=P.classesForCrossing(chapter,current,live);
+ summary.replaceChildren(P.el('strong','',chapter+' Chapter'),P.el('span','p-muted',classes.length?' · Crossed: '+classes.map(c=>c.pledgeClass).join(', '):' · No class recorded for this crossing semester'));
  for(const c of classes){
  const card=P.el('section','p-card'),members=live.people.filter(r=>r.classID===c.id).map((r,i)=>({...r,_order:i})).sort((a,b)=>(a.sortOrder??a._order)-(b.sortOrder??b._order));
  card.append(P.el('h3','',c.pledgeClass+' Class · '+members.length+' brothers'),P.el('p','p-muted','Crossed '+current.term+' '+current.year));
@@ -57,12 +76,20 @@ P.renderNewlyCrossed=async root=>{
  }
  }
  showExisting();
- const refresh=()=>{if(!root.isConnected){document.removeEventListener('p985:roster',refresh);return;}showExisting();};document.addEventListener('p985:roster',refresh);
+ const refresh=()=>{if(!root.isConnected){document.removeEventListener('p985:roster',refresh);return;}showExisting();updateSuggestedName();};document.addEventListener('p985:roster',refresh);
 
  if(plans[chapter]&&(!draft.chapters[chapter]||(!draft.chapters[chapter].pledgeClass&&!draft.chapters[chapter].members?.length&&!draft.chapters[chapter].pledgeMasterIDs?.length)))draft.chapters[chapter]={...plans[chapter],members:[]};
  const state=draft.chapters[chapter]||(draft.chapters[chapter]={pledgeClass:plans[chapter]?.pledgeClass||'',pledgeMasterIDs:plans[chapter]?.pledgeMasterIDs||[],members:[]});
- const form=P.el('div'),name=P.field('Class name (e.g. Alpha Nu)','text',state.pledgeClass);name.input.maxLength=80;name.input.oninput=()=>{state.pledgeClass=name.input.value;remember();};
- form.append(name.wrap,picker('Class pledge masters (select two)',records,[...state.pledgeMasterIDs],2,ids=>{state.pledgeMasterIDs=ids;remember();}));
+ const form=P.el('div'),name=P.field('Class name','text',state.pledgeClass),nameHint=P.el('p','p-muted');
+ function updateSuggestedName(){
+  const suggested=P.nextCrossingClass(chapter,P.rosterData||data);
+  if(!state.pledgeClass||state.autoClassName===state.pledgeClass){state.pledgeClass=suggested;state.autoClassName=suggested;name.input.value=suggested;remember();}
+  nameHint.textContent=state.autoClassName===state.pledgeClass?'Automatically selected as the next class for '+chapter+' Chapter.':'Using the saved class name. Next class in sequence: '+suggested+'.';
+ }
+ updateSuggestedName();name.input.maxLength=80;name.input.oninput=()=>{state.pledgeClass=name.input.value;delete state.autoClassName;remember();nameHint.textContent='Custom class name. Clear it to use the next class automatically.';};
+ name.input.onblur=()=>{if(!name.input.value.trim()){state.pledgeClass='';updateSuggestedName();}};
+
+ form.append(name.wrap,nameHint,picker('Class pledge masters (select two)',records,[...state.pledgeMasterIDs],2,ids=>{state.pledgeMasterIDs=ids;remember();}));
  const planStatus=P.el('p','p-muted',plans[chapter]?'Saved PM plan: '+plans[chapter].pledgeClass+' · Not yet marked crossed':'');
  form.append(P.button('Save PM plan (not crossed yet)',()=>P.run(form,async()=>{await P.call('portalAction',{action:'saveCrossingPlan',...current,chapter,pledgeClass:state.pledgeClass,pledgeMasterIDs:state.pledgeMasterIDs});planStatus.textContent='PM plan saved. No pledges added to the roster or tree.';})),planStatus);
  const members=P.el('div');form.append(members);
