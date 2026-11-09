@@ -7,9 +7,10 @@ P.renderNewlyCrossed=async root=>{
  if(!P.me.isAdmin)return;
  const data=P.rosterData;
  if(!data){root.append(P.empty('The roster is still loading. Reopen Newly Crossed in a moment.'));return;}
- root.append(P.el('p','p-muted','Record brothers who have already crossed. The semester below is their crossing semester—not a planned class. Existing roster classes have already crossed.'));
+ root.append(P.el('p','p-muted','View crossed classes, plan class leadership early, and record new crossings. Saving PM plans does not add pledges to the roster or family tree.'));
  const term=P.select('Crossing semester',['Spring','Summer','Fall'],period.term),year=P.field('Crossing year','number',period.year),toolbar=P.row();
  const area=P.el('div');toolbar.append(term.wrap,year.wrap,P.button('Load semester',()=>P.run(root,async()=>{const value=Number(year.input.value);if(!Number.isInteger(value)||value<1994||value>2100)throw Error('Enter a crossing year from 1994 to 2100.');period={term:term.input.value,year:value};root.replaceChildren();P.renderNewlyCrossed(root);})));root.append(toolbar,area);
+ let plans={};
  const current={...period},storageKey='985-crossed:'+P.uid+':'+current.year+':'+current.term;
  let draft;try{draft=JSON.parse(localStorage.getItem(storageKey)||'{}');}catch{draft={};}draft.chapters=draft.chapters||{};
  function remember(){try{localStorage.setItem(storageKey,JSON.stringify(draft));}catch{}}
@@ -25,6 +26,7 @@ P.renderNewlyCrossed=async root=>{
  const wardens=P.el('section','p-card');wardens.append(P.el('h3','',current.term+' '+current.year+' · National pledge wardens'),P.el('p','p-muted','These wardens apply to every chapter crossing this semester. Saving updates PW assignments on all existing classes for this crossing semester too.'));area.append(wardens);
  try{
  const saved=await P.call('portalAction',{action:'crossingOverview',...current});if(!root.isConnected)return;
+ plans=saved.plans||{};
  let chosen=[...(saved.pledgeWardenIDs||[])];
  wardens.append(picker('Search national pledge warden(s)',records,chosen,20,ids=>{chosen=ids;}));
  const status=P.el('p','p-muted',saved.saved?'Semester wardens saved.':'Select and save the semester’s wardens before adding a class.');
@@ -36,9 +38,33 @@ P.renderNewlyCrossed=async root=>{
  const crossed=data.classes.filter(c=>c.chapter===chapter&&normalize(c.semesterCrossed)===normalize(current.term)&&Number(c.yearCrossed)===current.year);
  summary.append(P.el('strong','',chapter+' Chapter'),P.el('span','p-muted',crossed.length?' · Crossed: '+crossed.map(c=>c.pledgeClass).join(', '):' · No class recorded for this crossing semester'));
  section.append(summary);chapters.append(section);
- const state=draft.chapters[chapter]||(draft.chapters[chapter]={pledgeClass:'',pledgeMasterIDs:[],members:[]});
- const form=P.el('div'),name=P.field('Class that crossed (e.g. Alpha Nu)','text',state.pledgeClass);name.input.maxLength=80;name.input.oninput=()=>{state.pledgeClass=name.input.value;remember();};
+ const existing=P.el('div');section.append(existing);
+ function showExisting(){
+ const live=P.rosterData||data;existing.replaceChildren();
+ const classes=live.classes.filter(c=>c.chapter===chapter&&normalize(c.semesterCrossed)===normalize(current.term)&&Number(c.yearCrossed)===current.year);
+ for(const c of classes){
+ const card=P.el('section','p-card'),members=live.people.filter(r=>r.classID===c.id).map((r,i)=>({...r,_order:i})).sort((a,b)=>(a.sortOrder??a._order)-(b.sortOrder??b._order));
+ card.append(P.el('h3','',c.pledgeClass+' Class · '+members.length+' brothers'),P.el('p','p-muted','Crossed '+current.term+' '+current.year));
+ for(const [key,label] of [['pledgeMasterIDs','Pledge masters'],['pledgeWardenIDs','Pledge wardens']])card.append(P.el('p','',label+': '+((c[key]||[]).map(id=>{const r=live.people.find(r=>r.id===id);return r?r.pledgeName+' · '+r.fullName:'Unavailable record';}).join('; ')||'Not assigned')));
+ members.forEach((r,i)=>{
+ const row=P.el('div','p-roster-person'),info=P.el('div');
+ info.append(P.button((i+1)+'. '+r.pledgeName+(r.pledgeNumber!==undefined&&r.pledgeNumber!==''?' #'+r.pledgeNumber:''),()=>P.profile('roster_'+r.id),'p-name'),P.el('p','p-muted',r.fullName));
+ if(i===0||i===members.length-1)info.append(P.el('small','p-roster-role',i===0?'Captain':'Co-Captain'));
+ row.append(info,P.button('Edit brother',()=>P.editRosterEntry(r)));card.append(row);
+ });
+ if(!members.length)card.append(P.empty('No brothers saved in this class yet.'));
+ card.append(P.button('Edit class / PMs',()=>P.editRosterClass(c.id)),P.button('Open master roster',()=>P.openRosterClass(c.id)));existing.append(card);
+ }
+ }
+ showExisting();
+ const refresh=()=>{if(!root.isConnected){document.removeEventListener('p985:roster',refresh);return;}showExisting();};document.addEventListener('p985:roster',refresh);
+
+ if(plans[chapter]&&(!draft.chapters[chapter]||(!draft.chapters[chapter].pledgeClass&&!draft.chapters[chapter].members?.length&&!draft.chapters[chapter].pledgeMasterIDs?.length)))draft.chapters[chapter]={...plans[chapter],members:[]};
+ const state=draft.chapters[chapter]||(draft.chapters[chapter]={pledgeClass:plans[chapter]?.pledgeClass||'',pledgeMasterIDs:plans[chapter]?.pledgeMasterIDs||[],members:[]});
+ const form=P.el('div'),name=P.field('Class name (e.g. Alpha Nu)','text',state.pledgeClass);name.input.maxLength=80;name.input.oninput=()=>{state.pledgeClass=name.input.value;remember();};
  form.append(name.wrap,picker('Class pledge masters (select two)',records,[...state.pledgeMasterIDs],2,ids=>{state.pledgeMasterIDs=ids;remember();}));
+ const planStatus=P.el('p','p-muted',plans[chapter]?'Saved PM plan: '+plans[chapter].pledgeClass+' · Not yet marked crossed':'');
+ form.append(P.button('Save PM plan (not crossed yet)',()=>P.run(form,async()=>{await P.call('portalAction',{action:'saveCrossingPlan',...current,chapter,pledgeClass:state.pledgeClass,pledgeMasterIDs:state.pledgeMasterIDs});planStatus.textContent='PM plan saved. No pledges added to the roster or tree.';})),planStatus);
  const members=P.el('div');form.append(members);
  function drawMembers(){members.replaceChildren();state.members.forEach((m,i)=>{
  const card=P.el('section','p-card'),head=P.row();head.append(P.el('h4','','Brother '+(i+1)),P.button('Remove',()=>{state.members.splice(i,1);state.members.forEach((r,j)=>r.lineNumber=j+1);remember();drawMembers();}));card.append(head);
@@ -57,7 +83,7 @@ P.renderNewlyCrossed=async root=>{
  review.append(P.el('p','p-muted','Saving publishes this crossed class to the master roster and family tree together. It does not create login accounts.'));
  const modal=P.dialog('Review before adding',review),save=P.button('Add to roster & family tree',()=>P.run(review,async()=>{save.disabled=true;try{const result=await P.call('portalAction',payload);delete draft.chapters[chapter];remember();modal.close();form.replaceChildren(P.el('p','',result.count+' crossed brothers added to the roster and family tree.' ));summary.textContent=chapter+' Chapter · '+payload.pledgeClass+' · Added';}catch(e){save.disabled=false;throw e;}}),'p-btn primary');review.append(save);
  },'p-btn primary'));
- form.append(P.el('small','p-muted','Unsubmitted class drafts are saved in this browser.'));section.append(form);drawMembers();
+ form.append(P.el('small','p-muted','Unsubmitted class drafts are saved in this browser.'));const intake=P.el('details'),intakeSummary=P.el('summary','',crossed.length?'Plan or add another class':'Plan leadership / add crossed brothers');intake.open=!crossed.length;intake.append(intakeSummary,form);section.append(intake);drawMembers();
  });
 };
 })();

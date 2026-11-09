@@ -64,29 +64,6 @@
     if(saved && !dates.includes(saved)) dates.push(saved);
     return {nodes, dates, missing:nodes.filter(n=>!clean(n.term,n.year)), label:saved||(dates.length===1?dates[0]:''), conflict:dates.length>1};
   };
-  function setClassCrossing(c) {
-    const form=P.el('div'), report=P.rosterClassCrossing(c);
-    const term=P.select('Crossing Semester',['Spring','Summer','Fall'],report.label.split(' ')[0]||'Fall');
-    const year=P.field('Crossing Year','number',report.label.split(' ')[1]||'');
-    form.append(P.el('p','p-muted','Applies to every family-tree record in '+c.chapter+' · '+c.pledgeClass+' Class, and the master roster class.'),term.wrap,year.wrap);
-    form.append(P.button('Save Class Crossing',()=>P.run(form,async()=>{
-      if(!/^\d{4}$/.test(year.input.value)||Number(year.input.value)<1994||Number(year.input.value)>new Date().getFullYear()+1)throw Error('Enter a valid four-digit crossing year.');
-      if(report.nodes.length>400)throw Error('This class is too large to update at once.');
-      await db.runTransaction(async tx=>{
-        const refs=report.nodes.map(n=>db.doc('familyTree/'+n.id));
-        const snapshots=await Promise.all(refs.map(ref=>tx.get(ref)));
-        const classRef=db.doc('masterRosterClasses/'+c.id), classSnap=await tx.get(classRef);
-        if(!classSnap.exists || classSnap.data().semesterCrossed!==c.semesterCrossed || classSnap.data().yearCrossed!==c.yearCrossed || norm(classSnap.data().chapter)!==norm(c.chapter) || classKey(classSnap.data().pledgeClass)!==classKey(c.pledgeClass))throw Error('The class changed. Reopen this editor.');
-        snapshots.forEach((snap,i)=>{
-          const old=report.nodes[i],now=snap.data();
-          if(!snap.exists || now.term!==old.term || now.year!==old.year || norm(now.chapter)!==norm(c.chapter) || classKey(now.pledgeClass)!==classKey(c.pledgeClass))throw Error('A tree record changed. Reopen this editor before saving.');
-        });
-        refs.forEach(ref=>tx.update(ref,{term:term.input.value,year:Number(year.input.value)}));
-        tx.update(classRef,{semesterCrossed:term.input.value,yearCrossed:Number(year.input.value)});
-      });d.close();
-    }),'p-btn primary'));
-    const d=P.dialog('Class Crossing',form);
-  }
   P.reviewRosterIssues = () => {
     if (!P.me.isAdmin) return;
             const box=P.el('div'),duplicates=new Map();
@@ -122,7 +99,7 @@
       const card=P.el('section','p-card p-crossing-review');
       card.append(P.el('h3','',c.chapter+' · '+c.pledgeClass+' Class'),P.el('p','p-muted',report.conflict?'Conflicting dates: '+report.dates.join(' / '):!report.label?'Crossing date not recorded':report.missing.length+' tree records missing a complete crossing date'));
       report.nodes.forEach(n=>card.append(P.el('p','p-crossing-record',(n.pledgeName||n.name||'Brother')+' · '+(n.name||'')+' — '+([n.term,n.year].filter(Boolean).join(' ')||'Not recorded'))));
-      card.append(P.button('Set Class Crossing',()=>setClassCrossing(c)));content.append(card);
+      content.append(card);
     });
     tree.filter(t=>!classes.some(c=>norm(c.chapter)===norm(t.chapter)&&classKey(c.pledgeClass)===classKey(t.pledgeClass))).forEach(t=>{
       count++;const card=P.el('div','p-card p-crossing-review');
@@ -237,7 +214,7 @@
           group.open=!!search || expandedClasses.has(c.id);
           group.addEventListener("toggle",()=>{if(search)return;if(group.open)expandedClasses.add(c.id);else expandedClasses.delete(c.id);});
           const label=P.el("span","p-roster-class-label");label.append(P.el("small","",c.chapter+" Chapter"),P.el("strong","",c.pledgeClass+" Class"));
-          label.append(P.el("small","p-roster-crossing",crossing.conflict?"Crossing date under review":crossing.label||"Crossing date not recorded"));
+          label.append(P.el("small","p-roster-crossing",crossing.label||"Crossing date not recorded"));
           h.append(label,P.el("span","p-roster-count",members.length+(members.length===1?" brother":" brothers")),P.el("span","p-roster-chevron","⌄"));
           if (P.me.isAdmin) {
             const actions=P.el("div","p-roster-class-actions");
@@ -395,7 +372,7 @@
         "p-btn primary",
       ),
     );
-    if(c) form.append(P.button("Set Class Crossing",()=>setClassCrossing(c)));
+
     if (c)
       form.append(
         P.button(
@@ -417,6 +394,7 @@
     const d = P.dialog(c ? "Edit class" : "Add class", form);
   }
   P.openRosterClass=id=>{chapter='';search='';viewMode='classes';expandedClasses.add(id);P.go('roster');render();};
+  P.editRosterClass=id=>{if(P.me.isAdmin)editClass(classes.find(c=>c.id===id));};
   P.editRosterEntry=(r)=>edit(r);
   function edit(r, defaultClassID) {
     const form = P.el("div"),
