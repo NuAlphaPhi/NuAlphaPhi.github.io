@@ -349,7 +349,7 @@
     const box = P.el("div", "p-event-detail");
     const page=P.root('event-detail');
     page.replaceChildren(P.button('← All events',()=>P.go('events')),box);
-    window.napSetTab('event-detail','events');
+    window.napSetTab('event-detail','events',window.NAP_ROUTES.options('events',id));
     const dialog={close:()=>P.go('events')};
     P.run(box, async () => {
       const snap = await db.doc("appEvents/" + id).get();
@@ -621,4 +621,5 @@
   document.addEventListener("p985:access", () => {
     if (P.uid) subscribe();
   });
+  P.ready(() => window.NAP_ROUTES.register("events", id => { if(id) P.openEvent(id); }));
 })();

@@ -104,8 +104,8 @@
     if (main) main.scrollTop = scrollPositions[tab] || 0;
 
     if (!opts.fromHistory && (validNavTabs.indexOf(activeNavTab) !== -1 || opts.profilePath)) {
-      var nextUrl = opts.profilePath || "/portal-home/" + activeNavTab + location.search;
-      if (location.pathname !== nextUrl || location.hash) {
+      var nextUrl = opts.profilePath || window.NAP_ROUTES.base(activeNavTab) + location.search;
+      if (location.pathname + location.search !== nextUrl || location.hash) {
         if (opts.replace) {
           history.replaceState(null, "", nextUrl);
         } else {
@@ -113,6 +113,7 @@
         }
       }
     }
+    if (!opts.fromHistory) window.NAP_ROUTES.navigated();
     document.dispatchEvent(new CustomEvent("nap:tab-changed", {detail: {tab: tab}}));
   }
 
@@ -139,7 +140,7 @@
         document.addEventListener("nap:auth-ready", ready, {once:true});
       });
       var user = auth.currentUser;
-      if (!user) { location.assign("/portal?next=" + encodeURIComponent(tab === "profile" ? location.pathname : "/portal-home/" + (navTab || tab))); return; }
+      if (!user) { location.assign("/portal?next=" + encodeURIComponent(location.pathname + location.search + location.hash)); return; }
       if(ticket !== navigationId) return;
       // Auth owns a live account subscription; reuse its verified session.
       // Panels remain mounted so returning to a page preserves loaded data.
@@ -184,16 +185,16 @@
   window.addEventListener("popstate", function () {
     var tabFromHash = routeTab();
     if (validNavTabs.indexOf(tabFromHash) !== -1 || tabFromHash === "profile") {
-      setTab(tabFromHash, undefined, { fromHistory: true });
+      setTab(tabFromHash, undefined, { fromHistory: true }).then(() => window.NAP_ROUTES.activate());
     }
   });
 
   /* Restore whichever tab the hash points to on a fresh load (a refresh, or
      landing on a link with a #hash) instead of always defaulting to
      Overview. Uses replaceState so this doesn't itself add a history entry. */
-  function routeTab() { return location.hash ? location.hash.slice(1) : location.pathname.split("/")[2] || "home"; }
+  function routeTab() { return window.NAP_ROUTES.read()?.tab || (location.hash ? location.hash.slice(1) : location.pathname.split("/")[2] || "home"); }
   var initialTab = routeTab();
-  if(initialTab === "profile"){ setTab("profile", undefined, {fromHistory:true}); } else if (validNavTabs.indexOf(initialTab) !== -1) {
+  if(window.NAP_ROUTES.read()){ setTab(initialTab, undefined, {fromHistory:true}).then(() => window.NAP_ROUTES.activate()); } else if(initialTab === "profile"){ setTab("profile", undefined, {fromHistory:true}); } else if (validNavTabs.indexOf(initialTab) !== -1) {
     setTab(initialTab, undefined, { replace: true });
   } else { setTab("home", undefined, {replace:true}); }
 })();

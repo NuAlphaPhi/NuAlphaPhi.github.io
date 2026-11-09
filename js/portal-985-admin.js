@@ -42,6 +42,10 @@
     } else c.append(P.el("small", "p-muted", "Only the account owner can change this position because it grants admin access."));
     return c;
   }
+  P.ready(() => window.NAP_ROUTES.register("admin", id => {
+    section = window.NAP_ROUTES.sections.find(s => window.NAP_ROUTES.slug(s) === id) || "Applications";
+    render();
+  }));
   function render() {
     const root = P.root("admin");
     root.classList.add("p-admin-page");
@@ -81,12 +85,13 @@
         : ["Actives & alumni"];
     if(P.uid==='vfC9YS7AqvY3Hyr0pfGYg38GVzs1')options.push('Discord Links');
     if (!options.includes(section)) section = options[0];
+    window.NAP_ROUTES.adminSection = window.NAP_ROUTES.slug(section);
     const pendingCounts={'Applications':apps.filter(a=>['pending','hold'].includes(a.status)).length,'Content reports':reports.filter(r=>r.status==='open').length,'Events':(P.events||[]).filter(e=>e.status==='pending').length,'Announcements':announcementRequests.filter(r=>r.status==='pending').length};
     tabs.setAttribute('aria-label','Administration sections');
     for(const [label,sections] of [['Review',['Class leadership requests','Applications','Content reports','Events','Announcements']],['People',['Discord Links','Accounts','Leadership','Pledging','Actives & alumni','Alumni advisors','Admins']],['Records',['Newly Crossed','Statistics','Roster discrepancies','Activity']]]){
       const available=sections.filter(t=>options.includes(t));if(!available.length)continue;
       const group=P.el('div','p-admin-nav-group');group.append(P.el('h2','',label));
-      available.forEach(t=>{const button=P.button('',()=>{section=t;render();},'p-admin-nav-item');button.append(P.el('span','',t));if(pendingCounts[t])button.append(P.el('span','p-admin-nav-count',pendingCounts[t]));if(section===t)button.setAttribute('aria-current','page');group.append(button);});tabs.append(group);
+      available.forEach(t=>{const button=P.button('',()=>{section=t;render();window.napSetTab("admin", "admin", window.NAP_ROUTES.options("admin",window.NAP_ROUTES.slug(t)));},'p-admin-nav-item');button.append(P.el('span','',t));if(pendingCounts[t])button.append(P.el('span','p-admin-nav-count',pendingCounts[t]));if(section===t)button.setAttribute('aria-current','page');group.append(button);});tabs.append(group);
     }
     const header=root.firstElementChild,headingText=P.el('div');headingText.append(...Array.from(header.childNodes));header.append(headingText);
     const layout=P.el('div','p-admin-layout');layout.append(tabs);root.append(layout);

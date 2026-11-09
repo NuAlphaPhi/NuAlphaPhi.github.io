@@ -89,6 +89,7 @@
     startBrothersListener();
   });
 
+  var chaptersLoaded = false;
   function startChaptersListener() {
     /* Public read (allow read: if true) — safe to start unconditionally,
        no admin gating needed the way Blog's listener requires. */
@@ -98,8 +99,10 @@
         snap.forEach(function (doc) {
           allChapterDocs[doc.id] = doc.data();
         });
+        chaptersLoaded = true;
         updateNavVisibility();
         renderChapterGrid();
+        window.NAP_ROUTES.restore();
         if (currentChapter) {
           renderEditorsList();
           if (isAdmin()) syncEditorPickerVisibility();
@@ -442,6 +445,13 @@
     }
   });
 
+  window.NAP_ROUTES.register("linktree", function(id) {
+    if (!id) { closeChapterEditor(); return; }
+    const chapter = (window.NAP_CHAPTERS || []).find(c => c.toLowerCase() === id.toLowerCase());
+    if (!currentUid || !chaptersLoaded) return false;
+    if (!chapter || !canEditChapter(chapter)) { closeChapterEditor(); chapterGridEl.textContent = "This chapter editor is unavailable to your account."; return; }
+    openChapterEditor(chapter);
+  });
   function openChapterEditor(chapter) {
     if (!canEditChapter(chapter)) return;
     currentChapter = chapter;
@@ -477,7 +487,7 @@
 
     feedbackEl.hidden = true;
     errorEl.hidden = true;
-    window.napSetTab("linktree-chapter", "linktree");
+    window.napSetTab("linktree-chapter", "linktree", window.NAP_ROUTES.options("linktree", chapter.toLowerCase()));
   }
 
   function closeChapterEditor() {

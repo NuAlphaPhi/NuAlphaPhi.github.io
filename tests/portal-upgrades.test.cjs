@@ -12,6 +12,8 @@ function setup(){
   db:{},storage:{}};
  window.napOnAuthReady=c.napOnAuthReady;window.napOnBrothersUpdated=c.napOnBrothersUpdated;
  c.window.localStorage=c.localStorage;vm.createContext(c);
+ vm.runInContext(fs.readFileSync('js/portal-routes.js','utf8'),c);
+ window.napSetTab=(tab)=>c.P985?.go(tab);
  vm.runInContext(fs.readFileSync('js/portal-985-core.js','utf8'),c);c.P985=window.P985;
  return c;
 }

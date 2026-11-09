@@ -318,7 +318,7 @@
     document
       .querySelectorAll("dialog.p-dialog[open]")
       .forEach((d) => d.close());
-    window.napSetTab("post", "home");
+    window.napSetTab("post", "home", window.NAP_ROUTES.options("home", id));
     const root = P.root("post");
     root.replaceChildren();
     root.classList.add("p-thread-page");
@@ -866,4 +866,5 @@
   document.addEventListener('click',e=>{document.querySelectorAll('.p-sort-picker[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.p-sort-picker[open]').forEach(d=>{d.open=false;d.querySelector('summary').focus();});});
   document.addEventListener("p985:blocks", render);
+  P.ready(() => window.NAP_ROUTES.register("home", id => { if(id) P.openPost(id); }));
 })();

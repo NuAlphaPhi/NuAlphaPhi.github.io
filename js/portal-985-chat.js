@@ -14,6 +14,7 @@
     reads = {},
     items = [];
   const panes = {};
+  let conversationsLoaded = false;
   const channelStreams = new Map(), channelUnread = {};
   function syncChannelUnread() {
     const rooms = P.uid && P.accessReady ? channels() : [];
@@ -83,6 +84,7 @@
     return P985Policy.channels(P.grant);
   }
   function restoreChannel(){
+    if(window.NAP_ROUTES.read()?.kind === "channels" && window.NAP_ROUTES.read()?.id){window.NAP_ROUTES.restore();return;}
     if(!P.uid||!P.accessReady||!panes.channels||active?.channel||document.querySelector('[data-panel="channels"]')?.hidden!==false)return;
     let previous='';try{previous=localStorage.getItem('985.lastChannel.'+P.uid)||'';}catch(_){}
     const room=P985Policy.resumeChannel(P.grant,previous);if(room)open(room);
@@ -105,6 +107,7 @@
     );
   }
   function lists() {
+    window.NAP_ROUTES.restore();
     const channelNav=document.querySelector('[data-tab="channels"]');
     const unreadChannels=channels().filter(r=>unread(r)).length;
     const pings=channels().reduce((sum,r)=>sum+channelStatus(r).mentions,0);
@@ -263,7 +266,7 @@
     if(r.channel){try{localStorage.setItem('985.lastChannel.'+P.uid,r.id);}catch(_){}}
     reply = "";
     const tab = r.channel ? "channels" : "messages";
-    P.go(tab);
+    window.napSetTab(tab, tab, window.NAP_ROUTES.options(tab, r.id));
     const chat = panes[tab].chat;
     chat.replaceChildren();
     head = P.el("div", "p-chat-head");
@@ -756,6 +759,17 @@
     const d = P.dialog("Send post", box);
   };
   P.ready(() => {
+    for (const kind of ["messages", "channels"]) window.NAP_ROUTES.register(kind, id => {
+      if (!panes[kind] || !P.accessReady) return false;
+      if (!id) { if(active) {off?.(); receiptOff?.(); roomPrefsOff?.(); active=null;} panes[kind].chat.replaceChildren(P.empty("Choose a conversation.")); return; }
+      const room = (kind === "channels" ? channels() : conversations).find(r => r.id === id);
+      if (kind === "messages" && !conversationsLoaded) return false;
+      if (!room || (room.kind === "direct" && room.memberIds.some(uid => P.blocks.has(uid)))) {
+        off?.(); receiptOff?.(); roomPrefsOff?.(); active=null;
+        panes[kind].chat.replaceChildren(P.empty("This conversation is unavailable to your account.")); return;
+      }
+      open(room);
+    });
     for (const tab of ["channels", "messages"]) {
       const root = P.root(tab);
       root.replaceChildren(
@@ -788,6 +802,7 @@
         .where("memberIds", "array-contains", P.uid),
       (rows) => {
         conversations = rows;
+        conversationsLoaded = true;
         if(active&&!active.channel&&!rows.some(r=>r.id===active.id)){off?.();receiptOff?.();roomPrefsOff?.();active=null;panes.messages.chat.replaceChildren(P.empty("You are no longer a member of this conversation."));}
         if(active&&!active.channel){const current=rows.find(r=>r.id===active.id);if(current){active={...active,...current};const label=head?.querySelector(".p-chat-identity strong");if(label)label.textContent=roomTitle(current);const avatar=head?.querySelector(".p-chat-identity > span:first-child");if(avatar)avatar.replaceWith(roomAvatar(current));}}
 

@@ -16,7 +16,9 @@ test('returning to loaded pages preserves content without network verification o
   const auth={currentUser:{uid:'bro'},signOut:async()=>{auth.currentUser=null;}};
   const ctx={window,document,location,history:{pushState(){},replaceState(){}},auth,
     db:{collection(){throw Error('Navigation must not refetch');}},setTimeout,clearTimeout,CustomEvent:window.CustomEvent};
-  vm.runInNewContext(fs.readFileSync('js/portal-shell.js','utf8'),ctx);
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync('js/portal-routes.js','utf8'),ctx);
+  vm.runInContext(fs.readFileSync('js/portal-shell.js','utf8'),ctx);
   const post=document.getElementById('saved-post');
   const main=document.querySelector('main'); main.scrollTop=240;
   await window.napSetTab('gallery');

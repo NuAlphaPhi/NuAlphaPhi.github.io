@@ -11,6 +11,7 @@
 
   var currentUid = null;
   var allAlbums = [];
+  var albumsLoaded = false;
   var started = false;
   var autoCovers = new Map();
 
@@ -50,8 +51,10 @@
           allAlbums = snap.docs.map(function (doc) {
             return Object.assign({}, doc.data(), { id: doc.id });
           });
+          albumsLoaded = true;
           syncAutoCovers();
           renderAlbumGrid();
+          window.NAP_ROUTES.restore();
           if (currentAlbumId) renderAlbumDetail();
         },
         function () {
@@ -88,6 +91,7 @@
           var current = findAlbum(album.id);
           if (current) current.autoCoverUrl = entry.url;
           renderAlbumGrid();
+
         }, function () {
           // Allow a later album refresh to retry a failed listener.
           if (autoCovers.get(album.id) === entry) autoCovers.delete(album.id);
@@ -298,12 +302,18 @@
   var currentAlbumPhotos = [];
   var photosUnsub = null;
 
+  window.NAP_ROUTES.register("gallery", function(id) {
+    if (!id) { closeAlbumDetail(); return; }
+    if (!currentUid || !albumsLoaded) return false;
+    if (!findAlbum(id)) { closeAlbumDetail(); albumGridEl.textContent = "This album is unavailable."; return; }
+    openAlbumDetail(id);
+  });
   function openAlbumDetail(albumId) {
     visiblePhotos = 48; selectedPhotos.clear();selectionMode=false;
     currentAlbumId = albumId;
     currentAlbumPhotos = [];
     renderAlbumDetail();
-    window.napSetTab("gallery-album", "gallery");
+    window.napSetTab("gallery-album", "gallery", window.NAP_ROUTES.options("gallery", albumId));
 
     if (photosUnsub) {
       photosUnsub();
