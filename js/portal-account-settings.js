@@ -139,17 +139,18 @@
     window.napSaveButtonStart(submitBtn, "Updating…");
 
     var user = auth.currentUser;
-    var credential = firebase.auth.EmailAuthProvider.credential(user.email, currentPassword);
+
 
     user
-      .reauthenticateWithCredential(credential)
+      .reload()
+      .then(function () { return user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, currentPassword)); })
       .then(function () {
         return user.updatePassword(newPassword);
       })
       .then(function () {
         form.reset();
         if (feedbackEl) {
-          feedbackEl.textContent = "Password updated. Use your new password next time you sign in to the portal or 985 app.";
+          feedbackEl.textContent = "Password updated for this account. All verified sign-in emails now use this same new password.";
           feedbackEl.className = "form-feedback form-feedback--success";
           feedbackEl.hidden = false;
         }

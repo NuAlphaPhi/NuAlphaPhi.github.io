@@ -79,8 +79,10 @@
     var feedback = document.getElementById('reset-feedback');
     button.disabled = true; button.textContent = 'Sending…'; feedback.hidden = true;
     try {
-      try { await auth.sendPasswordResetEmail(document.getElementById('reset-email').value.trim()); }
+      const email=document.getElementById('reset-email').value.trim();
+      try { await auth.sendPasswordResetEmail(email); }
       catch (error) { if (error.code !== 'auth/user-not-found') throw error; }
+      await callable('emailAliasPasswordReset',{email});
       feedback.textContent = 'If an account uses this email, a reset link is on its way. Check your inbox and spam folder.';
       feedback.className = 'form-feedback form-feedback--success';
     } catch (error) {
@@ -108,7 +110,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Signing in…";
 
-      (email.includes("@") ? auth.signInWithEmailAndPassword(email, password) : callable("phoneSignIn", {phone:email,password}).then(result=>auth.signInWithCustomToken(result.token)))
+      (email.includes("@") ? auth.signInWithEmailAndPassword(email, password).catch(async function(error){if(!["auth/invalid-credential","auth/user-not-found","auth/wrong-password"].includes(error.code))throw error;const result=await callable("emailAliasSignIn",{email,password});return auth.signInWithCustomToken(result.token);}) : callable("phoneSignIn", {phone:email,password}).then(result=>auth.signInWithCustomToken(result.token)))
         .then(async function (credential) {
           const profile=await db.doc('users/'+credential.user.uid).get();
           const value=profile.data();
