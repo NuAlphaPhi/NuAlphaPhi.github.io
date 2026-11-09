@@ -147,6 +147,24 @@
   window.addEventListener("resize", measurePreviews);
   document.addEventListener("nap:tab-changed", measurePreviews);
   document.fonts?.ready.then(measurePreviews);
+  function showPostLikes(post) {
+    const box = P.el("div", "p-suggestions");
+    box.style.maxHeight = "min(60vh, 420px)";
+    box.style.overflowY = "auto";
+    box.append(P.empty("Loading likes…"));
+    const dialog = P.dialog("Liked by", box);
+    dialog.cleanup = db.collection("forumPosts/" + post.id + "/likes").onSnapshot(snapshot => {
+      box.replaceChildren();
+      if (snapshot.empty) box.append(P.empty("No likes yet."));
+      snapshot.forEach(doc => {
+        const person = P.person(doc.id);
+        const row = P.button("", () => { dialog.close(); P.profile(doc.id); }, "p-group-member");
+        if (person) row.append(P.avatar(person), P.el("span", "", P.name(person)));
+        else { row.disabled = true; row.append(P.el("span", "", "Former or unavailable brother")); }
+        box.append(row);
+      });
+    }, () => box.replaceChildren(P.empty("Likes are unavailable. Please try again.")));
+  }
   P.postCard = (post, detail = false) => {
     const c = P.el("article", "p-card p-feed-post");
     const author = P.author(post.authorUid, post.authorName);
@@ -199,8 +217,13 @@
         await refreshLike();
       }),
     );
-    const count = P.el("span", "", stats[post.id]?.likeCount || "");
-    like.append(count);
+    const count = P.button(String(stats[post.id]?.likeCount || 0), () => showPostLikes(post), "p-action");
+    count.title = "See who liked this post";
+    count.setAttribute("aria-label", "See who liked this post");
+    const likeGroup = P.el("div", "p-post-like-group");
+    likeGroup.style.display = "inline-flex";
+    likeGroup.style.alignItems = "center";
+    likeGroup.append(like, count);
     async function refreshLike() {
       const d = await db.doc("forumPosts/" + post.id + "/likes/" + P.uid).get();
       like.classList.toggle("selected", d.exists);
@@ -239,7 +262,7 @@
       );
       const d = P.dialog("Share post", box);
     });
-    actions.append(like, reply, share);
+    actions.append(likeGroup, reply, share);
       c.append(
         P.button(
           "•••",
@@ -252,6 +275,7 @@
     }));
     if(P.me.isAdmin && post.kind==='announcement')menu.append(P.button(post.pinned?'Unpin announcement':'Pin announcement',()=>P.run(menu,async()=>{await P.call('portalAction',{action:'pinPost',id:post.id,pinned:!post.pinned});d.close();P.toast(post.pinned?'Announcement unpinned':'Announcement pinned',()=>P.call('portalAction',{action:'pinPost',id:post.id,pinned:!!post.pinned}));})));
 
+            menu.append(P.button("View likes", () => { d.close(); showPostLikes(post); }));
             menu.append(P.button("Report post", () => { d.close(); P.reportContent("forumPosts/" + post.id); }));
             if (!post.eventID && (post.authorUid === P.uid || P.me.isAdmin)) menu.append(
               P.button(
