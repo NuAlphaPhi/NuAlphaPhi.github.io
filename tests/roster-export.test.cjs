@@ -55,3 +55,10 @@ test('live UID-keyed account links work in both roster views and workbook export
  assert.equal(E.build(ExcelJS,data).getWorksheet('Roster Check').getCell('E2').value,'van Kwong');
  assert.equal(E.matrix({...data,accountLinks:{}}).total,3);
 });
+
+test('recorded roster crossing semester remains authoritative over conflicting tree dates',()=>{
+ const data={classes:[{id:'c',chapter:'Kappa',pledgeClass:'Alpha',semesterCrossed:'Summer',yearCrossed:2026}],people:[{id:'p',classID:'c',fullName:'Aiden Yue',pledgeName:'VIRO'}],tree:[{chapter:'Kappa',pledgeClass:'Alpha',term:'Fall',year:2026}],accountLinks:[],brothers:[]};
+ const prepared=require('../js/portal-roster-export.js').rows(data);
+ assert.deepEqual(prepared.rows[0].values.slice(5,7),['Summer',2026]);
+ assert.equal(prepared.warnings.length,1);
+});
