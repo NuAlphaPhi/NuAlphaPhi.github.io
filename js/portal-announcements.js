@@ -106,7 +106,7 @@
           if (!isEdit && isAdmin && window.napQueueBrotherhoodEmail) {
             window.napQueueBrotherhoodEmail(
               "New announcement: " + title,
-              authorName + " posted a new announcement:\n\n" + title + "\n\n" + body + "\n\nRead it in the portal: https://nualphaphi.com/portal-home"
+              authorName + " posted a new announcement:\n\n" + title + "\n\n" + body + "\n\nRead it in the portal: https://nualphaphi.com/portal"
             );
           }
           window.napSaveButtonDone(submitBtn, { savedLabel: isEdit || isAdmin ? "Saved" : "Sent for Approval" });

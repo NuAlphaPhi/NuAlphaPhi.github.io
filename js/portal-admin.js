@@ -101,7 +101,7 @@
           window.napQueueBrotherhoodEmail(
             "New announcement: " + a.title,
             (a.authorName || "A brother") + " posted a new announcement:\n\n" + a.title + "\n\n" + a.body +
-              "\n\nRead it in the portal: https://nualphaphi.com/portal-home"
+              "\n\nRead it in the portal: https://nualphaphi.com/portal"
           );
         }
       })
@@ -124,7 +124,7 @@
             "New event: " + ev.name,
             (ev.createdByName || "A brother") + " posted a new event:\n\n" + ev.name + "\n" + ev.location + (when ? " · " + when : "") +
               (ev.description ? "\n\n" + ev.description : "") +
-              "\n\nRSVP in the portal: https://nualphaphi.com/portal-home"
+              "\n\nRSVP in the portal: https://nualphaphi.com/portal"
           );
         }
       })

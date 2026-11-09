@@ -8,7 +8,11 @@
     const response=await fetch('https://us-central1-nualphaphi-6b330.cloudfunctions.net/'+name,{method:'POST',headers,body:JSON.stringify({data})});
     const result=await response.json();if(result.error)throw Error(result.error.message);return result.result;
   }
-  function destination(){const next=new URLSearchParams(location.search).get('next');if(next&&/^\/(?:admin|linktree|gallery|messages|channels|home|events)(?:\/[A-Za-z0-9_-]+)?\/?(?:[?#].*)?$/.test(next))return next;if(next&&/^\/portal-home\/profile\/[^/?#]+\/?$/.test(next))return next;return next&&/^\/portal-home(?:\.html)?(?:\/[a-z-]+\/?(?:[?#]|$)|[?#]|$)/.test(next)?next:'portal-home';}
+  function destination(){
+    let next=new URLSearchParams(location.search).get('next');
+    if(next)next=next.replace(/^\/portal-home(?:\.html)?(?=\/|[?#]|$)/,'/portal');
+    return next&&/^\/portal(?:\/(?!login(?:[/?#]|$))[a-z-]+(?:\/[A-Za-z0-9_-]+)?)?\/?(?:[?#].*)?$/.test(next)?next:'/portal';
+  }
   var toggleBtns = document.querySelectorAll(".portal-auth__toggle-btn");
   var panels = {
     signin: document.getElementById("authPanelSignin"),

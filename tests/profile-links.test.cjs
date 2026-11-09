@@ -9,7 +9,7 @@ function fixture(path,uid='viewer'){
 }
 test('pledge link normalization handles symbols accents and punctuation',()=>{const {P}=fixture('/');for(const [name,slug] of [['₩ARLORD','warlord'],['SØUTHPÅW','southpaw'],['₡RØWN','crown'],['A$AP','asap'],['T¥GA','tyga'],['A.S.C.E.N.D','ascend']])assert.equal(P.profileSlug(name),slug);});
 test('links resolve only after sign-in and collisions require a choice',()=>{
- const f=fixture('/portal-home/profile/VIRO');f.events['p985:people']();assert.equal(f.opened[0][0],'viro');
- const unauth=fixture('/portal-home/profile/viro',null);unauth.events['p985:people']();assert.equal(unauth.opened.length,0);
- const dup=fixture('/portal-home/profile/viro');dup.P.brothers.push({uid:'other',pledgeName:'VIRØ',chapter:'Alpha'});dup.events['p985:people']();assert.equal(dup.opened.length,0);assert.match(dup.document.body.textContent||dup.document.toString(),/Choose a brother/);
+ const f=fixture('/portal/profile/VIRO');f.events['p985:people']();assert.equal(f.opened[0][0],'viro');
+ const unauth=fixture('/portal/profile/viro',null);unauth.events['p985:people']();assert.equal(unauth.opened.length,0);
+ const dup=fixture('/portal/profile/viro');dup.P.brothers.push({uid:'other',pledgeName:'VIRØ',chapter:'Alpha'});dup.events['p985:people']();assert.equal(dup.opened.length,0);assert.match(dup.document.body.textContent||dup.document.toString(),/Choose a brother/);
 });

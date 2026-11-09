@@ -140,7 +140,7 @@
         document.addEventListener("nap:auth-ready", ready, {once:true});
       });
       var user = auth.currentUser;
-      if (!user) { location.assign("/portal?next=" + encodeURIComponent(location.pathname + location.search + location.hash)); return; }
+      if (!user) { location.assign("/portal/login?next=" + encodeURIComponent(location.pathname + location.search + location.hash)); return; }
       if(ticket !== navigationId) return;
       // Auth owns a live account subscription; reuse its verified session.
       // Panels remain mounted so returning to a page preserves loaded data.
@@ -148,7 +148,7 @@
       if (!session || session.uid !== user.uid) throw Error("Account changed");
       var profile = session.profile;
       if (!profile || profile.disabled || (profile.membershipStatus && profile.membershipStatus !== "approved")) {
-        await auth.signOut(); location.assign("/portal"); return;
+        await auth.signOut(); location.assign("/portal/login"); return;
       }
       if(auth.currentUser?.uid !== user.uid) return;
       if ((tab === "blog") && profile.isAdmin !== true) tab = navTab = "home";

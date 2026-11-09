@@ -251,7 +251,7 @@
           P.run(box, async () => {
             await navigator.clipboard.writeText(
               location.origin +
-                "/portal-home?post=" +
+                "/portal/home/" +
                 encodeURIComponent(post.id),
             );
             box.append(

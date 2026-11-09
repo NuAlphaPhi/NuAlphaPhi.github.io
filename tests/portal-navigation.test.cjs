@@ -11,7 +11,7 @@ test('returning to loaded pages preserves content without network verification o
     <div id="portalRouteLoading" hidden><p></p><button></button></div>
     <main class="portal-shell__main"><section class="portal-tab-panel" data-panel="home"><p id="saved-post">Loaded post</p></section>
     <section class="portal-tab-panel" data-panel="gallery" hidden>Loaded albums</section></main></body></html>`);
-  const location = {pathname:'/portal-home/home', search:'', hash:'', assign(url){this.redirect=url;}};
+  const location = {pathname:'/portal/home', search:'', hash:'', assign(url){this.redirect=url;}};
   window.NAP_AUTH_READY_DETAIL={uid:'bro',profile:{membershipStatus:'approved'}};
   const auth={currentUser:{uid:'bro'},signOut:async()=>{auth.currentUser=null;}};
   const ctx={window,document,location,history:{pushState(){},replaceState(){}},auth,
@@ -29,5 +29,5 @@ test('returning to loaded pages preserves content without network verification o
   assert.equal(document.getElementById('portalRouteLoading').hidden,true);
   auth.currentUser=null;
   await window.napSetTab('gallery');
-  assert.match(location.redirect,/^\/portal\?next=/);
+  assert.match(location.redirect,/^\/portal\/login\?next=/);
 });

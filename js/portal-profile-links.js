@@ -4,7 +4,7 @@
  P.profileSlug=value=>String(value||'').replace(/[₩Øø₡¢ŁłĐđÐðÞþÆæŒœß¥$€₱Ŧŧı]/g,c=>symbols[c]).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
  let resolved='';
  function resolve(){
-  const match=location.pathname.match(/^\/portal-home\/profile\/([^/]+)\/?$/);if(!match||!P.uid||window.napCurrentTab!=='profile')return;
+  const match=location.pathname.match(/^\/portal\/profile\/([^/]+)\/?$/);if(!match||!P.uid||window.napCurrentTab!=='profile')return;
   let slug;try{slug=P.profileSlug(decodeURIComponent(match[1]));}catch{return;}
   const root=P.root('profile');
   if(!P.rosterData){root.replaceChildren(P.empty('Loading brother profiles…'));return;}
@@ -22,5 +22,5 @@
   root.append(P.button('Open directory',()=>P.go('directory')));
  }
  document.addEventListener('nap:tab-changed',()=>{if(window.napCurrentTab!=='profile')resolved='';resolve();});
- document.addEventListener('p985:people',resolve);document.addEventListener('p985:roster',resolve);P.ready(()=>{if(/^\/portal-home\/profile\/[^/]+\/?$/.test(location.pathname))window.napSetTab('profile',undefined,{fromHistory:true});});
+ document.addEventListener('p985:people',resolve);document.addEventListener('p985:roster',resolve);P.ready(()=>{if(/^\/portal\/profile\/[^/]+\/?$/.test(location.pathname))window.napSetTab('profile',undefined,{fromHistory:true});});
 })();

@@ -585,7 +585,7 @@
     var target=memberProfileTarget(member);
     personModal.close();
     if(target)P.profile(target);
-    else window.napSetTab('profile',undefined,{profilePath:'/portal-home/profile/'+encodeURIComponent(P.profileSlug(member.pledgeName||member.name))});
+    else window.napSetTab('profile',undefined,{profilePath:'/portal/profile/'+encodeURIComponent(P.profileSlug(member.pledgeName||member.name))});
   }
   [personAvatarEl,personNameEl,personPledgeNameEl].forEach(function(el){
     el.addEventListener('click',viewPersonProfile);

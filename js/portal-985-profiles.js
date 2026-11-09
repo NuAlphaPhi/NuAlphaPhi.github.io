@@ -267,7 +267,7 @@
     profileTab = "about";
     const b=P.person(uid)||(uid===P.uid?P.me:P.rosterPerson?.(uid));
     const slug=P.profileSlug?.(b?.pledgeName);
-    if(!options.fromRoute || uid===P.uid)await window.napSetTab(uid===P.uid?'myprofile':'profile',undefined,{replace:!!options.fromRoute,...(uid!==P.uid&&slug?{profilePath:'/portal-home/profile/'+slug}:{})});
+    if(!options.fromRoute || uid===P.uid)await window.napSetTab(uid===P.uid?'myprofile':'profile',undefined,{replace:!!options.fromRoute,...(uid!==P.uid&&slug?{profilePath:'/portal/profile/'+slug}:{})});
     render();
   };
   window.napOpenProfileModal = (uid) => P.profile(uid);

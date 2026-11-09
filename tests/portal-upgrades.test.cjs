@@ -178,8 +178,8 @@ test('shared editor labels capitalize camel case and spaced field names',()=>{
 });
 test('every portal navigation section has a direct static entry',()=>{
  const html=fs.readFileSync('portal-home.html','utf8');
- for(const [,tab] of html.matchAll(/data-tab="([^"]+)"/g)) assert.ok(fs.existsSync(`portal-home/${tab}/index.html`),tab);
- assert.ok(fs.existsSync('portal-home/index.html'));
+ for(const [,tab] of html.matchAll(/data-tab="([^"]+)"/g)) assert.ok(fs.existsSync(`portal/${tab}/index.html`),tab);
+ assert.ok(fs.existsSync('portal/index.html'));
 });
 
 test('class crossing dates derive only from the same chapter and class',()=>{

@@ -638,7 +638,7 @@
               "New event: " + name,
               payload.createdByName + " posted a new event:\n\n" + name + "\n" + location + " · " + startDate.toLocaleString() +
                 (description ? "\n\n" + description : "") +
-                "\n\nRSVP in the portal: https://nualphaphi.com/portal-home"
+                "\n\nRSVP in the portal: https://nualphaphi.com/portal"
             );
           }
           window.napSaveButtonDone(submitBtn, { savedLabel: isEdit || isAdmin ? "Saved" : "Sent for Approval" });

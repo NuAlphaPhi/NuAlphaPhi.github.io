@@ -335,7 +335,7 @@
     accountSubscription = null;
     window.NAP_AUTH_READY_DETAIL = null;
     if (!user) {
-      window.location.href = "/portal?next=" + encodeURIComponent(location.pathname + location.search + location.hash);
+      window.location.href = "/portal/login?next=" + encodeURIComponent(location.pathname + location.search + location.hash);
       return;
     }
 
@@ -350,7 +350,7 @@
          portal itself is a locked door. */
       if (!snap.exists || profile.disabled === true || (profile.membershipStatus && profile.membershipStatus !== "approved")) {
         auth.signOut().then(function () {
-          window.location.href = "/portal";
+          window.location.href = "/portal/login";
         });
         return;
       }
@@ -401,7 +401,7 @@
   if (portalSignOut) {
     portalSignOut.addEventListener("click", function () {
       auth.signOut().then(function () {
-        window.location.href = "/portal";
+        window.location.href = "/portal/login";
       });
     });
   }
