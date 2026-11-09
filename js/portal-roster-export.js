@@ -17,7 +17,8 @@ function rows(data){
   const values=[...candidates.map(t=>[t.term,t.year]),[c.semesterCrossed,c.yearCrossed]];
   const dates=[...new Set(values.filter(([t,y])=>/^(spring|summer|fall|winter)$/i.test(String(t))&&/^\d{4}$/.test(String(y))).map(([t,y])=>String(t)[0].toUpperCase()+String(t).slice(1).toLowerCase()+' '+y))];
   if(dates.length!==1)warnings.push(c.chapter+' / '+clean(c.pledgeClass)+': '+(dates.length?'conflicting crossing dates':'crossing date missing'));
-  return [c.id,dates.length===1?dates[0].split(' '):['','']];
+  const saved=/^(spring|summer|fall|winter)$/i.test(String(c.semesterCrossed))&&/^\d{4}$/.test(String(c.yearCrossed))?[String(c.semesterCrossed)[0].toUpperCase()+String(c.semesterCrossed).slice(1).toLowerCase(),String(c.yearCrossed)]:null;
+  return [c.id,saved||(dates.length===1?dates[0].split(' '):['',''])];
  }));
  const output=data.people.map((r,index)=>{
   const c=classes.get(r.classID);if(!c||!CHAPTERS.includes(c.chapter))throw Error('A roster entry has no valid chapter/class. Fix Roster discrepancies before exporting.');

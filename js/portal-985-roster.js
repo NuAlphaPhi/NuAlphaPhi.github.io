@@ -62,11 +62,11 @@
     const dates = [...new Set(nodes.map(n=>clean(n.term,n.year)).filter(Boolean))];
     const saved = clean(c.semesterCrossed,c.yearCrossed);
     if(saved && !dates.includes(saved)) dates.push(saved);
-    return {nodes, dates, missing:nodes.filter(n=>!clean(n.term,n.year)), label:dates.length===1?dates[0]:'', conflict:dates.length>1};
+    return {nodes, dates, missing:nodes.filter(n=>!clean(n.term,n.year)), label:saved||(dates.length===1?dates[0]:''), conflict:dates.length>1};
   };
   function setClassCrossing(c) {
     const form=P.el('div'), report=P.rosterClassCrossing(c);
-    const term=P.select('Crossing Semester',['Spring','Summer','Fall','Winter'],report.label.split(' ')[0]||'Fall');
+    const term=P.select('Crossing Semester',['Spring','Summer','Fall'],report.label.split(' ')[0]||'Fall');
     const year=P.field('Crossing Year','number',report.label.split(' ')[1]||'');
     form.append(P.el('p','p-muted','Applies to every family-tree record in '+c.chapter+' · '+c.pledgeClass+' Class, and the master roster class.'),term.wrap,year.wrap);
     form.append(P.button('Save Class Crossing',()=>P.run(form,async()=>{
