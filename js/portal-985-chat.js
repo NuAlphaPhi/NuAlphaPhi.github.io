@@ -427,7 +427,7 @@
               .filter(Boolean)
               .forEach((e) => (counts[e] = (counts[e] || 0) + 1));
             Object.entries(counts).forEach(([emoji, n]) =>
-              actions.append(P.button(emoji + " " + n, () => react(m, emoji))),
+              actions.append(P.button(emoji + " " + n, () => showReactions(m, emoji))),
             );
             actions.append(P.button("•••", (e) => menu(m, e)));
             c.append(actions);
@@ -449,6 +449,35 @@
         },
         (e) => P.error(chat, e),
       );
+    function showReactions(message, selected = "") {
+      const box=P.el("div"),filters=P.row(),people=P.el("div","p-suggestions"),controls=P.row();
+      people.style.maxHeight="min(50vh, 360px)";people.style.overflowY="auto";
+      box.append(filters,people,controls);
+      const dialog=P.dialog("Message reactions",box);
+      let current=message;
+      function draw(){
+        filters.replaceChildren();people.replaceChildren();controls.replaceChildren();
+        const entries=Object.entries(current.reactions||{}).filter(([,emoji])=>typeof emoji==="string"&&emoji);
+        const counts={};entries.forEach(([,emoji])=>counts[emoji]=(counts[emoji]||0)+1);
+        for(const [emoji,count] of [["",entries.length],...Object.entries(counts)]){
+          const button=P.button((emoji||"All")+" "+count,()=>{selected=emoji;draw();});
+          button.setAttribute("aria-pressed",String(selected===emoji));filters.append(button);
+        }
+        entries.filter(([,emoji])=>!selected||emoji===selected).forEach(([uid,emoji])=>{
+          const person=P.person(uid),row=P.button("",()=>{dialog.close();P.profile(uid);},"p-group-member");
+          if(!person){row.disabled=true;row.append(P.el("span","","Former or unavailable brother"),P.el("small","",emoji));}
+          else row.append(P.avatar(person),P.el("span","",P.name(person)),P.el("small","",emoji));
+          people.append(row);
+        });
+        if(!people.childElementCount)people.append(P.empty("No reactions yet."));
+        if(selected)controls.append(P.button(current.reactions?.[P.uid]===selected?"Remove my "+selected:"React with "+selected,()=>react(current,selected)));
+      }
+      draw();
+      dialog.cleanup=db.doc(path+"/"+message.id).onSnapshot(snapshot=>{
+        if(!snapshot.exists){filters.replaceChildren();controls.replaceChildren();people.replaceChildren(P.empty("This message was deleted."));return;}
+        current={id:message.id,...snapshot.data()};draw();
+      },()=>{filters.replaceChildren();controls.replaceChildren();people.replaceChildren(P.empty("Reactions are unavailable. Close this window and try again."));});
+    }
     function react(m, emoji) {
       P.run(chat, () =>
         db
@@ -497,6 +526,7 @@
           }),
         ),
       );
+      if(Object.values(m.reactions||{}).some(Boolean))actions.append(P.button("View reactions",()=>{d.close();showReactions(m);}));
       if(m.senderUid===P.uid && !m.pollID)actions.append(P.button('Edit message',()=>{
         d.close();const box=P.el('div'),f=P.field('Message','textarea',m.body);f.input.maxLength=2000;
         box.append(f.wrap,P.button('Save',()=>P.run(box,async()=>{await P.call('portalAction',{action:'editMessage',scope:r.channel?'channel':'chat',roomID:r.id,id:m.id,body:f.input.value});edit.close();})));const edit=P.dialog('Edit message',box);
