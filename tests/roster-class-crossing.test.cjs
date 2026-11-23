@@ -7,7 +7,7 @@ function editor(c){
  select:(label,choices,value='')=>(fields[label]={wrap:element(),input:{value}}),
  button:(label,action)=>(buttons[label]=action,element()),run:(_,fn)=>fn(),dialog:()=>({close(){}})};
  const db={collection:()=>({doc:id=>id}),batch:()=>({set:(id,data)=>writes.push({id,data}),update(){},commit:async()=>{}})};
- const ctx={P,db,people:[],norm:s=>s,crypto};vm.createContext(ctx);
+ const ctx={P,db,people:[],norm:s=>s,crypto,canManageRoster:()=>P.me.isAdmin===true};vm.createContext(ctx);
  vm.runInContext(source.slice(source.indexOf('  function editClass(c)'),source.indexOf('  P.openRosterClass=')),ctx);
  ctx.editClass(c);return{fields,buttons,writes};
 }

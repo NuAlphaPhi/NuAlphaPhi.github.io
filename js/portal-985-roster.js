@@ -1,6 +1,8 @@
 (function () {
   "use strict";
   const P = P985;
+  const canManageRoster = () => P.me?.isAdmin === true && window.napIsAdmin?.() === true
+    && !!P.uid && auth.currentUser?.uid === P.uid;
   let classes = [],
     people = [],
     tree = [],
@@ -68,7 +70,7 @@
     return {nodes, dates, missing:nodes.filter(n=>!clean(n.term,n.year)), label:saved||(dates.length===1?dates[0]:''), conflict:dates.length>1};
   };
   P.reviewRosterIssues = () => {
-    if (!P.me.isAdmin) return;
+    if (!canManageRoster()) return;
             const box=P.el('div'),duplicates=new Map();
             people.forEach(r=>{const key=r.classID+':'+norm(r.fullName);duplicates.set(key,[...(duplicates.get(key)||[]),r]);});
             const rows=people.filter(r=>{const c=classes.find(c=>c.id===r.classID);return !c||issue(r,c)||(duplicates.get(r.classID+':'+norm(r.fullName))||[]).length>1;});
@@ -77,7 +79,7 @@
             box.append(P.button('Export review list',()=>P.download('roster-review.csv',P.csv([['Full name','Pledge name','Class','Issue'],...rows.map(r=>{const c=classes.find(c=>c.id===r.classID);return [r.fullName,r.pledgeName,c?.pledgeClass||'',c?issue(r,c)||'Possible duplicate':'Missing class'];})]),'text/csv')));P.dialog('Roster review queue',box);
   };
   P.reviewTreeDifferences = () => {
-    if (!P.me.isAdmin) return;
+    if (!canManageRoster()) return;
     const box = P.el('div');
     const rows = people.filter(r => { const c=classes.find(c=>c.id===r.classID); return c && issue(r,c); });
     box.append(P.el('p','p-muted',rows.length+' roster entries differ from the family tree.'));
@@ -90,7 +92,7 @@
     P.dialog('Review tree differences',box);
   };
   P.renderRosterDiscrepancies = content => {
-    if(!P.me.isAdmin) return;
+    if(!canManageRoster()) return;
     if(loadedSources.size < 4) { content.append(P.empty('Loading roster and family-tree records…')); return; }
     content.append(P.row(P.button('Review roster issues',P.reviewRosterIssues),P.button('Review tree differences',P.reviewTreeDifferences)));
     content.append(P.el('p','p-muted','Review crossing dates and roster-to-tree differences. Dates are shared by the whole chapter pledge class; conflicting records are never chosen automatically.'));
@@ -152,7 +154,7 @@
         people.length + " brothers · All chapters, with or without an account",
       ),
     );
-    const canExport=P.me.isAdmin === true || [P.grant.role,...(P.grant.roles||[])].some(role=>['nationalBoard','president'].includes(role));
+    const canExport=canManageRoster() || [P.grant.role,...(P.grant.roles||[])].some(role=>['nationalBoard','president'].includes(role));
     const exportLabel=()=>viewMode==='classes'?'Export Roster':viewMode==='timeline'?'Export Timeline':'Export Statistics';
     let exportButton;
     if(canExport) {
@@ -176,7 +178,7 @@
       draw();
     };
     const filters=P.row(q.wrap,ch.wrap);filters.classList.add("p-roster-filters");root.append(filters);
-    if (P.me.isAdmin)
+    if (canManageRoster())
       root.append(
         P.row(
           P.button("Add brother", () => edit()),
@@ -211,7 +213,7 @@
                   .includes(search.toLowerCase())) &&
               (!issuesOnly || issue(r, c)),
           );
-          if (!members.length && !P.me.isAdmin) return;
+          if (!members.length && !canManageRoster()) return;
           if (!members.length && (search || issuesOnly)) return;
           const group = P.el("details", "p-roster-group"), h=P.el("summary","p-roster-summary");
           group.open=!!search || expandedClasses.has(c.id);
@@ -219,7 +221,7 @@
           const label=P.el("span","p-roster-class-label");label.append(P.el("small","",c.chapter+" Chapter"),P.el("strong","",c.pledgeClass+" Class"));
           label.append(P.el("small","p-roster-crossing",crossing.label||"Crossing date not recorded"));
           h.append(label,P.el("span","p-roster-count",members.length+(members.length===1?" brother":" brothers")),P.el("span","p-roster-chevron","⌄"));
-          if (P.me.isAdmin) {
+          if (canManageRoster()) {
             const actions=P.el("div","p-roster-class-actions");
             actions.append(P.button("Edit Class",()=>editClass(c)),P.button("Add Brother",()=>edit(null,c.id)));
             group.append(actions);
@@ -274,11 +276,11 @@
               );
             if (r.disaffiliated)
               info.append(P.el("p", "", "Disaffiliated · Delettered"));
-            if (P.me.isAdmin && links[r.id]?.treeID) info.append(P.el("small", "p-muted", "Family-tree match selected"));
-            if (P.me.isAdmin && issue(r, c))
+            if (canManageRoster() && links[r.id]?.treeID) info.append(P.el("small", "p-muted", "Family-tree match selected"));
+            if (canManageRoster() && issue(r, c))
               info.append(P.el("small", "", issue(r, c)));
             row.append(info);
-            if (P.me.isAdmin)
+            if (canManageRoster())
               row.append(
                 P.row(
                   P.button("Edit", () => edit(r)),
@@ -296,6 +298,7 @@
     draw();
   }
   function editClass(c) {
+    if (!canManageRoster()) return;
     const form = P.el("div", "p-class-editor"),
       chapter = P.select("Chapter", P.chapters, c?.chapter || "Alpha"),
       name = P.field("Class", "text", c?.pledgeClass);
@@ -368,8 +371,9 @@
         "Save class",
         () =>
           P.run(form, async () => {
+            if (!canManageRoster()) throw Error("Only administrators can edit the roster.");
             if (!name.input.value.trim()) throw Error("Enter a class name.");
-            if(!P.me.isAdmin)throw Error('Only administrators can edit the roster.');
+            if(!canManageRoster())throw Error('Only administrators can edit the roster.');
             const term = crossingSemester.input.value, yearText = crossingYear.input.value.trim();
             const crossing = {};
             if (term || yearText) {
@@ -401,6 +405,7 @@
           "Delete empty class",
           () =>
             P.run(form, async () => {
+            if (!canManageRoster()) throw Error("Only administrators can edit the roster.");
               if (people.some((r) => r.classID === c.id))
                 throw Error(
                   "Move or remove all brothers before deleting this class.",
@@ -416,9 +421,10 @@
     const d = P.dialog(c ? "Edit class" : "Add class", form);
   }
   P.openRosterClass=id=>{chapter='';search='';viewMode='classes';expandedClasses.add(id);P.go('roster');render();};
-  P.editRosterClass=id=>{if(P.me.isAdmin)editClass(classes.find(c=>c.id===id));};
+  P.editRosterClass=id=>{if(canManageRoster())editClass(classes.find(c=>c.id===id));};
   P.editRosterEntry=(r)=>edit(r);
   function edit(r, defaultClassID) {
+    if (!canManageRoster()) return;
     const form = P.el("div"),
       full = P.field("Full real name", "text", r?.fullName),
       pledge = P.field("Pledge name", "text", r?.pledgeName),
@@ -449,6 +455,7 @@
         "Save brother",
         () =>
           P.run(form, async () => {
+            if (!canManageRoster()) throw Error("Only administrators can edit the roster.");
             if (!full.input.value.trim() || !pledge.input.value.trim())
               throw Error("Enter both names.");
             if (!/^\d{0,2}$/.test(num.input.value))
@@ -478,6 +485,7 @@
           "Remove from roster",
           () =>
             P.run(form, async () => {
+            if (!canManageRoster()) throw Error("Only administrators can edit the roster.");
               if (
                 await P.confirm(
                   "Remove this roster entry? The account and family tree will remain.",
@@ -493,6 +501,7 @@
     const d = P.dialog(r ? "Edit roster entry" : "Add brother", form);
   }
   function compare(r, c) {
+    if (!canManageRoster()) return;
     const box = P.el("div");
     box.append(
       P.el("h3", "", "Roster"),
@@ -518,6 +527,7 @@
     if (linked && !possible.some(t => t.id === linked.id)) possible.unshift(linked);
     box.append(P.el("p", "p-muted", "Choose the family-tree record that belongs to this brother. Your selection is saved; no names or family connections are changed."));
     async function saveLink(treeID) {
+      if (!canManageRoster()) throw Error("Only administrators can edit roster links.");
       await db.runTransaction(async tx => {
         const ref = db.doc("rosterTreeLinks/" + r.id);
         const latest = await tx.get(ref);
@@ -566,6 +576,7 @@
               "Save tree identity",
               () =>
                 P.run(form, async () => {
+            if (!canManageRoster()) throw Error("Only administrators can edit the roster.");
                   const data = Object.fromEntries(
                     Object.entries(fields).map(([k, v]) => [k, v.value.trim()]),
                   );
