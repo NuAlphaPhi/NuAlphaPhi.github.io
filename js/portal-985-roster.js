@@ -299,6 +299,11 @@
     const form = P.el("div", "p-class-editor"),
       chapter = P.select("Chapter", P.chapters, c?.chapter || "Alpha"),
       name = P.field("Class", "text", c?.pledgeClass);
+    const crossingSemester = P.select("Crossing semester", [["", "Select semester"], "Spring", "Summer", "Fall"], c?.semesterCrossed || ""),
+      crossingYear = P.field("Crossing year", "number", c?.yearCrossed || "");
+    crossingYear.input.min = "1994";
+    crossingYear.input.max = "2100";
+    crossingYear.input.step = "1";
     const members=c?P.rosterClassMembers(c.id):[];
     const ordering=P.el('div','p-class-order');
     function drawOrder(){
@@ -354,6 +359,9 @@
     form.append(
       chapter.wrap,
       name.wrap,
+      crossingSemester.wrap,
+      crossingYear.wrap,
+      P.el('p','p-muted','The semester and year this class crossed. Saving updates the crossing date shown in the master roster.'),
       assignments,
       ordering,
       P.button(
@@ -362,8 +370,19 @@
           P.run(form, async () => {
             if (!name.input.value.trim()) throw Error("Enter a class name.");
             if(!P.me.isAdmin)throw Error('Only administrators can edit the roster.');
+            const term = crossingSemester.input.value, yearText = crossingYear.input.value.trim();
+            const crossing = {};
+            if (term || yearText) {
+              const year = Number(yearText);
+              if (!['Spring','Summer','Fall'].includes(term) || !/^\d{4}$/.test(yearText) || !Number.isInteger(year) || year < 1994 || year > 2100)
+                throw Error('Select a crossing semester and enter a year from 1994 to 2100.');
+              crossing.semesterCrossed = term;
+              crossing.yearCrossed = year;
+            } else if (c?.semesterCrossed || c?.yearCrossed) {
+              throw Error('Select a crossing semester and year to keep this class’s crossing date recorded.');
+            }
             const batch=db.batch();
-            batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim(),...selected},{merge:true});
+            batch.set(db.collection('masterRosterClasses').doc(c?.id||crypto.randomUUID()),{chapter:chapter.input.value,pledgeClass:name.input.value.trim(),...selected,...crossing},{merge:true});
             if(members.length>400)throw Error('This class is too large to save at once.');
             members.forEach((r,i)=>{
               if(r._new){const {_new,id,...record}=r;batch.set(db.doc('masterRoster/'+r.id),{...record,sortOrder:i});}
