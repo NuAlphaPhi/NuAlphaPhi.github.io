@@ -906,11 +906,62 @@
     });
   }
 
+  var selectedRoster = null, rosterLoadVersion = 0;
+  var rosterPicker = document.createElement("section");
+  rosterPicker.className = "form-group";
+  rosterPicker.innerHTML = '<label class="form-label" for="tree-roster-search">Choose from master roster</label><input id="tree-roster-search" class="form-input" type="search" placeholder="Search real name or pledge name…" autocomplete="off"><p class="form-hint" data-roster-status></p><div data-roster-results style="max-height:240px;overflow:auto;display:grid;gap:8px"></div><button type="button" class="news-card__action-btn" data-roster-clear hidden>Clear selection / enter manually</button>';
+  form.prepend(rosterPicker);
+  var rosterSearch = rosterPicker.querySelector('input'), rosterResults = rosterPicker.querySelector('[data-roster-results]'), rosterStatus = rosterPicker.querySelector('[data-roster-status]'), rosterClear = rosterPicker.querySelector('[data-roster-clear]');
+  function rosterNorm(value) { return String(value || '').normalize('NFKC').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function availableRoster(rows, classes, links, tree) {
+    return rows.filter(function(r) {
+      var c = classes[r.classID];
+      if (!c || links[r.id] && tree.some(function(t){return t.id === links[r.id].treeID;})) return false;
+      return !tree.some(function(t) {
+        return t.id === 'roster-' + r.id || rosterNorm(t.chapter) === rosterNorm(c.chapter) &&
+          ((rosterNorm(r.fullName) && rosterNorm(t.name) === rosterNorm(r.fullName)) || (rosterNorm(r.pledgeName) && rosterNorm(t.pledgeName) === rosterNorm(r.pledgeName)));
+      });
+    });
+  }
+  async function loadRosterPicker() {
+    var version = ++rosterLoadVersion;
+    rosterSearch.value = ''; rosterResults.replaceChildren(); rosterStatus.textContent = 'Loading brothers not yet in the family tree…';
+    try {
+      var snapshots = await Promise.all(['masterRoster','masterRosterClasses','rosterTreeLinks','familyTree'].map(function(collection){return db.collection(collection).get();}));
+      if(version !== rosterLoadVersion) return;
+      var rows = snapshots[0].docs.map(function(d){return Object.assign({id:d.id},d.data());}), classes = {}, links = {};
+      snapshots[1].forEach(function(d){classes[d.id]=d.data();}); snapshots[2].forEach(function(d){links[d.id]=d.data();});
+      var tree = snapshots[3].docs.map(function(d){return Object.assign({id:d.id},d.data());});
+      var eligible = availableRoster(rows,classes,links,tree);
+      function draw() {
+        rosterResults.replaceChildren();
+        if(selectedRoster) return;
+        var query = rosterNorm(rosterSearch.value);
+        var matches = eligible.filter(function(r){return !query || rosterNorm(r.fullName+' '+r.pledgeName+' '+classes[r.classID].chapter).includes(query);});
+        rosterStatus.textContent = matches.length + ' brothers available. Search to narrow the list.';
+        matches.slice(0,30).forEach(function(r){
+          var c=classes[r.classID], button=document.createElement('button');button.type='button';button.className='news-card__action-btn';button.style.textAlign='left';
+          button.textContent=r.pledgeName+' · '+r.fullName+' · '+c.chapter+' · '+c.pledgeClass;
+          button.onclick=function(){
+            selectedRoster=r;rosterSearch.value=r.pledgeName+' · '+r.fullName;rosterClear.hidden=false;rosterResults.replaceChildren();rosterStatus.textContent='Selected. Saving will link this roster entry to the family tree.';
+            form.querySelector('[name="name"]').value=r.fullName||'';form.querySelector('[name="pledgeName"]').value=r.pledgeName||'';
+            chapterSelect.value=c.chapter||'';form.querySelector('[name="pledgeClass"]').value=c.pledgeClass||'';
+            form.querySelector('[name="term"]').value=c.semesterCrossed||'';form.querySelector('[name="year"]').value=c.yearCrossed||'';
+          };rosterResults.append(button);
+        });
+      }
+      rosterSearch.oninput=function(){selectedRoster=null;rosterClear.hidden=true;draw();};draw();
+    } catch(error) { if(version===rosterLoadVersion) rosterStatus.textContent='Could not load the roster. Close and reopen this form to retry.'; }
+  }
+  rosterClear.onclick=function(){selectedRoster=null;rosterClear.hidden=true;loadRosterPicker();};
+
   /* opts.editMember: person being edited (null = creating new).
      opts.presetBigId: pre-select this Big (used by "Add Little"). */
   function openPersonForm(editMember, presetBigId) {
     if (!isAdmin()) return;
     currentEditId = editMember ? editMember.id : null;
+    selectedRoster = null; ++rosterLoadVersion; rosterClear.hidden = true; rosterPicker.hidden = !!editMember;
+    if (!editMember) loadRosterPicker();
     formModalTitleEl.textContent = editMember ? "Edit Person" : "Add Person";
     formSubmitBtn.textContent = editMember ? "Save Changes" : "Save Person";
 
@@ -974,7 +1025,25 @@
     } else {
       payload.createdByUid = currentUid;
       payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      writePromise = db.collection("familyTree").add(payload);
+      if (selectedRoster) {
+        var rosterID = selectedRoster.id, treeRef = db.collection('familyTree').doc('roster-' + rosterID), linkRef = db.collection('rosterTreeLinks').doc(rosterID);
+        writePromise = db.runTransaction(async function(tx) {
+          var link = await tx.get(linkRef), existing = await tx.get(treeRef);
+          if (link.exists) throw Error('This brother has already been linked. Reopen the form to refresh the roster.');
+          if (!existing.exists) tx.set(treeRef,payload);
+          else if (existing.data().createdByUid !== currentUid || existing.data().bigId !== payload.bigId) throw Error('This brother is already in the tree. Reopen the form.');
+        }).then(function(){
+          // The link rules require the tree document to exist before linking.
+          // A stable tree ID makes a failed link safe to retry without another person.
+          return db.runTransaction(async function(tx){
+            var link=await tx.get(linkRef);
+            if(link.exists && link.data().treeID !== treeRef.id) throw Error('Another admin linked this brother. Reopen the form.');
+            tx.set(linkRef,{treeID:treeRef.id,updatedBy:currentUid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+          });
+        });
+      } else {
+        writePromise = db.collection("familyTree").add(payload);
+      }
     }
 
     writePromise
@@ -984,9 +1053,9 @@
           formModal.close();
         }, 550);
       })
-      .catch(function () {
+      .catch(function (error) {
         window.napSaveButtonDone(formSubmitBtn, { error: true });
-        formErrorEl.textContent = "Something went wrong. Please try again.";
+        formErrorEl.textContent = error.message || "Something went wrong. Please try again.";
         formErrorEl.hidden = false;
       });
   });
